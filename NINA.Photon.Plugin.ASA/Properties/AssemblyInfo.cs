@@ -25,7 +25,7 @@ using System.Runtime.InteropServices;
 // [MANDATORY] The name of your plugin
 [assembly: AssemblyTitle("ASA Tools")]
 // [MANDATORY] A short description of your plugin
-[assembly: AssemblyDescription("ASA Mount Tools, including model building")]
+[assembly: AssemblyDescription("ASA model building")]
 
 // The following attributes are not required for the plugin per se, but are required by the official manifest meta data
 
@@ -63,9 +63,11 @@ using System.Runtime.InteropServices;
 //[Optional] An additional url to an example example screenshot of your plugin in action
 [assembly: AssemblyMetadata("AltScreenshotURL", "https://github.com/photon1503/NINA.Photon.Plugin.ASA/releases/download/resources/ASAToolsAltScreenshot.JPG")]
 //[Optional] An in-depth description of your plugin
-[assembly: AssemblyMetadata("LongDescription", @"This plugin provides tools for ASA mounts, such as building pointing models.
+[assembly: AssemblyMetadata("LongDescription", @"This plugin provides building pointing models for ASA mounts.
 
 * NOTE: This plugin is still in active development *
+
+Cloned from https://github.com/ghilios/NINA.Joko.Plugin.TenMicron and adopted for ASA
 
 # Features #
 
@@ -88,9 +90,8 @@ using System.Runtime.InteropServices;
 
 # Getting Help #
 
-If you have questions, come ask in the **#plugin-discussions** channel on the NINA [Discord chat server](https://discord.com/invite/rWRbVbw).
-* ASA Tools is provided 'as is' under the terms of the [Mozilla Public License 2.0](https://github.com/ghilios/NINA.Photon.Plugin.ASA/blob/develop/LICENSE.txt)
-* Source code for this plugin is available at this plugin's [source code repository](https://github.com/ghilios/NINA.Photon.Plugin.ASA)
+* ASA Tools is provided 'as is' under the terms of the [Mozilla Public License 2.0](https://github.com/photon1503/NINA.Photon.Plugin.ASA/blob/develop/LICENSE.txt)
+* Source code for this plugin is available at this plugin's [source code repository](https://github.com/photon1503/NINA.Photon.Plugin.ASA)
 ")]
 
 // Setting ComVisible to false makes the types in this assembly not visible

@@ -18,14 +18,17 @@ using NINA.Profile;
 using NINA.Profile.Interfaces;
 using System;
 
-namespace NINA.Photon.Plugin.ASA {
-
-    public class ASAOptions : BaseINPC, IASAOptions {
+namespace NINA.Photon.Plugin.ASA
+{
+    public class ASAOptions : BaseINPC, IASAOptions
+    {
         private readonly PluginOptionsAccessor optionsAccessor;
 
-        public ASAOptions(IProfileService profileService) {
+        public ASAOptions(IProfileService profileService)
+        {
             var guid = PluginOptionsAccessor.GetAssemblyGuid(typeof(ASAOptions));
-            if (guid == null) {
+            if (guid == null)
+            {
                 throw new Exception($"Guid not found in assembly metadata");
             }
 
@@ -33,7 +36,8 @@ namespace NINA.Photon.Plugin.ASA {
             InitializeOptions();
         }
 
-        private void InitializeOptions() {
+        private void InitializeOptions()
+        {
             goldenSpiralStarCount = optionsAccessor.GetValueInt32("GoldenSpiralStarCount", 9);
             siderealTrackStartOffsetMinutes = optionsAccessor.GetValueInt32("SiderealTrackStartOffsetMinutes", 0);
             siderealTrackEndOffsetMinutes = optionsAccessor.GetValueInt32("SiderealTrackEndOffsetMinutes", 0);
@@ -60,15 +64,16 @@ namespace NINA.Photon.Plugin.ASA {
             minPointAzimuth = optionsAccessor.GetValueDouble("MinPointAzimuth", 0.5d);
             maxPointAzimuth = optionsAccessor.GetValueDouble("MaxPointAzimuth", 359.5d);
             disableRefractionCorrection = optionsAccessor.GetValueBoolean("DisableRefractionCorrection", false);
-            ipAddress = optionsAccessor.GetValueString("IPAddress", "");
-            macAddress = optionsAccessor.GetValueString("MACAddress", "");
-            wolBroadcastIP = optionsAccessor.GetValueString("WolBroadcastIP", "");
-            port = optionsAccessor.GetValueInt32("Port", 3490);
+            //ipAddress = optionsAccessor.GetValueString("IPAddress", "");
+            //macAddress = optionsAccessor.GetValueString("MACAddress", "");
+            //wolBroadcastIP = optionsAccessor.GetValueString("WolBroadcastIP", "");
+            //port = optionsAccessor.GetValueInt32("Port", 3490);
             driverID = optionsAccessor.GetValueString("DriverID", "");
             decJitterSigmaDegrees = optionsAccessor.GetValueDouble(nameof(DecJitterSigmaDegrees), 1.0d);
         }
 
-        public void ResetDefaults() {
+        public void ResetDefaults()
+        {
             GoldenSpiralStarCount = 9;
             SiderealTrackStartOffsetMinutes = 0;
             SiderealTrackEndOffsetMinutes = 0;
@@ -105,11 +110,15 @@ namespace NINA.Photon.Plugin.ASA {
 
         private int minPointAltitude;
 
-        public int MinPointAltitude {
+        public int MinPointAltitude
+        {
             get => minPointAltitude;
-            set {
-                if (minPointAltitude != value) {
-                    if (value < 0 || value > 90) {
+            set
+            {
+                if (minPointAltitude != value)
+                {
+                    if (value < 0 || value > 90)
+                    {
                         throw new ArgumentException("MinPointAltitude must be between 0 and 90, inclusive", "MinPointAltitude");
                     }
                     minPointAltitude = value;
@@ -121,11 +130,15 @@ namespace NINA.Photon.Plugin.ASA {
 
         private int maxPointAltitude;
 
-        public int MaxPointAltitude {
+        public int MaxPointAltitude
+        {
             get => maxPointAltitude;
-            set {
-                if (maxPointAltitude != value) {
-                    if (value < 0 || value > 90) {
+            set
+            {
+                if (maxPointAltitude != value)
+                {
+                    if (value < 0 || value > 90)
+                    {
                         throw new ArgumentException("MaxPointAltitude must be between 0 and 90, inclusive", "MaxPointAltitude");
                     }
                     maxPointAltitude = value;
@@ -137,11 +150,15 @@ namespace NINA.Photon.Plugin.ASA {
 
         private int goldenSpiralStarCount;
 
-        public int GoldenSpiralStarCount {
+        public int GoldenSpiralStarCount
+        {
             get => goldenSpiralStarCount;
-            set {
-                if (goldenSpiralStarCount != value) {
-                    if (value < 3 || value > ModelPointGenerator.MAX_POINTS) {
+            set
+            {
+                if (goldenSpiralStarCount != value)
+                {
+                    if (value < 3 || value > ModelPointGenerator.MAX_POINTS)
+                    {
                         throw new ArgumentException($"GoldenSpiralStarCount must be between 3 and {ModelPointGenerator.MAX_POINTS}, inclusive", "GoldenSpiralStarCount");
                     }
                     goldenSpiralStarCount = value;
@@ -153,10 +170,13 @@ namespace NINA.Photon.Plugin.ASA {
 
         private int siderealTrackStartOffsetMinutes;
 
-        public int SiderealTrackStartOffsetMinutes {
+        public int SiderealTrackStartOffsetMinutes
+        {
             get => siderealTrackStartOffsetMinutes;
-            set {
-                if (siderealTrackStartOffsetMinutes != value) {
+            set
+            {
+                if (siderealTrackStartOffsetMinutes != value)
+                {
                     siderealTrackStartOffsetMinutes = value;
                     optionsAccessor.SetValueInt32("SiderealTrackStartOffsetMinutes", siderealTrackStartOffsetMinutes);
                     RaisePropertyChanged();
@@ -166,10 +186,13 @@ namespace NINA.Photon.Plugin.ASA {
 
         private int siderealTrackEndOffsetMinutes;
 
-        public int SiderealTrackEndOffsetMinutes {
+        public int SiderealTrackEndOffsetMinutes
+        {
             get => siderealTrackEndOffsetMinutes;
-            set {
-                if (siderealTrackEndOffsetMinutes != value) {
+            set
+            {
+                if (siderealTrackEndOffsetMinutes != value)
+                {
                     siderealTrackEndOffsetMinutes = value;
                     optionsAccessor.SetValueInt32("SiderealTrackEndOffsetMinutes", siderealTrackEndOffsetMinutes);
                     RaisePropertyChanged();
@@ -179,11 +202,15 @@ namespace NINA.Photon.Plugin.ASA {
 
         private double siderealTrackRADeltaDegrees;
 
-        public double SiderealTrackRADeltaDegrees {
+        public double SiderealTrackRADeltaDegrees
+        {
             get => siderealTrackRADeltaDegrees;
-            set {
-                if (siderealTrackRADeltaDegrees != value) {
-                    if (value <= 0.0d) {
+            set
+            {
+                if (siderealTrackRADeltaDegrees != value)
+                {
+                    if (value <= 0.0d)
+                    {
                         throw new ArgumentException("SiderealTrackRADeltaDegrees must be positive", "SiderealTrackRADeltaDegrees");
                     }
                     siderealTrackRADeltaDegrees = value;
@@ -196,11 +223,15 @@ namespace NINA.Photon.Plugin.ASA {
         private int domeShutterWidth_mm;
 
         // TODO: Restore after this works properly
-        public int DomeShutterWidth_mm {
+        public int DomeShutterWidth_mm
+        {
             get => 0; // domeShutterWidth_mm;
-            set {
-                if (domeShutterWidth_mm != value) {
-                    if (value < 0) {
+            set
+            {
+                if (domeShutterWidth_mm != value)
+                {
+                    if (value < 0)
+                    {
                         throw new ArgumentException("DomeShutterWidth_mm must be non-negative", "DomeShutterWidth_mm");
                     }
                     domeShutterWidth_mm = value;
@@ -212,10 +243,13 @@ namespace NINA.Photon.Plugin.ASA {
 
         private bool minimizeDomeMovementEnabled;
 
-        public bool MinimizeDomeMovementEnabled {
+        public bool MinimizeDomeMovementEnabled
+        {
             get => minimizeDomeMovementEnabled;
-            set {
-                if (minimizeDomeMovementEnabled != value) {
+            set
+            {
+                if (minimizeDomeMovementEnabled != value)
+                {
                     minimizeDomeMovementEnabled = value;
                     optionsAccessor.SetValueBoolean("MinimizeDomeMovementEnabled", minimizeDomeMovementEnabled);
                     RaisePropertyChanged();
@@ -225,10 +259,13 @@ namespace NINA.Photon.Plugin.ASA {
 
         private bool minimizeMeridianFlipsEnabled;
 
-        public bool MinimizeMeridianFlipsEnabled {
+        public bool MinimizeMeridianFlipsEnabled
+        {
             get => minimizeMeridianFlipsEnabled;
-            set {
-                if (minimizeMeridianFlipsEnabled != value) {
+            set
+            {
+                if (minimizeMeridianFlipsEnabled != value)
+                {
                     minimizeMeridianFlipsEnabled = value;
                     optionsAccessor.SetValueBoolean("MinimizeMeridianFlipsEnabled", minimizeMeridianFlipsEnabled);
                     RaisePropertyChanged();
@@ -238,10 +275,13 @@ namespace NINA.Photon.Plugin.ASA {
 
         private ModelPointGenerationTypeEnum modelPointGenerationType;
 
-        public ModelPointGenerationTypeEnum ModelPointGenerationType {
+        public ModelPointGenerationTypeEnum ModelPointGenerationType
+        {
             get => modelPointGenerationType;
-            set {
-                if (modelPointGenerationType != value) {
+            set
+            {
+                if (modelPointGenerationType != value)
+                {
                     modelPointGenerationType = value;
                     optionsAccessor.SetValueEnum("ModelPointGenerationType", modelPointGenerationType);
                     RaisePropertyChanged();
@@ -251,10 +291,13 @@ namespace NINA.Photon.Plugin.ASA {
 
         private bool westToEastSorting;
 
-        public bool WestToEastSorting {
+        public bool WestToEastSorting
+        {
             get => westToEastSorting;
-            set {
-                if (westToEastSorting != value) {
+            set
+            {
+                if (westToEastSorting != value)
+                {
                     westToEastSorting = value;
                     optionsAccessor.SetValueBoolean("WestToEastSorting", westToEastSorting);
                     RaisePropertyChanged();
@@ -264,11 +307,15 @@ namespace NINA.Photon.Plugin.ASA {
 
         private int builderNumRetries;
 
-        public int BuilderNumRetries {
+        public int BuilderNumRetries
+        {
             get => builderNumRetries;
-            set {
-                if (builderNumRetries != value) {
-                    if (value < 0) {
+            set
+            {
+                if (builderNumRetries != value)
+                {
+                    if (value < 0)
+                    {
                         throw new ArgumentException("BuilderNumRetries must be non-negative", "BuilderNumRetries");
                     }
                     builderNumRetries = value;
@@ -280,13 +327,19 @@ namespace NINA.Photon.Plugin.ASA {
 
         private double maxPointRMS;
 
-        public double MaxPointRMS {
+        public double MaxPointRMS
+        {
             get => maxPointRMS;
-            set {
-                if (maxPointRMS != value) {
-                    if (value <= 0.0d || double.IsNaN(value)) {
+            set
+            {
+                if (maxPointRMS != value)
+                {
+                    if (value <= 0.0d || double.IsNaN(value))
+                    {
                         maxPointRMS = double.NaN;
-                    } else {
+                    }
+                    else
+                    {
                         maxPointRMS = value;
                     }
                     optionsAccessor.SetValueDouble("MaxPointRMS", maxPointRMS);
@@ -297,10 +350,13 @@ namespace NINA.Photon.Plugin.ASA {
 
         private bool logCommands;
 
-        public bool LogCommands {
+        public bool LogCommands
+        {
             get => logCommands;
-            set {
-                if (logCommands != value) {
+            set
+            {
+                if (logCommands != value)
+                {
                     logCommands = value;
                     optionsAccessor.SetValueBoolean("LogCommands", logCommands);
                     RaisePropertyChanged();
@@ -310,10 +366,13 @@ namespace NINA.Photon.Plugin.ASA {
 
         private bool allowBlindSolves;
 
-        public bool AllowBlindSolves {
+        public bool AllowBlindSolves
+        {
             get => allowBlindSolves;
-            set {
-                if (allowBlindSolves != value) {
+            set
+            {
+                if (allowBlindSolves != value)
+                {
                     allowBlindSolves = value;
                     optionsAccessor.SetValueBoolean("AllowBlindSolves", allowBlindSolves);
                     RaisePropertyChanged();
@@ -323,11 +382,15 @@ namespace NINA.Photon.Plugin.ASA {
 
         private int maxConcurrency;
 
-        public int MaxConcurrency {
+        public int MaxConcurrency
+        {
             get => maxConcurrency;
-            set {
-                if (maxConcurrency != value) {
-                    if (maxConcurrency < 0) {
+            set
+            {
+                if (maxConcurrency != value)
+                {
+                    if (maxConcurrency < 0)
+                    {
                         throw new ArgumentException("MaxConcurrency must be non-negative", "MaxConcurrency");
                     }
                     maxConcurrency = value;
@@ -339,10 +402,13 @@ namespace NINA.Photon.Plugin.ASA {
 
         private bool showRemovedPoints;
 
-        public bool ShowRemovedPoints {
+        public bool ShowRemovedPoints
+        {
             get => showRemovedPoints;
-            set {
-                if (showRemovedPoints != value) {
+            set
+            {
+                if (showRemovedPoints != value)
+                {
                     showRemovedPoints = value;
                     optionsAccessor.SetValueBoolean("ShowRemovedPoints", showRemovedPoints);
                     RaisePropertyChanged();
@@ -352,11 +418,15 @@ namespace NINA.Photon.Plugin.ASA {
 
         private int maxFailedPoints;
 
-        public int MaxFailedPoints {
+        public int MaxFailedPoints
+        {
             get => maxFailedPoints;
-            set {
-                if (maxFailedPoints != value) {
-                    if (maxFailedPoints < 0) {
+            set
+            {
+                if (maxFailedPoints != value)
+                {
+                    if (maxFailedPoints < 0)
+                    {
                         throw new ArgumentException("MaxFailedPoints must be non-negative", "MaxFailedPoints");
                     }
                     maxFailedPoints = value;
@@ -368,10 +438,13 @@ namespace NINA.Photon.Plugin.ASA {
 
         private string siderealTrackStartTimeProvider;
 
-        public string SiderealTrackStartTimeProvider {
+        public string SiderealTrackStartTimeProvider
+        {
             get => siderealTrackStartTimeProvider;
-            set {
-                if (siderealTrackStartTimeProvider != value) {
+            set
+            {
+                if (siderealTrackStartTimeProvider != value)
+                {
                     siderealTrackStartTimeProvider = value;
                     optionsAccessor.SetValueString("SiderealTrackStartTimeProvider", siderealTrackStartTimeProvider);
                     RaisePropertyChanged();
@@ -381,10 +454,13 @@ namespace NINA.Photon.Plugin.ASA {
 
         private string siderealTrackEndTimeProvider;
 
-        public string SiderealTrackEndTimeProvider {
+        public string SiderealTrackEndTimeProvider
+        {
             get => siderealTrackEndTimeProvider;
-            set {
-                if (siderealTrackEndTimeProvider != value) {
+            set
+            {
+                if (siderealTrackEndTimeProvider != value)
+                {
                     siderealTrackEndTimeProvider = value;
                     optionsAccessor.SetValueString("SiderealTrackEndTimeProvider", siderealTrackEndTimeProvider);
                     RaisePropertyChanged();
@@ -394,10 +470,13 @@ namespace NINA.Photon.Plugin.ASA {
 
         private bool removeHighRMSPointsAfterBuild;
 
-        public bool RemoveHighRMSPointsAfterBuild {
+        public bool RemoveHighRMSPointsAfterBuild
+        {
             get => removeHighRMSPointsAfterBuild;
-            set {
-                if (removeHighRMSPointsAfterBuild != value) {
+            set
+            {
+                if (removeHighRMSPointsAfterBuild != value)
+                {
                     removeHighRMSPointsAfterBuild = value;
                     optionsAccessor.SetValueBoolean("RemoveHighRMSPointsAfterBuild", removeHighRMSPointsAfterBuild);
                     RaisePropertyChanged();
@@ -407,11 +486,15 @@ namespace NINA.Photon.Plugin.ASA {
 
         private double plateSolveSubframePercentage;
 
-        public double PlateSolveSubframePercentage {
+        public double PlateSolveSubframePercentage
+        {
             get => plateSolveSubframePercentage;
-            set {
-                if (plateSolveSubframePercentage != value) {
-                    if (value <= 0.0d || value > 1.0d) {
+            set
+            {
+                if (plateSolveSubframePercentage != value)
+                {
+                    if (value <= 0.0d || value > 1.0d)
+                    {
                         throw new ArgumentException($"PlateSolveSubframePercentage must be within (0, 1]", "PlateSolveSubframePercentage");
                     }
 
@@ -424,10 +507,13 @@ namespace NINA.Photon.Plugin.ASA {
 
         private bool alternateDirectionsBetweenIterations;
 
-        public bool AlternateDirectionsBetweenIterations {
+        public bool AlternateDirectionsBetweenIterations
+        {
             get => alternateDirectionsBetweenIterations;
-            set {
-                if (alternateDirectionsBetweenIterations != value) {
+            set
+            {
+                if (alternateDirectionsBetweenIterations != value)
+                {
                     alternateDirectionsBetweenIterations = value;
                     optionsAccessor.SetValueBoolean("AlternateDirectionsBetweenIterations", alternateDirectionsBetweenIterations);
                     RaisePropertyChanged();
@@ -437,15 +523,23 @@ namespace NINA.Photon.Plugin.ASA {
 
         private double minPointAzimuth;
 
-        public double MinPointAzimuth {
+        public double MinPointAzimuth
+        {
             get => minPointAzimuth;
-            set {
-                if (minPointAzimuth != value) {
-                    if (value <= 0.0d || double.IsNaN(value)) {
+            set
+            {
+                if (minPointAzimuth != value)
+                {
+                    if (value <= 0.0d || double.IsNaN(value))
+                    {
                         minPointAzimuth = 0.0d;
-                    } else if (value >= 360.0d) {
+                    }
+                    else if (value >= 360.0d)
+                    {
                         minPointAzimuth = 360.0d;
-                    } else {
+                    }
+                    else
+                    {
                         minPointAzimuth = value;
                     }
 
@@ -457,15 +551,23 @@ namespace NINA.Photon.Plugin.ASA {
 
         private double maxPointAzimuth;
 
-        public double MaxPointAzimuth {
+        public double MaxPointAzimuth
+        {
             get => maxPointAzimuth;
-            set {
-                if (maxPointAzimuth != value) {
-                    if (value <= 0.0d || double.IsNaN(value)) {
+            set
+            {
+                if (maxPointAzimuth != value)
+                {
+                    if (value <= 0.0d || double.IsNaN(value))
+                    {
                         maxPointAzimuth = 0.0d;
-                    } else if (value >= 360.0d) {
+                    }
+                    else if (value >= 360.0d)
+                    {
                         maxPointAzimuth = 360.0d;
-                    } else {
+                    }
+                    else
+                    {
                         maxPointAzimuth = value;
                     }
 
@@ -477,10 +579,13 @@ namespace NINA.Photon.Plugin.ASA {
 
         private bool disableRefractionCorrection;
 
-        public bool DisableRefractionCorrection {
+        public bool DisableRefractionCorrection
+        {
             get => disableRefractionCorrection;
-            set {
-                if (disableRefractionCorrection != value) {
+            set
+            {
+                if (disableRefractionCorrection != value)
+                {
                     disableRefractionCorrection = value;
                     optionsAccessor.SetValueBoolean("DisableRefractionCorrection", disableRefractionCorrection);
                     RaisePropertyChanged();
@@ -490,10 +595,13 @@ namespace NINA.Photon.Plugin.ASA {
 
         private string ipAddress;
 
-        public string IPAddress {
+        public string IPAddress
+        {
             get => ipAddress;
-            set {
-                if (ipAddress != value) {
+            set
+            {
+                if (ipAddress != value)
+                {
                     ipAddress = value;
                     optionsAccessor.SetValueString("IPAddress", ipAddress);
                     RaisePropertyChanged();
@@ -503,10 +611,13 @@ namespace NINA.Photon.Plugin.ASA {
 
         private string macAddress;
 
-        public string MACAddress {
+        public string MACAddress
+        {
             get => macAddress;
-            set {
-                if (macAddress != value) {
+            set
+            {
+                if (macAddress != value)
+                {
                     macAddress = value;
                     optionsAccessor.SetValueString("MACAddress", macAddress);
                     RaisePropertyChanged();
@@ -516,11 +627,15 @@ namespace NINA.Photon.Plugin.ASA {
 
         private int port;
 
-        public int Port {
+        public int Port
+        {
             get => port;
-            set {
-                if (port != value) {
-                    if (value < 0 || value > short.MaxValue) {
+            set
+            {
+                if (port != value)
+                {
+                    if (value < 0 || value > short.MaxValue)
+                    {
                         throw new ArgumentException($"Port must be between (0, {short.MaxValue})", "Port");
                     }
                     port = value;
@@ -532,10 +647,13 @@ namespace NINA.Photon.Plugin.ASA {
 
         private string wolBroadcastIP;
 
-        public string WolBroadcastIP {
+        public string WolBroadcastIP
+        {
             get => wolBroadcastIP;
-            set {
-                if (wolBroadcastIP != value) {
+            set
+            {
+                if (wolBroadcastIP != value)
+                {
                     wolBroadcastIP = value;
                     optionsAccessor.SetValueString("WolBroadcastIP", wolBroadcastIP);
                     RaisePropertyChanged();
@@ -545,10 +663,13 @@ namespace NINA.Photon.Plugin.ASA {
 
         private string driverID;
 
-        public string DriverID {
+        public string DriverID
+        {
             get => driverID;
-            set {
-                if (driverID != value) {
+            set
+            {
+                if (driverID != value)
+                {
                     driverID = value;
                     optionsAccessor.SetValueString("DriverID", driverID);
                     RaisePropertyChanged();
@@ -558,15 +679,23 @@ namespace NINA.Photon.Plugin.ASA {
 
         private double decJitterSigmaDegrees;
 
-        public double DecJitterSigmaDegrees {
+        public double DecJitterSigmaDegrees
+        {
             get => decJitterSigmaDegrees;
-            set {
-                if (decJitterSigmaDegrees != value) {
-                    if (value < 0.0d || double.IsNaN(value)) {
+            set
+            {
+                if (decJitterSigmaDegrees != value)
+                {
+                    if (value < 0.0d || double.IsNaN(value))
+                    {
                         decJitterSigmaDegrees = 0.0d;
-                    } else if (value >= 10.0d) {
+                    }
+                    else if (value >= 10.0d)
+                    {
                         decJitterSigmaDegrees = 10.0d;
-                    } else {
+                    }
+                    else
+                    {
                         decJitterSigmaDegrees = value;
                     }
 
