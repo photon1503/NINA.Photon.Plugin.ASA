@@ -13,15 +13,21 @@
 using NINA.Equipment.Equipment;
 using NINA.Photon.Plugin.ASA.Model;
 
-namespace NINA.Photon.Plugin.ASA.Equipment {
-
-    public class MountInfo : DeviceInfo {
+namespace NINA.Photon.Plugin.ASA.Equipment
+{
+    public class MountInfo : DeviceInfo
+    {
         private string mountId;
 
-        public string MountId {
+        public bool Connected { get => true; }  //TODO GH
+
+        public string MountId
+        {
             get => mountId;
-            set {
-                if (mountId != value) {
+            set
+            {
+                if (mountId != value)
+                {
                     mountId = value;
                     RaisePropertyChanged();
                 }
@@ -30,10 +36,13 @@ namespace NINA.Photon.Plugin.ASA.Equipment {
 
         private ProductFirmware productFirmware;
 
-        public ProductFirmware ProductFirmware {
+        public ProductFirmware ProductFirmware
+        {
             get => productFirmware;
-            set {
-                if (productFirmware != value) {
+            set
+            {
+                if (productFirmware != value)
+                {
                     productFirmware = value;
                     RaisePropertyChanged();
                 }
@@ -42,10 +51,13 @@ namespace NINA.Photon.Plugin.ASA.Equipment {
 
         private bool unattendedFlipEnabled;
 
-        public bool UnattendedFlipEnabled {
+        public bool UnattendedFlipEnabled
+        {
             get => unattendedFlipEnabled;
-            set {
-                if (unattendedFlipEnabled != value) {
+            set
+            {
+                if (unattendedFlipEnabled != value)
+                {
                     unattendedFlipEnabled = value;
                     RaisePropertyChanged();
                 }
@@ -54,10 +66,13 @@ namespace NINA.Photon.Plugin.ASA.Equipment {
 
         private decimal trackingRateArcsecPerSec;
 
-        public decimal TrackingRateArcsecPerSec {
+        public decimal TrackingRateArcsecPerSec
+        {
             get => trackingRateArcsecPerSec;
-            set {
-                if (trackingRateArcsecPerSec != value) {
+            set
+            {
+                if (trackingRateArcsecPerSec != value)
+                {
                     trackingRateArcsecPerSec = value;
                     RaisePropertyChanged();
                 }
@@ -66,10 +81,13 @@ namespace NINA.Photon.Plugin.ASA.Equipment {
 
         private MountStatusEnum status;
 
-        public MountStatusEnum Status {
+        public MountStatusEnum Status
+        {
             get => status;
-            set {
-                if (status != value) {
+            set
+            {
+                if (status != value)
+                {
                     status = value;
                     RaisePropertyChanged();
                 }
@@ -78,10 +96,13 @@ namespace NINA.Photon.Plugin.ASA.Equipment {
 
         private decimal slewSettleTimeSeconds;
 
-        public decimal SlewSettleTimeSeconds {
+        public decimal SlewSettleTimeSeconds
+        {
             get => slewSettleTimeSeconds;
-            set {
-                if (slewSettleTimeSeconds != value) {
+            set
+            {
+                if (slewSettleTimeSeconds != value)
+                {
                     slewSettleTimeSeconds = value;
                     RaisePropertyChanged();
                 }
@@ -90,10 +111,13 @@ namespace NINA.Photon.Plugin.ASA.Equipment {
 
         private int meridianLimitDegrees;
 
-        public int MeridianLimitDegrees {
+        public int MeridianLimitDegrees
+        {
             get => meridianLimitDegrees;
-            set {
-                if (meridianLimitDegrees != value) {
+            set
+            {
+                if (meridianLimitDegrees != value)
+                {
                     meridianLimitDegrees = value;
                     RaisePropertyChanged();
                 }
@@ -102,10 +126,13 @@ namespace NINA.Photon.Plugin.ASA.Equipment {
 
         private string refractionFilePathOverride;
 
-        public string RefractionFilePathOverride {
+        public string RefractionFilePathOverride
+        {
             get => refractionFilePathOverride;
-            set {
-                if (refractionFilePathOverride != value) {
+            set
+            {
+                if (refractionFilePathOverride != value)
+                {
                     refractionFilePathOverride = value;
                     RaisePropertyChanged();
                 }
@@ -114,10 +141,13 @@ namespace NINA.Photon.Plugin.ASA.Equipment {
 
         private bool dualAxisTrackingEnabled;
 
-        public bool DualAxisTrackingEnabled {
+        public bool DualAxisTrackingEnabled
+        {
             get => dualAxisTrackingEnabled;
-            set {
-                if (dualAxisTrackingEnabled != value) {
+            set
+            {
+                if (dualAxisTrackingEnabled != value)
+                {
                     dualAxisTrackingEnabled = value;
                     RaisePropertyChanged();
                 }

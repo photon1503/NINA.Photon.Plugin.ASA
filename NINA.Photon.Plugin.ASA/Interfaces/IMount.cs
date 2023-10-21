@@ -15,10 +15,10 @@ using NINA.Photon.Plugin.ASA.Equipment;
 using NINA.Photon.Plugin.ASA.Model;
 using System;
 
-namespace NINA.Photon.Plugin.ASA.Interfaces {
-
-    public interface IMount {
-
+namespace NINA.Photon.Plugin.ASA.Interfaces
+{
+    public interface IMount
+    {
         Response<CoordinateAngle> GetDeclination();
 
         Response<AstrometricTime> GetRightAscension();
@@ -49,15 +49,15 @@ namespace NINA.Photon.Plugin.ASA.Interfaces {
 
         Response<bool> FinishAlignmentSpec();
 
-        Response<PierSide> GetSideOfPier();
+        //Response<PierSide> GetSideOfPier();
 
         Response<int> AddAlignmentPointToSpec(
-            AstrometricTime mountRightAscension,
-            CoordinateAngle mountDeclination,
+            double mountRightAscension,
+            double mountDeclination,
             PierSide sideOfPier,
-            AstrometricTime plateSolvedRightAscension,
-            CoordinateAngle plateSolvedDeclination,
-            AstrometricTime localSiderealTime);
+            double plateSolvedRightAscension,
+            double plateSolvedDeclination,
+            double localSiderealTime);
 
         Response<string> GetId();
 

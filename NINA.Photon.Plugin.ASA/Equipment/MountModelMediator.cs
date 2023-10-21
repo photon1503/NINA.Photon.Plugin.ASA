@@ -17,73 +17,88 @@ using NINA.WPF.Base.Mediator;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace NINA.Photon.Plugin.ASA.Equipment {
-
-    public class MountModelMediator : DeviceMediator<IMountModelVM, IMountModelConsumer, MountModelInfo>, IMountModelMediator {
-
-        public void DeleteAlignment() {
+namespace NINA.Photon.Plugin.ASA.Equipment
+{
+    public class MountModelMediator : DeviceMediator<IMountModelVM, IMountModelConsumer, MountModelInfo>, IMountModelMediator
+    {
+        public void DeleteAlignment()
+        {
             handler.DeleteAlignment();
         }
 
-        public bool DeleteAlignmentStar(int alignmentStarIndex) {
+        public bool DeleteAlignmentStar(int alignmentStarIndex)
+        {
             return handler.DeleteAlignmentStar(alignmentStarIndex);
         }
 
-        public bool DeleteModel(string name) {
+        public bool DeleteModel(string name)
+        {
             return handler.DeleteModel(name);
         }
 
-        public bool FinishAlignmentSpec() {
+        public bool FinishAlignmentSpec()
+        {
             return handler.FinishAlignmentSpec();
         }
 
-        public AlignmentModelInfo GetAlignmentModelInfo() {
+        public AlignmentModelInfo GetAlignmentModelInfo()
+        {
             return handler.GetAlignmentModelInfo();
         }
 
-        public int GetAlignmentStarCount() {
+        public int GetAlignmentStarCount()
+        {
             return handler.GetAlignmentStarCount();
         }
 
-        public AlignmentStarInfo GetAlignmentStarInfo(int alignmentStarIndex) {
+        public AlignmentStarInfo GetAlignmentStarInfo(int alignmentStarIndex)
+        {
             return handler.GetAlignmentStarInfo(alignmentStarIndex);
         }
 
-        public int GetModelCount() {
+        public int GetModelCount()
+        {
             return handler.GetModelCount();
         }
 
-        public string GetModelName(int modelIndex) {
+        public string GetModelName(int modelIndex)
+        {
             return handler.GetModelName(modelIndex);
         }
 
-        public string[] GetModelNames() {
+        public string[] GetModelNames()
+        {
             return handler.GetModelNames();
         }
 
-        public bool LoadModel(string name) {
+        public bool LoadModel(string name)
+        {
             return handler.LoadModel(name);
         }
 
-        public bool SaveModel(string name) {
+        public bool SaveModel(string name)
+        {
             return handler.SaveModel(name);
         }
 
-        public bool StartNewAlignmentSpec() {
+        public bool StartNewAlignmentSpec()
+        {
             return handler.StartNewAlignmentSpec();
         }
 
         public int AddAlignmentStar(
-            AstrometricTime mountRightAscension,
-            CoordinateAngle mountDeclination,
+            double mountRightAscension,
+            double mountDeclination,
             PierSide sideOfPier,
-            AstrometricTime plateSolvedRightAscension,
-            CoordinateAngle plateSolvedDeclination,
-            AstrometricTime localSiderealTime) {
+            double plateSolvedRightAscension,
+            double plateSolvedDeclination,
+            double localSiderealTime)
+        {
             return handler.AddAlignmentStar(mountRightAscension, mountDeclination, sideOfPier, plateSolvedRightAscension, plateSolvedDeclination, localSiderealTime);
         }
 
-        public Task<LoadedAlignmentModel> GetLoadedAlignmentModel(CancellationToken ct) {
+        public Task<LoadedAlignmentModel> GetLoadedAlignmentModel(CancellationToken ct)
+        {
             return handler.GetLoadedAlignmentModel(ct);
         }
     }

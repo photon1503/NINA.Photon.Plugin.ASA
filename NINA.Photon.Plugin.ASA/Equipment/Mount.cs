@@ -25,20 +25,22 @@ using NINA.Photon.Plugin.ASA.Converters;
 using NINA.Photon.Plugin.ASA.Model;
 using System.Linq;
 
-namespace NINA.Photon.Plugin.ASA.Equipment {
-
-    public class ResponseBase {
-
-        public ResponseBase(string rawResponse) {
+namespace NINA.Photon.Plugin.ASA.Equipment
+{
+    public class ResponseBase
+    {
+        public ResponseBase(string rawResponse)
+        {
             this.RawResponse = rawResponse;
         }
 
         public string RawResponse { get; private set; }
     }
 
-    public class Response<T> : ResponseBase {
-
-        public Response(T value, string rawResponse) : base(rawResponse) {
+    public class Response<T> : ResponseBase
+    {
+        public Response(T value, string rawResponse) : base(rawResponse)
+        {
             this.Value = value;
         }
 
@@ -46,15 +48,18 @@ namespace NINA.Photon.Plugin.ASA.Equipment {
 
         public static implicit operator T(Response<T> r) => r.Value;
 
-        public override string ToString() {
+        public override string ToString()
+        {
             return Value.ToString();
         }
     }
 
-    public static class LexerCreator<T> where T : Lexer {
+    public static class LexerCreator<T> where T : Lexer
+    {
         public static readonly Func<ICharStream, T> Construct = ConstructImpl(typeof(T));
 
-        private static Func<ICharStream, T> ConstructImpl(Type type) {
+        private static Func<ICharStream, T> ConstructImpl(Type type)
+        {
             var parameters = new Type[] { typeof(ICharStream) };
             var constructorInfo = type.GetConstructor(parameters);
             var paramExpr = Expression.Parameter(typeof(ICharStream));
@@ -64,10 +69,12 @@ namespace NINA.Photon.Plugin.ASA.Equipment {
         }
     }
 
-    public static class ParserCreator<T> where T : Parser {
+    public static class ParserCreator<T> where T : Parser
+    {
         public static readonly Func<ITokenStream, T> Construct = ConstructImpl(typeof(T));
 
-        private static Func<ITokenStream, T> ConstructImpl(Type type) {
+        private static Func<ITokenStream, T> ConstructImpl(Type type)
+        {
             var parameters = new Type[] { typeof(ITokenStream) };
             var constructorInfo = type.GetConstructor(parameters);
             var paramExpr = Expression.Parameter(typeof(ITokenStream));
@@ -78,8 +85,8 @@ namespace NINA.Photon.Plugin.ASA.Equipment {
     }
 
     [TypeConverter(typeof(EnumStaticDescriptionTypeConverter))]
-    public enum MountStatusEnum {
-
+    public enum MountStatusEnum
+    {
         [Description("Tracking")]
         Tracking = 0,
 
@@ -126,15 +133,17 @@ namespace NINA.Photon.Plugin.ASA.Equipment {
         NotConnected = 100
     }
 
-    public static class MountResponseParser {
-
-        private static int ParseIntOrDefault(string s, int defaultValue) {
+    public static class MountResponseParser
+    {
+        private static int ParseIntOrDefault(string s, int defaultValue)
+        {
             return s != null ? int.Parse(s) : defaultValue;
         }
 
         private static P GetParser<L, P>(string s)
             where L : Lexer
-            where P : Parser {
+            where P : Parser
+        {
             var inputStream = new AntlrInputStream(s);
             var lexer = LexerCreator<L>.Construct(inputStream);
             var commonTokenStream = new CommonTokenStream(lexer);
@@ -144,7 +153,8 @@ namespace NINA.Photon.Plugin.ASA.Equipment {
             return parser;
         }
 
-        public static Response<CoordinateAngle> ParseCoordinateAngle(string s) {
+        public static Response<CoordinateAngle> ParseCoordinateAngle(string s)
+        {
             var parser = GetParser<AngleLexer, AngleParser>(s);
             var context = parser.angle();
 
@@ -157,7 +167,8 @@ namespace NINA.Photon.Plugin.ASA.Equipment {
             return new Response<CoordinateAngle>(new CoordinateAngle(positive, degrees, minutes, seconds, (byte)(tenthSeconds * 10)), s);
         }
 
-        public static Response<AstrometricTime> ParseAstrometricTime(string s) {
+        public static Response<AstrometricTime> ParseAstrometricTime(string s)
+        {
             var parser = GetParser<TimeLexer, TimeParser>(s);
             var context = parser.time();
 
@@ -170,7 +181,8 @@ namespace NINA.Photon.Plugin.ASA.Equipment {
             return new Response<AstrometricTime>(new AstrometricTime(hours, minutes, seconds + 6 * tenthMinutes, hundredthSeconds + 10 * tenthSeconds), s);
         }
 
-        public static Response<AlignmentStarInfo> ParseAlignmentStarInfo(string s) {
+        public static Response<AlignmentStarInfo> ParseAlignmentStarInfo(string s)
+        {
             var parser = GetParser<AlignmentStarInfoLexer, AlignmentStarInfoParser>(s);
             var context = parser.alignmentStarInfo();
 
@@ -195,7 +207,8 @@ namespace NINA.Photon.Plugin.ASA.Equipment {
             return new Response<AlignmentStarInfo>(new AlignmentStarInfo(rightAscension, declination, errorArcseconds), s);
         }
 
-        public static Response<AlignmentModelInfo> ParseAlignmentModelInfo(string s) {
+        public static Response<AlignmentModelInfo> ParseAlignmentModelInfo(string s)
+        {
             var parser = GetParser<AlignmentModelInfoLexer, AlignmentModelInfoParser>(s);
             var context = parser.alignmentModelInfo();
 
@@ -216,14 +229,17 @@ namespace NINA.Photon.Plugin.ASA.Equipment {
                 s);
         }
 
-        private static string SanitizeIP(string ip) {
+        private static string SanitizeIP(string ip)
+        {
             var ipParts = ip.Trim().Split('.');
             return string.Join(".", ipParts.Select(s => int.Parse(s, CultureInfo.InvariantCulture)));
         }
 
-        public static Response<MountIP> ParseIP(string s) {
+        public static Response<MountIP> ParseIP(string s)
+        {
             var splitResponse = s.TrimEnd('#').Split(',');
-            if (splitResponse.Length != 4) {
+            if (splitResponse.Length != 4)
+            {
                 throw new ArgumentException($"IP response expected to have 4 parts, separated by commas. {s}");
             }
 
@@ -235,32 +251,38 @@ namespace NINA.Photon.Plugin.ASA.Equipment {
         }
     }
 
-    public class Mount : IMount {
+    public class Mount : IMount
+    {
         private readonly IMountCommander mountCommander;
 
-        public Mount(IMountCommander mountCommander) {
+        public Mount(IMountCommander mountCommander)
+        {
             this.mountCommander = mountCommander;
         }
 
-        public Response<CoordinateAngle> GetDeclination() {
+        public Response<CoordinateAngle> GetDeclination()
+        {
             const string command = ":GD#";
             var rawResponse = this.mountCommander.SendCommandString(command, true);
             return MountResponseParser.ParseCoordinateAngle(rawResponse);
         }
 
-        public Response<AstrometricTime> GetRightAscension() {
+        public Response<AstrometricTime> GetRightAscension()
+        {
             const string command = ":GR#";
             var rawResponse = this.mountCommander.SendCommandString(command, true);
             return MountResponseParser.ParseAstrometricTime(rawResponse);
         }
 
-        public Response<AstrometricTime> GetLocalSiderealTime() {
+        public Response<AstrometricTime> GetLocalSiderealTime()
+        {
             const string command = ":GS#";
             var rawResponse = this.mountCommander.SendCommandString(command, true);
             return MountResponseParser.ParseAstrometricTime(rawResponse);
         }
 
-        public Response<int> GetModelCount() {
+        public Response<int> GetModelCount()
+        {
             const string command = ":modelcnt#";
 
             // returns nnn#
@@ -269,21 +291,25 @@ namespace NINA.Photon.Plugin.ASA.Equipment {
             return new Response<int>(result, rawResponse);
         }
 
-        public Response<string> GetModelName(int modelIndex) {
-            if (modelIndex < 1 || modelIndex > 99) {
+        public Response<string> GetModelName(int modelIndex)
+        {
+            if (modelIndex < 1 || modelIndex > 99)
+            {
                 throw new ArgumentException("modelIndex must be between 1 and 99 inclusive", "modelIndex");
             }
             string command = $":modelnam{modelIndex}#";
             // returns name#, or just # if it is not valid
             var rawResponse = this.mountCommander.SendCommandString(command, true);
             var name = rawResponse.TrimEnd('#');
-            if (string.IsNullOrEmpty(name)) {
+            if (string.IsNullOrEmpty(name))
+            {
                 throw new Exception($"{modelIndex} is not a valid model index");
             }
             return new Response<string>(name, rawResponse);
         }
 
-        public Response<bool> LoadModel(string name) {
+        public Response<bool> LoadModel(string name)
+        {
             string command = $":modelld0{name}#";
             // returns 1# on success, and 0# on failure
             var rawResponse = this.mountCommander.SendCommandString(command, true);
@@ -291,7 +317,8 @@ namespace NINA.Photon.Plugin.ASA.Equipment {
             return new Response<bool>(result, rawResponse);
         }
 
-        public Response<bool> SaveModel(string name) {
+        public Response<bool> SaveModel(string name)
+        {
             string command = $":modelsv0{name}#";
             // returns 1# on success, and 0# on failure
             var rawResponse = this.mountCommander.SendCommandString(command, true);
@@ -299,7 +326,8 @@ namespace NINA.Photon.Plugin.ASA.Equipment {
             return new Response<bool>(result, rawResponse);
         }
 
-        public Response<bool> DeleteModel(string name) {
+        public Response<bool> DeleteModel(string name)
+        {
             string command = $":modeldel0{name}#";
             // returns 1# on success, and 0# on failure
             var rawResponse = this.mountCommander.SendCommandString(command, true);
@@ -307,15 +335,18 @@ namespace NINA.Photon.Plugin.ASA.Equipment {
             return new Response<bool>(result, rawResponse);
         }
 
-        public void DeleteAlignment() {
+        public void DeleteAlignment()
+        {
             const string command = ":delalig#";
             var rawResponse = this.mountCommander.SendCommandString(command, true);
-            if (!string.IsNullOrWhiteSpace(rawResponse.TrimEnd('#'))) {
+            if (!string.IsNullOrWhiteSpace(rawResponse.TrimEnd('#')))
+            {
                 throw new Exception($"Failed to delete alignment. {command} returned {rawResponse}");
             }
         }
 
-        public Response<int> GetAlignmentStarCount() {
+        public Response<int> GetAlignmentStarCount()
+        {
             const string command = ":getalst#";
 
             // Returns count followed by #
@@ -324,8 +355,10 @@ namespace NINA.Photon.Plugin.ASA.Equipment {
             return new Response<int>(result, rawResponse);
         }
 
-        public Response<AlignmentStarInfo> GetAlignmentStarInfo(int alignmentStarIndex) {
-            if (alignmentStarIndex < 1) {
+        public Response<AlignmentStarInfo> GetAlignmentStarInfo(int alignmentStarIndex)
+        {
+            if (alignmentStarIndex < 1)
+            {
                 throw new ArgumentException("alignmentStarIndex must be >= 1", "alignmentStarIndex");
             }
             string command = $":getali{alignmentStarIndex}#";
@@ -335,7 +368,8 @@ namespace NINA.Photon.Plugin.ASA.Equipment {
             return MountResponseParser.ParseAlignmentStarInfo(rawResponse);
         }
 
-        public Response<AlignmentModelInfo> GetAlignmentModelInfo() {
+        public Response<AlignmentModelInfo> GetAlignmentModelInfo()
+        {
             const string command = ":getain#";
 
             // returns ZZZ.ZZZZ,+AA.AAAA,EE.EEEE,PPP.PP,+OO.OOOO,+aa.aa,+bb.bb,NN,RRRRR.R#
@@ -343,51 +377,54 @@ namespace NINA.Photon.Plugin.ASA.Equipment {
             return MountResponseParser.ParseAlignmentModelInfo(rawResponse);
         }
 
-        public Response<bool> StartNewAlignmentSpec() {
-            const string command = ":newalig#";
-
-            var rawResponse = this.mountCommander.SendCommandString(command, true);
-            var success = rawResponse == "V#";
-            return new Response<bool>(success, rawResponse);
+        public Response<bool> StartNewAlignmentSpec()
+        {
+            return new Response<bool>(true, String.Empty);
         }
 
-        public Response<bool> FinishAlignmentSpec() {
-            const string command = ":endalig#";
-
-            var rawResponse = this.mountCommander.SendCommandString(command, true);
-            var success = rawResponse == "V#";
-            return new Response<bool>(success, rawResponse);
+        public Response<bool> FinishAlignmentSpec()
+        {
+            return new Response<bool>(true, String.Empty);
         }
 
-        public Response<bool> Shutdown() {
-            const string command = ":shutdown#";
-
-            var success = this.mountCommander.SendCommandBool(command, true);
-            return new Response<bool>(success, "");
+        public Response<bool> Shutdown()
+        {
+            return new Response<bool>(true, "");
         }
 
-        public Response<PierSide> GetSideOfPier() {
+        /*
+        public Response<PierSide> GetSideOfPier()
+        {
+            //TODO
             const string command = ":pS#";
 
             var rawResponse = this.mountCommander.SendCommandString(command, true);
             PierSide sideOfPier;
-            if (StringComparer.OrdinalIgnoreCase.Equals(rawResponse, "East#")) {
+            if (StringComparer.OrdinalIgnoreCase.Equals(rawResponse, "East#"))
+            {
                 sideOfPier = PierSide.pierEast;
-            } else if (StringComparer.OrdinalIgnoreCase.Equals(rawResponse, "West#")) {
+            }
+            else if (StringComparer.OrdinalIgnoreCase.Equals(rawResponse, "West#"))
+            {
                 sideOfPier = PierSide.pierWest;
-            } else {
+            }
+            else
+            {
                 throw new Exception($"Unexpected pier side {rawResponse} returned by {command}");
             }
             return new Response<PierSide>(sideOfPier, rawResponse);
         }
+        */
 
         public Response<int> AddAlignmentPointToSpec(
-            AstrometricTime mountRightAscension,
-            CoordinateAngle mountDeclination,
+            double mountRightAscension,
+            double mountDeclination,
             PierSide sideOfPier,
-            AstrometricTime plateSolvedRightAscension,
-            CoordinateAngle plateSolvedDeclination,
-            AstrometricTime localSiderealTime) {
+            double plateSolvedRightAscension,
+            double plateSolvedDeclination,
+            double localSiderealTime)
+        {
+            /*
             var mountRightAscensionRounded = mountRightAscension.RoundTenthSecond();
             var mountDeclinationRounded = mountDeclination.RoundSeconds();
             var plateSolvedRightAscensionRounded = plateSolvedRightAscension.RoundTenthSecond();
@@ -398,7 +435,8 @@ namespace NINA.Photon.Plugin.ASA.Equipment {
             commandBuilder.Append(":newalpt");
             commandBuilder.Append($"{mountRightAscensionRounded.Hours:00}:{mountRightAscensionRounded.Minutes:00}:{mountRightAscensionRounded.Seconds:00}.{mountRightAscensionRounded.HundredthSeconds / 10:0},");
             commandBuilder.Append($"{(mountDeclinationRounded.Positive ? "+" : "-")}{mountDeclinationRounded.Degrees:00}:{mountDeclinationRounded.Minutes:00}:{mountDeclinationRounded.Seconds:00},");
-            switch (sideOfPier) {
+            switch (sideOfPier)
+            {
                 case PierSide.pierEast:
                     commandBuilder.Append("E,");
                     break;
@@ -416,26 +454,31 @@ namespace NINA.Photon.Plugin.ASA.Equipment {
             var command = commandBuilder.ToString();
 
             var rawResponse = this.mountCommander.SendCommandString(command, true);
-            if (rawResponse == "E#") {
+            if (rawResponse == "E#")
+            {
                 throw new Exception($"Failed to add alignment point using {command}");
             }
 
             var numPoints = int.Parse(rawResponse.TrimEnd('#'), CultureInfo.InvariantCulture);
-            return new Response<int>(numPoints, rawResponse);
+            */
+            return new Response<int>(0, String.Empty);
         }
 
-        public Response<string> GetId() {
+        public Response<string> GetId()
+        {
             const string command = ":GETID#";
             var rawResponse = this.mountCommander.SendCommandString(command, true);
             return new Response<string>(rawResponse.TrimEnd('#'), rawResponse);
         }
 
-        public void SetUltraPrecisionMode() {
+        public void SetUltraPrecisionMode()
+        {
             const string command = ":U2#";
             this.mountCommander.SendCommandBlind(command, true);
         }
 
-        public Response<int> GetMeridianSlewLimitDegrees() {
+        public Response<int> GetMeridianSlewLimitDegrees()
+        {
             const string command = ":Glms#";
 
             // Returns limit followed by #
@@ -444,14 +487,16 @@ namespace NINA.Photon.Plugin.ASA.Equipment {
             return new Response<int>(result, rawResponse);
         }
 
-        public Response<bool> SetMeridianSlewLimit(int degrees) {
+        public Response<bool> SetMeridianSlewLimit(int degrees)
+        {
             string command = $":Slms{degrees:00}#";
 
             var result = this.mountCommander.SendCommandBool(command, true);
             return new Response<bool>(result, "");
         }
 
-        public Response<decimal> GetSlewSettleTimeSeconds() {
+        public Response<decimal> GetSlewSettleTimeSeconds()
+        {
             const string command = ":Gstm#";
 
             var rawResponse = this.mountCommander.SendCommandString(command, true);
@@ -459,8 +504,10 @@ namespace NINA.Photon.Plugin.ASA.Equipment {
             return new Response<decimal>(result, rawResponse);
         }
 
-        public Response<bool> SetSlewSettleTime(decimal seconds) {
-            if (seconds < 0 || seconds > 99999) {
+        public Response<bool> SetSlewSettleTime(decimal seconds)
+        {
+            if (seconds < 0 || seconds > 99999)
+            {
                 return new Response<bool>(false, "");
             }
 
@@ -469,7 +516,8 @@ namespace NINA.Photon.Plugin.ASA.Equipment {
             return new Response<bool>(result, "");
         }
 
-        public Response<MountStatusEnum> GetStatus() {
+        public Response<MountStatusEnum> GetStatus()
+        {
             const string command = ":Gstat#";
 
             var rawResponse = this.mountCommander.SendCommandString(command, true);
@@ -477,14 +525,16 @@ namespace NINA.Photon.Plugin.ASA.Equipment {
             return new Response<MountStatusEnum>((MountStatusEnum)result, rawResponse);
         }
 
-        public Response<bool> GetUnattendedFlipEnabled() {
+        public Response<bool> GetUnattendedFlipEnabled()
+        {
             const string command = ":Guaf#";
 
             var result = this.mountCommander.SendCommandBool(command, true);
             return new Response<bool>(result, "");
         }
 
-        public Response<decimal> GetTrackingRateArcsecsPerSec() {
+        public Response<decimal> GetTrackingRateArcsecsPerSec()
+        {
             const string command = ":GT#";
 
             // Needs to be divided by 4 to get arcsecs/sec, according to spec
@@ -494,7 +544,8 @@ namespace NINA.Photon.Plugin.ASA.Equipment {
             return new Response<decimal>(result / 4, rawResponse);
         }
 
-        public void SetUnattendedFlip(bool enabled) {
+        public void SetUnattendedFlip(bool enabled)
+        {
             var command = $":Suaf{(enabled ? 1 : 0)}#";
 
             this.mountCommander.SendCommandBlind(command, true);
@@ -502,17 +553,22 @@ namespace NINA.Photon.Plugin.ASA.Equipment {
 
         private static readonly Version ultraPrecisionMinimumVersion = new Version(2, 10, 0);
 
-        public void SetMaximumPrecision(ProductFirmware productFirmware) {
-            if (productFirmware.Version > ultraPrecisionMinimumVersion) {
+        public void SetMaximumPrecision(ProductFirmware productFirmware)
+        {
+            if (productFirmware.Version > ultraPrecisionMinimumVersion)
+            {
                 this.SetUltraPrecisionMode();
-            } else {
+            }
+            else
+            {
                 // The ASA ASCOM driver uses this logic
                 Logger.Warning($"Firmware {productFirmware.Version} too old to support ultra precision. Falling back to AP emulation mode");
                 this.mountCommander.SendCommandBlind(":EMUAP#:U#", true);
             }
         }
 
-        public Response<ProductFirmware> GetProductFirmware() {
+        public Response<ProductFirmware> GetProductFirmware()
+        {
             const string productCommand = ":GVP#";
             const string firmwareDateCommand = ":GVD#";
             const string firmwareVersionCommand = ":GVN#";
@@ -529,12 +585,14 @@ namespace NINA.Photon.Plugin.ASA.Equipment {
             var firmwareTimestampString = $"{firmwareDateRawResponse.TrimEnd('#')} {firmwareTimeRawResponse.TrimEnd('#')}";
 
             const string firmwareDateTimeFormat = "MMM dd yyyy HH:mm:ss";
-            if (!DateTime.TryParseExact(firmwareTimestampString, firmwareDateTimeFormat, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var firmwareTimestamp)) {
+            if (!DateTime.TryParseExact(firmwareTimestampString, firmwareDateTimeFormat, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal, out var firmwareTimestamp))
+            {
                 throw new Exception($"Failed to parse firmware timestamp {firmwareTimestampString}");
             }
 
             var firmwareVersionResponse = this.mountCommander.SendCommandString(firmwareVersionCommand, true);
-            if (!Version.TryParse(firmwareVersionResponse.TrimEnd('#'), out var firmwareVersion)) {
+            if (!Version.TryParse(firmwareVersionResponse.TrimEnd('#'), out var firmwareVersion))
+            {
                 throw new Exception($"Failed to parse firmware version {firmwareVersionResponse}");
             }
 
@@ -544,35 +602,32 @@ namespace NINA.Photon.Plugin.ASA.Equipment {
             );
         }
 
-        public Response<bool> DeleteAlignmentStar(int alignmentStarIndex) {
-            var command = $":delalst{alignmentStarIndex}#";
-
-            // returns 1# on success, and 0# on failure
-            var rawResponse = this.mountCommander.SendCommandString(command, true);
-            var result = rawResponse == "1#";
+        public Response<bool> DeleteAlignmentStar(int alignmentStarIndex)
+        {
+            var rawResponse = "";
+            var result = true;
             return new Response<bool>(result, rawResponse);
         }
 
-        public Response<decimal> GetPressure() {
-            const string command = ":GRPRS#";
-
-            var rawResponse = this.mountCommander.SendCommandString(command, true);
-            var result = decimal.Parse(rawResponse.TrimEnd('#'), CultureInfo.InvariantCulture);
+        public Response<decimal> GetPressure()
+        {
+            decimal result = 1000;
+            string rawResponse = "1000";
             return new Response<decimal>(result, rawResponse);
         }
 
-        public Response<decimal> GetTemperature() {
+        public Response<decimal> GetTemperature()
+        {
             const string command = ":GRTMP#";
 
-            var rawResponse = this.mountCommander.SendCommandString(command, true);
-            var result = decimal.Parse(rawResponse.TrimEnd('#'), CultureInfo.InvariantCulture);
+            var rawResponse = "10";
+            decimal result = 10;
             return new Response<decimal>(result, rawResponse);
         }
 
-        public Response<bool> GetRefractionCorrectionEnabled() {
-            const string command = ":GREF#";
-
-            var response = this.mountCommander.SendCommandBool(command, true);
+        public Response<bool> GetRefractionCorrectionEnabled()
+        {
+            bool response = true;
             return new Response<bool>(response, "");
         }
 
@@ -582,87 +637,76 @@ namespace NINA.Photon.Plugin.ASA.Equipment {
             "MM:dd:yy"
         };
 
-        public Response<DateTime> GetUTCTime() {
-            const string command = ":GUDT#";
-
-            var rawResponse = this.mountCommander.SendCommandString(command, true);
-            var responseParts = rawResponse.Split(new char[] { ',' }, 2);
-            var datePartString = responseParts[0];
-            var timePartString = responseParts[1].TrimEnd('#');
-
-            var datePart = DateTime.ParseExact(datePartString, DATE_FORMATS, null, DateTimeStyles.None);
-            int hours = int.Parse(timePartString.Substring(0, 2), CultureInfo.InvariantCulture);
-            int minutes = int.Parse(timePartString.Substring(3, 2), CultureInfo.InvariantCulture);
-            int seconds;
-            if (timePartString.Length == 7) {
-                seconds = int.Parse(timePartString.Substring(6, 1), CultureInfo.InvariantCulture) * 6;
-            } else {
-                seconds = int.Parse(timePartString.Substring(6, 2), CultureInfo.InvariantCulture);
-            }
-            int hundredthSeconds = 0;
-            if (timePartString.Length == 10) {
-                hundredthSeconds = int.Parse(timePartString.Substring(9, 1), CultureInfo.InvariantCulture) * 10;
-            } else if (timePartString.Length == 11) {
-                hundredthSeconds = int.Parse(timePartString.Substring(9, 2), CultureInfo.InvariantCulture);
-            }
-
-            var result = new DateTime(datePart.Year, datePart.Month, datePart.Day, hours, minutes, seconds, hundredthSeconds * 10, DateTimeKind.Utc);
+        public Response<DateTime> GetUTCTime()
+        {
+            DateTime result = DateTime.UtcNow;
+            var rawResponse = String.Empty;
             return new Response<DateTime>(result, rawResponse);
         }
 
-        public void SetSiderealTrackingRate() {
-            const string command = ":TQ#";
-            this.mountCommander.SendCommandBlind(command, true);
+        public void SetSiderealTrackingRate()
+        {
+            //   const string command = ":TQ#";
+            //   this.mountCommander.SendCommandBlind(command, true);
         }
 
-        public void SetLunarTrackingRate() {
-            const string command = ":TL#";
-            this.mountCommander.SendCommandBlind(command, true);
+        public void SetLunarTrackingRate()
+        {
+            //const string command = ":TL#";
+            //this.mountCommander.SendCommandBlind(command, true);
         }
 
-        public void SetSolarTrackingRate() {
-            const string command = ":TSOLAR#";
-            this.mountCommander.SendCommandBlind(command, true);
+        public void SetSolarTrackingRate()
+        {
+            //   const string command = ":TSOLAR#";
+            //   this.mountCommander.SendCommandBlind(command, true);
         }
 
-        public void StopTracking() {
+        public void StopTracking()
+        {
             const string command = ":AL#";
             this.mountCommander.SendCommandBlind(command, true);
         }
 
-        public void StartTracking() {
+        public void StartTracking()
+        {
             const string command = ":AP#";
             this.mountCommander.SendCommandBlind(command, true);
         }
 
-        public Response<bool> SetRefractionCorrection(bool enabled) {
+        public Response<bool> SetRefractionCorrection(bool enabled)
+        {
             var command = $":SREF{(enabled ? 1 : 0)}#";
             var result = this.mountCommander.SendCommandBool(command, true);
             return new Response<bool>(result, "");
         }
 
-        public Response<MountIP> GetIPAddress() {
+        public Response<MountIP> GetIPAddress()
+        {
             const string command = ":GIP#";
 
             var response = this.mountCommander.SendCommandString(command, true);
             return MountResponseParser.ParseIP(response);
         }
 
-        public Response<string> GetMACAddress() {
+        public Response<string> GetMACAddress()
+        {
             const string command = ":GMAC#";
 
             var response = this.mountCommander.SendCommandString(command, true);
             return new Response<string>(response.TrimEnd('#'), response);
         }
 
-        public Response<bool> GetDualAxisTrackingEnabled() {
+        public Response<bool> GetDualAxisTrackingEnabled()
+        {
             const string command = ":Gdat#";
 
             var response = this.mountCommander.SendCommandBool(command, true);
             return new Response<bool>(response, "");
         }
 
-        public Response<bool> SetDualAxisTracking(bool enabled) {
+        public Response<bool> SetDualAxisTracking(bool enabled)
+        {
             var command = $":Sdat{(enabled ? 1 : 0)}#";
 
             var result = this.mountCommander.SendCommandBool(command, true);

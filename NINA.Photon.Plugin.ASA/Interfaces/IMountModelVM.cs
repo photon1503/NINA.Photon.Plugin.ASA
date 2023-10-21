@@ -17,10 +17,10 @@ using NINA.Photon.Plugin.ASA.Model;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace NINA.Photon.Plugin.ASA.Interfaces {
-
-    public interface IMountModelVM : IDeviceVM<MountModelInfo>, IDockableVM {
-
+namespace NINA.Photon.Plugin.ASA.Interfaces
+{
+    public interface IMountModelVM : IDeviceVM<MountModelInfo>, IDockableVM
+    {
         string GetModelName(int modelIndex);
 
         int GetModelCount();
@@ -48,12 +48,12 @@ namespace NINA.Photon.Plugin.ASA.Interfaces {
         bool FinishAlignmentSpec();
 
         int AddAlignmentStar(
-            AstrometricTime mountRightAscension,
-            CoordinateAngle mountDeclination,
+            double mountRightAscension,
+            double mountDeclination,
             PierSide sideOfPier,
-            AstrometricTime plateSolvedRightAscension,
-            CoordinateAngle plateSolvedDeclination,
-            AstrometricTime localSiderealTime);
+            double plateSolvedRightAscension,
+            double plateSolvedDeclination,
+            double localSiderealTime);
 
         Task<LoadedAlignmentModel> GetLoadedAlignmentModel(CancellationToken ct);
     }

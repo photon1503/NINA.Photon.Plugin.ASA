@@ -21,11 +21,11 @@ using System;
 using System.ComponentModel;
 using System.Globalization;
 
-namespace NINA.Photon.Plugin.ASA.Model {
-
+namespace NINA.Photon.Plugin.ASA.Model
+{
     [TypeConverter(typeof(EnumStaticDescriptionTypeConverter))]
-    public enum ModelPointStateEnum {
-
+    public enum ModelPointStateEnum
+    {
         [Description("Generated")]
         Generated = 0,
 
@@ -57,19 +57,24 @@ namespace NINA.Photon.Plugin.ASA.Model {
         BelowHorizon = 101,
     }
 
-    public class ModelPoint : BaseINPC {
+    public class ModelPoint : BaseINPC
+    {
         private readonly ITelescopeMediator telescopeMediator;
 
-        public ModelPoint(ITelescopeMediator telescopeMediator) {
+        public ModelPoint(ITelescopeMediator telescopeMediator)
+        {
             this.telescopeMediator = telescopeMediator;
         }
 
         private int modelIndex;
 
-        public int ModelIndex {
+        public int ModelIndex
+        {
             get => modelIndex;
-            set {
-                if (modelIndex != value) {
+            set
+            {
+                if (modelIndex != value)
+                {
                     modelIndex = value;
                     RaisePropertyChanged();
                 }
@@ -78,10 +83,13 @@ namespace NINA.Photon.Plugin.ASA.Model {
 
         private PierSide expectedDomeSideOfPier = PierSide.pierUnknown;
 
-        public PierSide ExpectedDomeSideOfPier {
+        public PierSide ExpectedDomeSideOfPier
+        {
             get => expectedDomeSideOfPier;
-            set {
-                if (expectedDomeSideOfPier != value) {
+            set
+            {
+                if (expectedDomeSideOfPier != value)
+                {
                     expectedDomeSideOfPier = value;
                     RaisePropertyChanged();
                 }
@@ -90,10 +98,13 @@ namespace NINA.Photon.Plugin.ASA.Model {
 
         private double altitude;
 
-        public double Altitude {
+        public double Altitude
+        {
             get => altitude;
-            set {
-                if (altitude != value) {
+            set
+            {
+                if (altitude != value)
+                {
                     altitude = value;
                     RaisePropertyChanged();
                 }
@@ -102,10 +113,13 @@ namespace NINA.Photon.Plugin.ASA.Model {
 
         private double azimuth;
 
-        public double Azimuth {
+        public double Azimuth
+        {
             get => azimuth;
-            set {
-                if (azimuth != value) {
+            set
+            {
+                if (azimuth != value)
+                {
                     azimuth = value;
                     RaisePropertyChanged();
                 }
@@ -114,10 +128,13 @@ namespace NINA.Photon.Plugin.ASA.Model {
 
         private double minDomeAzimuth = double.NaN;
 
-        public double MinDomeAzimuth {
+        public double MinDomeAzimuth
+        {
             get => minDomeAzimuth;
-            set {
-                if (minDomeAzimuth != value) {
+            set
+            {
+                if (minDomeAzimuth != value)
+                {
                     minDomeAzimuth = value;
                     RaisePropertyChanged();
                 }
@@ -126,10 +143,13 @@ namespace NINA.Photon.Plugin.ASA.Model {
 
         private double domeAzimuth = double.NaN;
 
-        public double DomeAzimuth {
+        public double DomeAzimuth
+        {
             get => domeAzimuth;
-            set {
-                if (domeAzimuth != value) {
+            set
+            {
+                if (domeAzimuth != value)
+                {
                     domeAzimuth = value;
                     RaisePropertyChanged();
                 }
@@ -138,10 +158,13 @@ namespace NINA.Photon.Plugin.ASA.Model {
 
         private double domeAltitude = double.NaN;
 
-        public double DomeAltitude {
+        public double DomeAltitude
+        {
             get => domeAltitude;
-            set {
-                if (domeAltitude != value) {
+            set
+            {
+                if (domeAltitude != value)
+                {
                     domeAltitude = value;
                     RaisePropertyChanged();
                 }
@@ -150,10 +173,13 @@ namespace NINA.Photon.Plugin.ASA.Model {
 
         private double maxDomeAzimuth = double.NaN;
 
-        public double MaxDomeAzimuth {
+        public double MaxDomeAzimuth
+        {
             get => maxDomeAzimuth;
-            set {
-                if (maxDomeAzimuth != value) {
+            set
+            {
+                if (maxDomeAzimuth != value)
+                {
                     maxDomeAzimuth = value;
                     RaisePropertyChanged();
                 }
@@ -162,10 +188,13 @@ namespace NINA.Photon.Plugin.ASA.Model {
 
         private ModelPointStateEnum modelPointState;
 
-        public ModelPointStateEnum ModelPointState {
+        public ModelPointStateEnum ModelPointState
+        {
             get => modelPointState;
-            set {
-                if (modelPointState != value) {
+            set
+            {
+                if (modelPointState != value)
+                {
                     modelPointState = value;
                     RaisePropertyChanged();
                     RaisePropertyChanged(nameof(ModelPointStateString));
@@ -173,39 +202,47 @@ namespace NINA.Photon.Plugin.ASA.Model {
             }
         }
 
-        public string ModelPointStateString {
-            get {
+        public string ModelPointStateString
+        {
+            get
+            {
                 var fi = typeof(ModelPointStateEnum).GetField(ModelPointState.ToString());
                 var attributes = (DescriptionAttribute[])fi.GetCustomAttributes(typeof(DescriptionAttribute), false);
                 return attributes[0].Description;
             }
         }
 
-        private AstrometricTime mountReportedLocalSiderealTime = AstrometricTime.ZERO;
+        private double mountReportedLocalSiderealTime = double.NaN;
 
-        public AstrometricTime MountReportedLocalSiderealTime {
+        public double MountReportedLocalSiderealTime
+        {
             get => mountReportedLocalSiderealTime;
-            set {
+            set
+            {
                 mountReportedLocalSiderealTime = value;
                 RaisePropertyChanged();
             }
         }
 
-        private AstrometricTime mountReportedRightAscension = AstrometricTime.ZERO;
+        private double mountReportedRightAscension = double.NaN;
 
-        public AstrometricTime MountReportedRightAscension {
+        public double MountReportedRightAscension
+        {
             get => mountReportedRightAscension;
-            set {
+            set
+            {
                 mountReportedRightAscension = value;
                 RaisePropertyChanged();
             }
         }
 
-        private CoordinateAngle mountReportedDeclination = CoordinateAngle.ZERO;
+        private double mountReportedDeclination = double.NaN;
 
-        public CoordinateAngle MountReportedDeclination {
+        public double MountReportedDeclination
+        {
             get => mountReportedDeclination;
-            set {
+            set
+            {
                 mountReportedDeclination = value;
                 RaisePropertyChanged();
             }
@@ -213,10 +250,13 @@ namespace NINA.Photon.Plugin.ASA.Model {
 
         private PierSide mountReportedSideOfPier = PierSide.pierUnknown;
 
-        public PierSide MountReportedSideOfPier {
+        public PierSide MountReportedSideOfPier
+        {
             get => mountReportedSideOfPier;
-            set {
-                if (mountReportedSideOfPier != value) {
+            set
+            {
+                if (mountReportedSideOfPier != value)
+                {
                     mountReportedSideOfPier = value;
                     RaisePropertyChanged();
                 }
@@ -225,29 +265,35 @@ namespace NINA.Photon.Plugin.ASA.Model {
 
         private Coordinates plateSolvedCoordinates;
 
-        public Coordinates PlateSolvedCoordinates {
+        public Coordinates PlateSolvedCoordinates
+        {
             get => plateSolvedCoordinates;
-            set {
+            set
+            {
                 plateSolvedCoordinates = value?.Transform(Epoch.JNOW);
                 RaisePropertyChanged();
             }
         }
 
-        private AstrometricTime plateSolvedRightAscension = AstrometricTime.ZERO;
+        private double plateSolvedRightAscension = double.NaN;
 
-        public AstrometricTime PlateSolvedRightAscension {
+        public double PlateSolvedRightAscension
+        {
             get => plateSolvedRightAscension;
-            set {
+            set
+            {
                 plateSolvedRightAscension = value;
                 RaisePropertyChanged();
             }
         }
 
-        private CoordinateAngle plateSolvedDeclination = CoordinateAngle.ZERO;
+        private double plateSolvedDeclination = double.NaN;
 
-        public CoordinateAngle PlateSolvedDeclination {
+        public double PlateSolvedDeclination
+        {
             get => plateSolvedDeclination;
-            set {
+            set
+            {
                 plateSolvedDeclination = value;
                 RaisePropertyChanged();
             }
@@ -255,10 +301,13 @@ namespace NINA.Photon.Plugin.ASA.Model {
 
         private double rmsError = double.NaN;
 
-        public double RMSError {
+        public double RMSError
+        {
             get => rmsError;
-            set {
-                if (rmsError != value) {
+            set
+            {
+                if (rmsError != value)
+                {
                     rmsError = value;
                     RaisePropertyChanged();
                     RaisePropertyChanged(nameof(RMSErrorString));
@@ -266,9 +315,12 @@ namespace NINA.Photon.Plugin.ASA.Model {
             }
         }
 
-        public string RMSErrorString {
-            get {
-                if (double.IsNaN(rmsError)) {
+        public string RMSErrorString
+        {
+            get
+            {
+                if (double.IsNaN(rmsError))
+                {
                     return "-";
                 }
                 return rmsError.ToString("0.0##", CultureInfo.CurrentUICulture);
@@ -277,17 +329,21 @@ namespace NINA.Photon.Plugin.ASA.Model {
 
         private DateTime captureTime = DateTime.MinValue;
 
-        public DateTime CaptureTime {
+        public DateTime CaptureTime
+        {
             get => captureTime;
-            set {
-                if (captureTime != value) {
+            set
+            {
+                if (captureTime != value)
+                {
                     captureTime = value;
                     RaisePropertyChanged();
                 }
             }
         }
 
-        public TopocentricCoordinates ToTopocentric(ICustomDateTime dateTime) {
+        public TopocentricCoordinates ToTopocentric(ICustomDateTime dateTime)
+        {
             var telescopeInfo = telescopeMediator.GetInfo();
             return new TopocentricCoordinates(
                 azimuth: Angle.ByDegree(azimuth),
@@ -298,16 +354,20 @@ namespace NINA.Photon.Plugin.ASA.Model {
                 dateTime: dateTime);
         }
 
-        public Coordinates ToCelestial(double pressurehPa, double tempCelcius, double relativeHumidity, double wavelength, ICustomDateTime dateTime) {
+        public Coordinates ToCelestial(double pressurehPa, double tempCelcius, double relativeHumidity, double wavelength, ICustomDateTime dateTime)
+        {
             return ToTopocentric(dateTime).Transform(Epoch.JNOW, pressurehPa: pressurehPa, tempCelcius: tempCelcius, relativeHumidity: relativeHumidity, wavelength: wavelength);
         }
 
-        public override string ToString() {
+        public override string ToString()
+        {
             return $"Alt={Altitude}, Az={Azimuth}, State={ModelPointState}, RMSError={RMSError}, ModelIndex={ModelIndex}, MountRA={MountReportedRightAscension}, MountDEC={MountReportedDeclination}, MountLST={MountReportedLocalSiderealTime}, MountPier={MountReportedSideOfPier}, SolvedCoordinates={PlateSolvedCoordinates}, CaptureTime={CaptureTime}, ExpectedDomeSideOfPier={ExpectedDomeSideOfPier}";
         }
 
-        public ModelPoint Clone() {
-            return new ModelPoint(telescopeMediator) {
+        public ModelPoint Clone()
+        {
+            return new ModelPoint(telescopeMediator)
+            {
                 ModelIndex = ModelIndex,
                 ExpectedDomeSideOfPier = ExpectedDomeSideOfPier,
                 Altitude = Altitude,
@@ -329,7 +389,8 @@ namespace NINA.Photon.Plugin.ASA.Model {
             };
         }
 
-        public void CopyFrom(ModelPoint p) {
+        public void CopyFrom(ModelPoint p)
+        {
             ModelIndex = p.ModelIndex;
             ExpectedDomeSideOfPier = p.ExpectedDomeSideOfPier;
             Altitude = p.Altitude;
