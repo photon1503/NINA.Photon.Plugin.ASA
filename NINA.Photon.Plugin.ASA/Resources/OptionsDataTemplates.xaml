@@ -1,0 +1,475 @@
+﻿<ResourceDictionary
+    x:Class="NINA.Photon.Plugin.ASA.Resources.OptionsDataTemplates"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:interfaces="clr-namespace:NINA.Photon.Plugin.ASA.Interfaces"
+    xmlns:local="clr-namespace:NINA.Photon.Plugin.ASA"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:ninactrl="clr-namespace:NINACustomControlLibrary;assembly=NINACustomControlLibrary"
+    xmlns:rules="clr-namespace:NINA.Core.Utility.ValidationRules;assembly=NINA.Core"
+    xmlns:tmconverters="clr-namespace:NINA.Photon.Plugin.ASA.Converters"
+    xmlns:tmrules="clr-namespace:NINA.Photon.Plugin.ASA.ValidationRules"
+    xmlns:util="clr-namespace:NINA.Core.Utility;assembly=NINA.Core"
+    xmlns:xceed="http://schemas.xceed.com/wpf/xaml/toolkit"
+    mc:Ignorable="d">
+    <tmconverters:DoubleZeroToVisibilityConverter x:Key="TM_DoubleZeroToVisibilityConverter" />
+    <tmconverters:IntNegativeToVisibilityConverter x:Key="TM_IntNegativeToVisibilityConverter" />
+    <tmconverters:InverseDoubleZeroToVisibilityConverter x:Key="TM_InverseDoubleZeroToVisibilityConverter" />
+    <tmconverters:ZeroToInfinityConverter x:Key="TM_ZeroToInfinityConverter" />
+    <tmconverters:DecimalMinToDoubleDashConverter x:Key="TM_DecimalMinToDoubleDashConverter" />
+    <tmconverters:DecimalDegreesToArcsecDoubleDashConverter x:Key="TM_DecimalDegreesToArcsecDoubleDashConverter" />
+    <tmconverters:PositiveToBooleanConverter x:Key="TM_PositiveToBooleanConverter" />
+    <tmconverters:EnumStaticDescriptionValueConverter x:Key="TM_EnumStaticDescriptionValueConverter" />
+    <tmconverters:ZeroToDisabledConverter x:Key="TM_ZeroToDisabledConverter" />
+    <tmconverters:NumericToHalfConverter x:Key="TM_NumericToHalfConverter" />
+    <tmconverters:ModelPointStateToColorConverter x:Key="TM_ModelPointStateToColorConverter" />
+    <tmconverters:CollectionContainsItemsToBooleanConverterNoCheck x:Key="TM_CollectionContainsItemsToBooleanConverterNoCheck" />
+    <tmconverters:ColorAndBooleanToTransparentMultiBinding x:Key="TM_ColorAndBooleanToTransparentMultiBinding" />
+    <tmconverters:IntZeroBooleanMultiConverter x:Key="TM_IntZeroBooleanMultiConverter" />
+    <TextBlock x:Key="Placeholder_Tooltip" Text="Placeholder text" />
+    <TextBlock x:Key="Stars_Tooltip" Text="Number of stars to include in the model. Must be at least 3, and no more than 100" />
+    <TextBlock x:Key="PointGenerator_Tooltip" Text="The algorithm used to generate points for an alignment model. Golden Spiral is used for a full sky model, and Sidereal Path generates points along the sidereal path of an RA/DEC coordinate" />
+    <TextBlock x:Key="SiderealTrackStartTime_Tooltip" Text="The object's location at this time is used as the first point. Points are added along the way over the RA Delta interval until the end time" />
+    <TextBlock x:Key="SiderealTrackEndTime_Tooltip" Text="The object's location at this time is used as the last point. Points are added along the way over the RA Delta interval" />
+    <TextBlock x:Key="SiderealTrackStartTimeOffset_Tooltip" Text="Offset, in minutes, relative to the selected time provider to start point generation for the target object" />
+    <TextBlock x:Key="SiderealTrackEndTimeOffset_Tooltip" Text="Offset, in minutes, relative to the selected time provider to end point generation for the target object" />
+    <TextBlock x:Key="SiderealTrackRADeltaDegrees_Tooltip" Text="Interval, in degrees, to place points along the target's sidereal track. If this is too small, an interval is chosen that will produce 90 points" />
+    <TextBlock x:Key="BuilderRetries_Tooltip" Text="How many time to retry model building when individual points fail. This will only reprocess failed points by re-using previous successful solves" />
+    <TextBlock x:Key="MaxFailedPoints_Tooltip" Text="After a build iteration, another iteration isn't attempted if there are more than this many failed points" />
+    <TextBlock x:Key="MaxPointRMS_Tooltip" Text="After a build iteration, any point with an RMS greater than this value will be treated as a failed point during a retry" />
+    <DataTemplate x:Key="ASA_ModelBuilder_Options">
+        <Grid d:DataContext="{d:DesignInstance local:ASAOptions, IsDesignTimeCreatable=False}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition />
+                <ColumnDefinition />
+                <ColumnDefinition />
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition />
+                <RowDefinition />
+                <RowDefinition />
+                <RowDefinition />
+                <RowDefinition />
+                <RowDefinition />
+                <RowDefinition />
+                <RowDefinition />
+                <!--  Hidden until this works  -->
+                <RowDefinition Height="0" />
+                <RowDefinition />
+                <RowDefinition />
+                <RowDefinition />
+                <RowDefinition />
+                <RowDefinition />
+                <RowDefinition />
+                <RowDefinition />
+                <RowDefinition />
+                <RowDefinition />
+                <RowDefinition />
+            </Grid.RowDefinitions>
+            <Grid.Resources>
+                <TextBlock x:Key="LogCommands_Tooltip" Text="If enabled, every ASA command sent and response received will be logged at INFO level in the NINA log" />
+                <TextBlock x:Key="MaxConcurrency_Tooltip" Text="The maximum number of plate solves that can run concurrently during a model build. This can be set to infinite if you have plenty of system memory or are using a fast plate solver such as ASTAP with blind solves disabled" />
+                <TextBlock x:Key="AllowBlindSolves_Tooltip" Text="Plate solving is done over a narrow search radius to ensure it is fast. This should generally work since you know where the telescope is pointed, but could fail if the pointing model is very far off (more than 30 degrees). This setting enables falling back to blind solves when they fail, at the expense of potentially much longer model build times" />
+                <TextBlock x:Key="MinPointAltitude_Tooltip" Text="The minimum altitude allowed for point generation" />
+                <TextBlock x:Key="MaxPointAltitude_Tooltip" Text="The maximum altitude allowed for point generation" />
+                <TextBlock x:Key="MinPointAzimuth_Tooltip" Text="The minimum azimuth allowed for point generation. This is helpful for providing clearance during the point where meridian flips occur" />
+                <TextBlock x:Key="MaxPointAzimuth_Tooltip" Text="The maximum azimuth allowed for point generation. This is helpful for providing clearance during the point where meridian flips occur" />
+                <TextBlock x:Key="ShowRemovedPoints_Tooltip" Text="Whether to show points that were rejected for being outside of the altitude bounds or below the defined horizon" />
+                <TextBlock x:Key="DomeShutterWidth_Tooltip" Text="The width of the dome shutter, in mm. If set, this is used to determine if the scope is pointing out of the shutter instead of the Threshold setting from Dome Options" />
+                <TextBlock x:Key="MinimizeDomeMovement_Tooltip" Text="If enabled, points will be ordered based on the calculated dome azimuth. The left boundary of the dome opening is used for E-&gt;W sorting, and the right boundary for W-&gt;E" />
+                <TextBlock x:Key="MinimizeMeridianFlips_Tooltip" Text="If enabled, points will not cross over to the other side of the meridian until there are no more remaining on the current one. If you use a dome, this comes at the expensive of a potentially big dome movement in the middle of the model build" />
+                <TextBlock x:Key="WestToEast_Tooltip" Text="By default, points will be process from east to west. Enabling this toggle reverses that order" />
+                <TextBlock x:Key="PlateSolveSubframePercentage_Tooltip" Text="What percentage of the full camera resolution to use when taking exposures for plate solving. This is an alternative to binning, which increases the pixel scale" />
+                <TextBlock x:Key="RemoveHighRMSPointsAfterBuild_Tooltip" Text="Removes points with RMS above a threshold from a newly built model" />
+                <TextBlock x:Key="AlternateDirectionsBetweenIterations_Tooltip" Text="Alternates sort directions between each build iteration. This helps minimize scope, and particularly dome, movements" />
+                <TextBlock x:Key="DisableRefractionCorrection_Tooltip" Text="Disables refraction correction for the duration of model build. It is turned back on afterwards if it was originally enabled." />
+                <TextBlock x:Key="WolBroadcastIP_Tooltip" Text="The IP address to use for broadcasting the WOL packet to power on the mount. This might not be needed based on your network setup, but try setting this if Power On from the Mount Info pane doesn't work." />
+                <TextBlock x:Key="DecJitterSigma_Tooltip" Text="When creating a sidereal path model, points are randomly jittered along the dec arc. This parameter controls how wide this can vary, with the maximum distance being 3 * sigma." />
+            </Grid.Resources>
+            <TextBlock
+                Grid.Row="0"
+                Grid.Column="0"
+                VerticalAlignment="Center"
+                Text="Log Commands"
+                ToolTip="{StaticResource LogCommands_Tooltip}" />
+            <CheckBox
+                Grid.Row="0"
+                Grid.Column="1"
+                MinWidth="80"
+                Margin="5,5,0,0"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                IsChecked="{Binding LogCommands}"
+                ToolTip="{StaticResource LogCommands_Tooltip}" />
+            <TextBlock
+                Grid.Row="1"
+                Grid.Column="0"
+                VerticalAlignment="Center"
+                Text="Max Concurrency"
+                ToolTip="{StaticResource MaxConcurrency_Tooltip}" />
+            <ninactrl:UnitTextBox
+                Grid.Row="1"
+                Grid.Column="1"
+                MinWidth="80"
+                Margin="5,5,0,0"
+                HorizontalAlignment="Left"
+                ToolTip="{StaticResource MaxConcurrency_Tooltip}"
+                Unit="plate solves">
+                <Binding
+                    Converter="{StaticResource TM_ZeroToInfinityConverter}"
+                    Path="MaxConcurrency"
+                    UpdateSourceTrigger="LostFocus">
+                    <Binding.ValidationRules>
+                        <tmrules:PositiveIntegerOrInfiniteRule />
+                    </Binding.ValidationRules>
+                </Binding>
+            </ninactrl:UnitTextBox>
+            <TextBlock
+                Grid.Row="3"
+                Grid.Column="0"
+                VerticalAlignment="Center"
+                Text="Allow Blind Solves"
+                ToolTip="{StaticResource AllowBlindSolves_Tooltip}" />
+            <CheckBox
+                Grid.Row="3"
+                Grid.Column="1"
+                MinWidth="80"
+                Margin="5,5,0,0"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                IsChecked="{Binding AllowBlindSolves}"
+                ToolTip="{StaticResource AllowBlindSolves_Tooltip}" />
+            <TextBlock
+                Grid.Row="4"
+                Grid.Column="0"
+                VerticalAlignment="Center"
+                Text="Min Altitude"
+                ToolTip="{StaticResource MinPointAltitude_Tooltip}" />
+            <ninactrl:UnitTextBox
+                Grid.Row="4"
+                Grid.Column="1"
+                MinWidth="80"
+                Margin="5,5,0,0"
+                HorizontalAlignment="Left"
+                ToolTip="{StaticResource MinPointAltitude_Tooltip}"
+                Unit="°">
+                <Binding Path="MinPointAltitude" UpdateSourceTrigger="LostFocus">
+                    <Binding.ValidationRules>
+                        <rules:IntRangeRule>
+                            <rules:IntRangeRule.ValidRange>
+                                <rules:IntRangeChecker Maximum="90" Minimum="0" />
+                            </rules:IntRangeRule.ValidRange>
+                        </rules:IntRangeRule>
+                    </Binding.ValidationRules>
+                </Binding>
+            </ninactrl:UnitTextBox>
+            <TextBlock
+                Grid.Row="5"
+                Grid.Column="0"
+                VerticalAlignment="Center"
+                Text="Max Altitude"
+                ToolTip="{StaticResource MaxPointAltitude_Tooltip}" />
+            <ninactrl:UnitTextBox
+                Grid.Row="5"
+                Grid.Column="1"
+                MinWidth="80"
+                Margin="5,5,0,0"
+                HorizontalAlignment="Left"
+                ToolTip="{StaticResource MaxPointAltitude_Tooltip}"
+                Unit="°">
+                <Binding Path="MaxPointAltitude" UpdateSourceTrigger="LostFocus">
+                    <Binding.ValidationRules>
+                        <rules:IntRangeRule>
+                            <rules:IntRangeRule.ValidRange>
+                                <rules:IntRangeChecker Maximum="90" Minimum="0" />
+                            </rules:IntRangeRule.ValidRange>
+                        </rules:IntRangeRule>
+                    </Binding.ValidationRules>
+                </Binding>
+            </ninactrl:UnitTextBox>
+            <TextBlock
+                Grid.Row="6"
+                Grid.Column="0"
+                VerticalAlignment="Center"
+                Text="Show Removed Points"
+                ToolTip="{StaticResource ShowRemovedPoints_Tooltip}" />
+            <CheckBox
+                Grid.Row="6"
+                Grid.Column="1"
+                MinWidth="80"
+                Margin="5,5,0,0"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                IsChecked="{Binding ShowRemovedPoints}"
+                ToolTip="{StaticResource ShowRemovedPoints_Tooltip}" />
+            <TextBlock
+                Grid.Row="7"
+                Grid.Column="0"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                Text="Optimize Dome"
+                ToolTip="{StaticResource MinimizeDomeMovement_Tooltip}" />
+            <CheckBox
+                Grid.Row="7"
+                Grid.Column="1"
+                MinWidth="80"
+                Margin="5,5,0,0"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                IsChecked="{Binding MinimizeDomeMovementEnabled}"
+                ToolTip="{StaticResource MinimizeDomeMovement_Tooltip}" />
+
+            <TextBlock
+                Grid.Row="8"
+                Grid.Column="0"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                Text="Dome Shutter Width"
+                ToolTip="{StaticResource DomeShutterWidth_Tooltip}" />
+            <ninactrl:UnitTextBox
+                Grid.Row="8"
+                Grid.Column="1"
+                MinWidth="80"
+                Margin="5,5,0,0"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                ToolTip="{StaticResource DomeShutterWidth_Tooltip}"
+                Unit="mm">
+                <Binding
+                    Converter="{StaticResource TM_ZeroToDisabledConverter}"
+                    Path="DomeShutterWidth_mm"
+                    UpdateSourceTrigger="LostFocus">
+                    <Binding.ValidationRules>
+                        <rules:GreaterZeroRule />
+                    </Binding.ValidationRules>
+                </Binding>
+            </ninactrl:UnitTextBox>
+            <TextBlock
+                Grid.Row="8"
+                Grid.Column="2"
+                Margin="5,5,0,0"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                Text="TIP: Make this less than the actual shutter width to give extra clearance and to account for dome imperfections" />
+            <TextBlock
+                Grid.Row="9"
+                Grid.Column="0"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                Text="West to East"
+                ToolTip="{StaticResource WestToEast_Tooltip}" />
+            <CheckBox
+                Grid.Row="9"
+                Grid.Column="1"
+                Grid.ColumnSpan="2"
+                MinWidth="80"
+                Margin="5,5,0,0"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                IsChecked="{Binding WestToEastSorting}"
+                ToolTip="{StaticResource WestToEast_Tooltip}" />
+            <TextBlock
+                Grid.Row="10"
+                Grid.Column="0"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                Text="Remove High RMS Points"
+                ToolTip="{StaticResource RemoveHighRMSPointsAfterBuild_Tooltip}" />
+            <CheckBox
+                Grid.Row="10"
+                Grid.Column="1"
+                Grid.ColumnSpan="2"
+                MinWidth="80"
+                Margin="5,5,0,0"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                IsChecked="{Binding RemoveHighRMSPointsAfterBuild}"
+                ToolTip="{StaticResource RemoveHighRMSPointsAfterBuild_Tooltip}" />
+            <TextBlock
+                Grid.Row="11"
+                Grid.Column="0"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                Text="Plate Solve Subframe"
+                ToolTip="{StaticResource PlateSolveSubframePercentage_Tooltip}" />
+            <ninactrl:UnitTextBox
+                Grid.Row="11"
+                Grid.Column="1"
+                MinWidth="80"
+                Margin="5,5,0,0"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                ToolTip="{StaticResource PlateSolveSubframePercentage_Tooltip}"
+                Unit="%">
+                <Binding
+                    Converter="{StaticResource PercentageConverter}"
+                    ConverterParameter="1"
+                    Path="PlateSolveSubframePercentage"
+                    UpdateSourceTrigger="LostFocus">
+                    <Binding.ValidationRules>
+                        <rules:DoubleRangeRule>
+                            <rules:DoubleRangeRule.ValidRange>
+                                <rules:DoubleRangeChecker Maximum="100" Minimum="0.1" />
+                            </rules:DoubleRangeRule.ValidRange>
+                        </rules:DoubleRangeRule>
+                    </Binding.ValidationRules>
+                </Binding>
+            </ninactrl:UnitTextBox>
+            <TextBlock
+                Grid.Row="12"
+                Grid.Column="0"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                Text="Alternate Direction"
+                ToolTip="{StaticResource AlternateDirectionsBetweenIterations_Tooltip}" />
+            <CheckBox
+                Grid.Row="12"
+                Grid.Column="1"
+                Grid.ColumnSpan="2"
+                MinWidth="80"
+                Margin="5,5,0,0"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                IsChecked="{Binding AlternateDirectionsBetweenIterations}"
+                ToolTip="{StaticResource AlternateDirectionsBetweenIterations_Tooltip}" />
+
+            <TextBlock
+                Grid.Row="13"
+                Grid.Column="0"
+                VerticalAlignment="Center"
+                Text="Min Azimuth"
+                ToolTip="{StaticResource MinPointAzimuth_Tooltip}" />
+            <ninactrl:UnitTextBox
+                Grid.Row="13"
+                Grid.Column="1"
+                MinWidth="80"
+                Margin="5,5,0,0"
+                HorizontalAlignment="Left"
+                ToolTip="{StaticResource MinPointAzimuth_Tooltip}"
+                Unit="°">
+                <Binding Path="MinPointAzimuth" UpdateSourceTrigger="LostFocus">
+                    <Binding.ValidationRules>
+                        <rules:DoubleRangeRule>
+                            <rules:DoubleRangeRule.ValidRange>
+                                <rules:DoubleRangeChecker Maximum="360" Minimum="0" />
+                            </rules:DoubleRangeRule.ValidRange>
+                        </rules:DoubleRangeRule>
+                    </Binding.ValidationRules>
+                </Binding>
+            </ninactrl:UnitTextBox>
+
+            <TextBlock
+                Grid.Row="14"
+                Grid.Column="0"
+                VerticalAlignment="Center"
+                Text="Max Azimuth"
+                ToolTip="{StaticResource MaxPointAzimuth_Tooltip}" />
+            <ninactrl:UnitTextBox
+                Grid.Row="14"
+                Grid.Column="1"
+                MinWidth="80"
+                Margin="5,5,0,0"
+                HorizontalAlignment="Left"
+                ToolTip="{StaticResource MaxPointAzimuth_Tooltip}"
+                Unit="°">
+                <Binding Path="MaxPointAzimuth" UpdateSourceTrigger="LostFocus">
+                    <Binding.ValidationRules>
+                        <rules:DoubleRangeRule>
+                            <rules:DoubleRangeRule.ValidRange>
+                                <rules:DoubleRangeChecker Maximum="360" Minimum="0" />
+                            </rules:DoubleRangeRule.ValidRange>
+                        </rules:DoubleRangeRule>
+                    </Binding.ValidationRules>
+                </Binding>
+            </ninactrl:UnitTextBox>
+
+            <TextBlock
+                Grid.Row="15"
+                Grid.Column="0"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                Text="Minimize Meridian Flips"
+                ToolTip="{StaticResource MinimizeMeridianFlips_Tooltip}" />
+            <CheckBox
+                Grid.Row="15"
+                Grid.Column="1"
+                MinWidth="80"
+                Margin="5,5,0,0"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                IsChecked="{Binding MinimizeMeridianFlipsEnabled}"
+                ToolTip="{StaticResource MinimizeMeridianFlips_Tooltip}" />
+
+            <TextBlock
+                Grid.Row="16"
+                Grid.Column="0"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                Text="Disable Refraction Correction"
+                ToolTip="{StaticResource DisableRefractionCorrection_Tooltip}" />
+            <CheckBox
+                Grid.Row="16"
+                Grid.Column="1"
+                Grid.ColumnSpan="2"
+                MinWidth="80"
+                Margin="5,5,0,0"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                IsChecked="{Binding DisableRefractionCorrection}"
+                ToolTip="{StaticResource DisableRefractionCorrection_Tooltip}" />
+
+            <TextBlock
+                Grid.Row="17"
+                Grid.Column="0"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                Text="Dec Jitter σ"
+                ToolTip="{StaticResource PlateSolveSubframePercentage_Tooltip}" />
+            <ninactrl:UnitTextBox
+                Grid.Row="17"
+                Grid.Column="1"
+                MinWidth="80"
+                Margin="5,5,0,0"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                ToolTip="{StaticResource DecJitterSigma_Tooltip}"
+                Unit="°">
+                <Binding Path="DecJitterSigmaDegrees" UpdateSourceTrigger="LostFocus">
+                    <Binding.ValidationRules>
+                        <rules:DoubleRangeRule>
+                            <rules:DoubleRangeRule.ValidRange>
+                                <rules:DoubleRangeChecker Maximum="10.0" Minimum="0.0" />
+                            </rules:DoubleRangeRule.ValidRange>
+                        </rules:DoubleRangeRule>
+                    </Binding.ValidationRules>
+                </Binding>
+            </ninactrl:UnitTextBox>
+
+            <TextBlock
+                Grid.Row="18"
+                Grid.Column="0"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                Text="WOL Broadcast IP"
+                ToolTip="{StaticResource WolBroadcastIP_Tooltip}" />
+            <TextBox
+                Grid.Row="18"
+                Grid.Column="1"
+                Grid.ColumnSpan="2"
+                MinWidth="80"
+                Margin="5,5,0,0"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                ToolTip="{StaticResource WolBroadcastIP_Tooltip}">
+                <TextBox.Text>
+                    <Binding Path="WolBroadcastIP" UpdateSourceTrigger="LostFocus">
+                        <Binding.ValidationRules>
+                            <rules:IsValidIPAddressRule />
+                        </Binding.ValidationRules>
+                    </Binding>
+                </TextBox.Text>
+            </TextBox>
+        </Grid>
+    </DataTemplate>
+</ResourceDictionary>
