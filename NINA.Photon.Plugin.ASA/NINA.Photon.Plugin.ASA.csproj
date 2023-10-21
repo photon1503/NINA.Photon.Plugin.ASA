@@ -342,7 +342,6 @@
     <Compile Include="Equipment\MountModelInfo.cs" />
     <Compile Include="Equipment\MountModelMediator.cs" />
     <Compile Include="SequenceItems\BuildGoldenSpiralModel.cs" />
-    <Compile Include="SequenceItems\PowerOn.cs" />
     <Compile Include="Utility\NativeMethods.cs" />
     <Compile Include="Exceptions\CommandFailedException.cs" />
     <Compile Include="Exceptions\ModelBuildException.cs" />
@@ -399,7 +398,6 @@
       <DependentUpon>DataTemplates.xaml</DependentUpon>
     </Compile>
     <Compile Include="SequenceItems\BuildSiderealPathModel.cs" />
-    <Compile Include="SequenceItems\Shutdown.cs" />
     <Compile Include="SequenceItems\SetTrackingRate.cs" />
     <Compile Include="SequenceItems\SaveModel.cs" />
     <Compile Include="SequenceItems\LoadModel.cs" />
@@ -443,16 +441,12 @@
     <Compile Include="Utility\ThrowingErrorListener.cs" />
     <Compile Include="ViewModels\MountModelBuilderVM.cs" />
     <Compile Include="ViewModels\MountModelVM.cs" />
-    <Compile Include="ViewModels\MountVM.cs" />
     <Compile Include="ViewModels\MyInputBox.cs" />
     <Compile Include="View\MountModelBuilderView.xaml.cs">
       <DependentUpon>MountModelBuilderView.xaml</DependentUpon>
     </Compile>
     <Compile Include="View\MountModelView.xaml.cs">
       <DependentUpon>MountModelView.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="View\MountView.xaml.cs">
-      <DependentUpon>MountView.xaml</DependentUpon>
     </Compile>
     <Compile Include="View\MyInputBoxView.xaml.cs">
       <DependentUpon>MyInputBoxView.xaml</DependentUpon>
@@ -517,10 +511,6 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="View\MountModelView.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="View\MountView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
