@@ -730,9 +730,13 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
         {
             if (Connected)
             {
-                return mount.AddAlignmentPointToSpec(mountRightAscension, mountDeclination, sideOfPier, plateSolvedRightAscension, plateSolvedDeclination, localSiderealTime);
+                //return mount.AddAlignmentPointToSpec(mountRightAscension, mountDeclination, sideOfPier, plateSolvedRightAscension, plateSolvedDeclination, localSiderealTime);
+
+                //TODO Add to list
+                Notification.ShowInformation("Adding point");
+                return 1;
             }
-            return -1;
+            return 0;
         }
 
         public string Action(string actionName, string actionParameters)

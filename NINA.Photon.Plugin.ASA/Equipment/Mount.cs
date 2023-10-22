@@ -24,6 +24,7 @@ using System.Text;
 using NINA.Photon.Plugin.ASA.Converters;
 using NINA.Photon.Plugin.ASA.Model;
 using System.Linq;
+using System.Collections.Generic;
 
 namespace NINA.Photon.Plugin.ASA.Equipment
 {
@@ -258,7 +259,10 @@ namespace NINA.Photon.Plugin.ASA.Equipment
         public Mount(IMountCommander mountCommander)
         {
             this.mountCommander = mountCommander;
+            this.modelPoints = new List<ModelPoint>();
         }
+
+        public List<ModelPoint> modelPoints { get; set; }
 
         public Response<CoordinateAngle> GetDeclination()
         {
@@ -392,30 +396,6 @@ namespace NINA.Photon.Plugin.ASA.Equipment
             return new Response<bool>(true, "");
         }
 
-        /*
-        public Response<PierSide> GetSideOfPier()
-        {
-            //TODO
-            const string command = ":pS#";
-
-            var rawResponse = this.mountCommander.SendCommandString(command, true);
-            PierSide sideOfPier;
-            if (StringComparer.OrdinalIgnoreCase.Equals(rawResponse, "East#"))
-            {
-                sideOfPier = PierSide.pierEast;
-            }
-            else if (StringComparer.OrdinalIgnoreCase.Equals(rawResponse, "West#"))
-            {
-                sideOfPier = PierSide.pierWest;
-            }
-            else
-            {
-                throw new Exception($"Unexpected pier side {rawResponse} returned by {command}");
-            }
-            return new Response<PierSide>(sideOfPier, rawResponse);
-        }
-        */
-
         public Response<int> AddAlignmentPointToSpec(
             double mountRightAscension,
             double mountDeclination,
@@ -461,7 +441,12 @@ namespace NINA.Photon.Plugin.ASA.Equipment
 
             var numPoints = int.Parse(rawResponse.TrimEnd('#'), CultureInfo.InvariantCulture);
             */
-            return new Response<int>(0, String.Empty);
+
+            //TODO Add to list
+
+            //            this.modelPoints.Add();
+
+            return new Response<int>(1, String.Empty);
         }
 
         public Response<string> GetId()

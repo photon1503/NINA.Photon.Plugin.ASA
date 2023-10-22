@@ -30,9 +30,11 @@ using NINA.Profile.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows;
 
 namespace NINA.Photon.Plugin.ASA.ModelManagement
 {
@@ -53,6 +55,8 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
         private readonly IFilterWheelMediator filterWheelMediator;
         private readonly ICustomDateTime nowProvider = new SystemDateTime();
         private volatile int processingInProgressCount;
+
+        private List<ModelPoint> modelPoints1 = new List<ModelPoint>();
 
         public event EventHandler<PointNextUpEventArgs> PointNextUp;
 
@@ -366,6 +370,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             Logger.Info("PreStep1_ClearState");
             PreStep1_ClearState(state);
             processingInProgressCount = 0;
+            modelPoints1.Clear();
 
             // Pre-Step 3: If a dome is connected, pre-compute all dome ranges since we're using a fixed Alt/Az for each point
             Logger.Info("PreStep3_CacheDomeAzimuthRanges");
@@ -531,46 +536,33 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             var completedPoints = state.ValidPoints.Count - state.FailedPoints;
             if (completedPoints > 2)
             {
+                //TODO
                 Logger.Info("Completing alignment spec");
-                if (!mountModelMediator.FinishAlignmentSpec())
-                {
-                    Logger.Error("Failed to complete alignment spec. Aborting");
-                    return null;
-                }
-
-                var maxPointRMS = overrideMaxPointRMS ?? state.Options.MaxPointRMS;
-                var builtModel = await mountModelMediator.GetLoadedAlignmentModel(ct);
-                Logger.Info($"Completed alignment spec. RMSError={builtModel.RMSError}, Stars={builtModel.AlignmentStarCount}");
 
                 ct.ThrowIfCancellationRequested();
-                var modelAlignmentStars = builtModel.AlignmentStars.ToArray();
-                foreach (var point in state.ValidPoints)
+                var filePath = "c:\\git\\NINA-ASA.pox";
+                using (StreamWriter writer = new StreamWriter(filePath))
                 {
-                    if (point.ModelPointState == ModelPointStateEnum.AddedToModel)
+                    int points = 1;
+                    writer.WriteLine(completedPoints); // Total Number of images
+                    foreach (var point in state.ValidPoints)
                     {
-                        if (point.ModelIndex > 0 && point.ModelIndex <= modelAlignmentStars.Length)
+                        if (point.ModelPointState == ModelPointStateEnum.AddedToModel)
                         {
-                            point.RMSError = modelAlignmentStars[point.ModelIndex - 1].ErrorArcsec;
-                            if (!double.IsNaN(state.Options.MaxPointRMS) && point.RMSError > maxPointRMS)
-                            {
-                                Logger.Info($"Point {point} exceeds limit of {state.Options.MaxPointRMS}. This point will be reattempted if there are remaining retries");
-                                point.ModelPointState = ModelPointStateEnum.FailedRMS;
-                                ++state.FailedPoints;
-                            }
-                            else
-                            {
-                                Logger.Info($"Point {point} added to model");
-                            }
-                        }
-                        else
-                        {
-                            Logger.Error($"Point {point} has invalid model index {point.ModelIndex}. There are {modelAlignmentStars.Length} alignment stars in the model");
-                            point.ModelPointState = ModelPointStateEnum.Failed;
-                            ++state.FailedPoints;
+                            writer.WriteLine($"\"Number {points++}\"");
+                            writer.WriteLine($"\"'{point.CaptureTime:yyyy-MM-ddTHH:mm:ss.ff}'\"");
+                            writer.WriteLine($"\"{point.CaptureTime:mm:ss.ff}\"");
+                            writer.WriteLine($"\"5.0\"");  //TODO Exposure time
+                            writer.WriteLine(point.MountReportedRightAscension);
+                            writer.WriteLine(point.PlateSolvedCoordinates.RA);
+                            writer.WriteLine(point.MountReportedDeclination);
+                            writer.WriteLine(point.PlateSolvedCoordinates.Dec);
+                            writer.WriteLine(point.MountReportedSideOfPier == PierSide.pierEast ? "\"1\"" : "\"-1\"");
+                            writer.WriteLine("**************************");
                         }
                     }
+                    return null;
                 }
-                return builtModel;
             }
             else
             {
@@ -1013,6 +1005,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
         private bool AddModelPointToAlignmentSpec(ModelPoint point)
         {
             Logger.Info($"Adding alignment point to specification: {point}");
+            /*
             int modelIndex = this.mountModelMediator.AddAlignmentStar(
                 point.MountReportedRightAscension,
                 point.MountReportedDeclination,
@@ -1026,8 +1019,14 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 Logger.Error($"Failed to add {point} to alignment spec");
                 return false;
             }
+            */
 
-            point.ModelIndex = modelIndex;
+            //TODO
+
+            point.ModelIndex = modelPoints1.Count + 1;
+            modelPoints1.Add(point);
+
+            point.ModelIndex = modelPoints1.Count();
             point.ModelPointState = ModelPointStateEnum.AddedToModel;
             return true;
         }
@@ -1035,8 +1034,8 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
         private async Task<IExposureData> CaptureImage(ModelBuilderState state, ModelPoint point, IProgress<ApplicationStatus> stepProgress, CancellationToken ct)
         {
             point.MountReportedSideOfPier = telescopeMediator.GetInfo().SideOfPier; // mount.GetSideOfPier();
-            point.MountReportedDeclination = telescopeMediator.GetInfo().RightAscension; // mount.GetDeclination();
-            point.MountReportedRightAscension = telescopeMediator.GetInfo().Declination; //mount.GetRightAscension();
+            point.MountReportedDeclination = telescopeMediator.GetInfo().Declination; // mount.GetDeclination();
+            point.MountReportedRightAscension = telescopeMediator.GetInfo().RightAscension; //mount.GetRightAscension();
             point.CaptureTime = mount.GetUTCTime();
             point.MountReportedLocalSiderealTime = telescopeMediator.GetInfo().SiderealTime; // mount.GetLocalSiderealTime();
             var seq = new CaptureSequence(
