@@ -543,7 +543,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 // C:\ProgramData\ASA\Sequence
                 var programdata = System.Environment.GetFolderPath(System.Environment.SpecialFolder.CommonApplicationData);
 
-                string fileName = DateTime.Now.ToString("yyyy-MM-dd-HH-mm") + ".pox";
+                string fileName = DateTime.Now.ToString("NINA-ASA-yyyy-MM-dd-HH-mm") + ".pox";
 
                 var filePath = Path.Combine(programdata, "ASA", "Sequence", "PointingPics", fileName);
                 using (StreamWriter writer = new StreamWriter(filePath))

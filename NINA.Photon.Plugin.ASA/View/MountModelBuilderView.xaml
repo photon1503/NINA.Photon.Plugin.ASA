@@ -548,8 +548,9 @@
                     <ColumnDefinition Width="*" MinWidth="200" />
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="*" />
-                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="2*" />
+                    <RowDefinition Height="1*" />
+                    <RowDefinition Height="1*" />
                 </Grid.RowDefinitions>
                 <oxy:Plot
                     Grid.Row="0" Grid.Column="0"
@@ -705,6 +706,11 @@
                         </oxy:PointAnnotation>
                     </oxy:Plot.Annotations>
                 </oxy:Plot>
+
+                <TextBlock Grid.Row="1" Grid.Column="0"
+                         MinHeight="100"
+                         Text="{Binding LoggerWindow}">
+                </TextBlock>
             </Grid>
         </Grid>
     </ScrollViewer>
