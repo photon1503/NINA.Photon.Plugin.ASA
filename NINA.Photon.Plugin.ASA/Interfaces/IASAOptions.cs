@@ -13,9 +13,10 @@
 using NINA.Photon.Plugin.ASA.Model;
 using System.ComponentModel;
 
-namespace NINA.Photon.Plugin.ASA.Interfaces {
-
-    public interface IASAOptions : INotifyPropertyChanged {
+namespace NINA.Photon.Plugin.ASA.Interfaces
+{
+    public interface IASAOptions : INotifyPropertyChanged
+    {
         int GoldenSpiralStarCount { get; set; }
 
         string SiderealTrackStartTimeProvider { get; set; }
@@ -65,6 +66,7 @@ namespace NINA.Photon.Plugin.ASA.Interfaces {
         bool AlternateDirectionsBetweenIterations { get; set; }
 
         bool DisableRefractionCorrection { get; set; }
+        bool IsLegacyDDM { get; set; }
 
         string IPAddress { get; set; }
 

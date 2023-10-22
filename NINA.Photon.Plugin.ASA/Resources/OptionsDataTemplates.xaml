@@ -429,6 +429,20 @@
                     </Binding.ValidationRules>
                 </Binding>
             </ninactrl:UnitTextBox>
+            <TextBlock
+                 Grid.Row="18"
+                 Grid.Column="0"
+                 VerticalAlignment="Center"
+                 Text="Legacy DDM mount"
+                  ToolTip="" />
+            <CheckBox
+                 Grid.Row="18"
+                 Grid.Column="1"
+                 MinWidth="80"
+                 Margin="5,5,0,0"
+                 HorizontalAlignment="Left"
+                 VerticalAlignment="Center"
+                 IsChecked="{Binding IsLegacyDDM}" />
         </Grid>
     </DataTemplate>
 </ResourceDictionary>

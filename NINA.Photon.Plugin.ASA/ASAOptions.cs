@@ -70,6 +70,7 @@ namespace NINA.Photon.Plugin.ASA
             //port = optionsAccessor.GetValueInt32("Port", 3490);
             driverID = optionsAccessor.GetValueString("DriverID", "");
             decJitterSigmaDegrees = optionsAccessor.GetValueDouble(nameof(DecJitterSigmaDegrees), 1.0d);
+            isLegacyDDM = optionsAccessor.GetValueBoolean("IsLegacyDDM", true);
         }
 
         public void ResetDefaults()
@@ -100,6 +101,7 @@ namespace NINA.Photon.Plugin.ASA
             MinPointAzimuth = 0.5d;
             MaxPointAzimuth = 359.5d;
             DisableRefractionCorrection = false;
+            IsLegacyDDM = true;
             MACAddress = "";
             IPAddress = "";
             WolBroadcastIP = "";
@@ -572,6 +574,22 @@ namespace NINA.Photon.Plugin.ASA
                     }
 
                     optionsAccessor.SetValueDouble("MaxPointAzimuth", maxPointAzimuth);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private bool isLegacyDDM;
+
+        public bool IsLegacyDDM
+        {
+            get => isLegacyDDM;
+            set
+            {
+                if (isLegacyDDM != value)
+                {
+                    isLegacyDDM = value;
+                    optionsAccessor.SetValueBoolean("DisableRefractionCorrection", isLegacyDDM);
                     RaisePropertyChanged();
                 }
             }

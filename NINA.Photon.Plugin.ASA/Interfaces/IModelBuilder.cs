@@ -17,9 +17,10 @@ using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace NINA.Photon.Plugin.ASA.Interfaces {
-
-    public class ModelBuilderOptions {
+namespace NINA.Photon.Plugin.ASA.Interfaces
+{
+    public class ModelBuilderOptions
+    {
         public int NumRetries { get; set; } = 0;
         public double MaxPointRMS { get; set; } = double.PositiveInfinity;
         public bool WestToEastSorting { get; set; } = false;
@@ -33,14 +34,16 @@ namespace NINA.Photon.Plugin.ASA.Interfaces {
         public double PlateSolveSubframePercentage { get; set; } = 1.0d;
         public bool AlternateDirectionsBetweenIterations { get; set; } = true;
         public bool DisableRefractionCorrection { get; set; } = false;
+        public bool IsLegacyDDM { get; set; } = false;
     }
 
-    public class PointNextUpEventArgs : EventArgs {
+    public class PointNextUpEventArgs : EventArgs
+    {
         public ModelPoint Point { get; set; } = null;
     }
 
-    public interface IModelBuilder {
-
+    public interface IModelBuilder
+    {
         Task<LoadedAlignmentModel> Build(IList<ModelPoint> modelPoints, ModelBuilderOptions options, CancellationToken ct = default, CancellationToken stopToken = default, IProgress<ApplicationStatus> overallProgress = null, IProgress<ApplicationStatus> stepProgress = null);
 
         event EventHandler<PointNextUpEventArgs> PointNextUp;

@@ -30,6 +30,7 @@ using NINA.Profile.Interfaces;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -554,7 +555,11 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                     {
                         if (point.ModelPointState == ModelPointStateEnum.AddedToModel)
                         {
-                            writer.WriteLine($"\"Number {points++}\"");
+                            string text = $"\"Number {points++}\"";
+                            if (!state.Options.IsLegacyDDM)
+                                text = $"\"Number {points++} no pointing correction\"";
+
+                            writer.WriteLine(text);
                             writer.WriteLine($"\"'{point.CaptureTime:yyyy-MM-ddTHH:mm:ss.ff}'\"");
                             writer.WriteLine($"\"{point.CaptureTime:mm:ss.ff}\"");
                             writer.WriteLine($"\"{profileService.ActiveProfile.PlateSolveSettings.ExposureTime}\"");  //TODO Exposure time
