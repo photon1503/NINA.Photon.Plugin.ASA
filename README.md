@@ -37,3 +37,9 @@ download end extract the archive to %localappdata%\NINA\Plugins from https://git
 - [x] Dynamically create filename
 - [x] Remove sidereal path option
 - [ ] Fix errors :-)
+
+### Disclaimer
+
+All trademarks, logos and brand names are the property of their respective owners. All company, product and service names used in this website are for identification purposes only. Use of these names,trademarks and brands does not imply endorsement.
+
+This software is in not related to ASA in any way.
