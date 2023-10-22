@@ -1,6 +1,6 @@
 # ASA Model Builder NINA Plugin
 
-This project was forked from the TenMicron plugin by (ghilios)[https://github.com/ghilios] at https://github.com/ghilios/NINA.Joko.Plugin.TenMicron
+This project was forked from the TenMicron plugin by [ghilios](https://github.com/ghilios) at https://github.com/ghilios/NINA.Joko.Plugin.TenMicron
 
 
 Many thanks for the great work!
