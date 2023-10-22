@@ -27,6 +27,8 @@ download end extract the archive to %localappdata%\NINA\Plugins from https://git
 
 ## Known issues
 
+- Azimuth graph does not update - need to switch between (NINA) tabs to refresh
+- Error message "Object reference not set to an instance ..." after successful model build
 - Telescope needs to be connected before starting the model builder
 
 ## TODOs
