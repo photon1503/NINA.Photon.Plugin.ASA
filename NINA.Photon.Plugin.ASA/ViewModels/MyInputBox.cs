@@ -21,11 +21,12 @@ using System.Threading.Tasks;
 using System.Windows;
 using NINA.Core.Utility.Extensions;
 
-namespace NINA.Photon.Plugin.ASA.ViewModels {
-
-    public class MyInputBoxResult {
-
-        public MyInputBoxResult(MessageBoxResult messageBoxResult, string inputText = "") {
+namespace NINA.Photon.Plugin.ASA.ViewModels
+{
+    public class MyInputBoxResult
+    {
+        public MyInputBoxResult(MessageBoxResult messageBoxResult, string inputText = "")
+        {
             this.MessageBoxResult = messageBoxResult;
             this.InputText = inputText;
         }
@@ -34,13 +35,17 @@ namespace NINA.Photon.Plugin.ASA.ViewModels {
         public string InputText { get; private set; }
     }
 
-    public class MyInputBox : BaseINPC {
+    public class MyInputBox : BaseINPC
+    {
         private string title;
 
-        public string Title {
+        public string Title
+        {
             get => title;
-            set {
-                if (title != value) {
+            set
+            {
+                if (title != value)
+                {
                     title = value;
                     RaisePropertyChanged();
                 }
@@ -49,10 +54,13 @@ namespace NINA.Photon.Plugin.ASA.ViewModels {
 
         private string promptText;
 
-        public string PromptText {
+        public string PromptText
+        {
             get => promptText;
-            set {
-                if (promptText != value) {
+            set
+            {
+                if (promptText != value)
+                {
                     promptText = value;
                     RaisePropertyChanged();
                 }
@@ -61,10 +69,13 @@ namespace NINA.Photon.Plugin.ASA.ViewModels {
 
         private string promptTooltip;
 
-        public string PromptTooltip {
+        public string PromptTooltip
+        {
             get => promptTooltip;
-            set {
-                if (promptTooltip != value) {
+            set
+            {
+                if (promptTooltip != value)
+                {
                     promptTooltip = value;
                     RaisePropertyChanged();
                 }
@@ -73,10 +84,13 @@ namespace NINA.Photon.Plugin.ASA.ViewModels {
 
         private string inputText;
 
-        public string InputText {
+        public string InputText
+        {
             get => inputText;
-            set {
-                if (inputText != value) {
+            set
+            {
+                if (inputText != value)
+                {
                     inputText = value;
                     RaisePropertyChanged();
                 }
@@ -85,17 +99,22 @@ namespace NINA.Photon.Plugin.ASA.ViewModels {
 
         private bool? dialogResult;
 
-        public bool? DialogResult {
+        public bool? DialogResult
+        {
             get => dialogResult;
-            set {
-                if (dialogResult != value) {
+            set
+            {
+                if (dialogResult != value)
+                {
                     dialogResult = value;
                     RaisePropertyChanged();
                 }
             }
         }
 
-        public static MyInputBoxResult Show(string caption, string promptText, string promptTooltip) {
+        public static MyInputBoxResult Show(string caption, string promptText, string promptTooltip)
+        {
+            /*
             var result = Application.Current.Dispatcher.Invoke(() => {
                 var inputBox = new MyInputBox();
                 inputBox.Title = caption;
@@ -132,7 +151,8 @@ namespace NINA.Photon.Plugin.ASA.ViewModels {
                     return new MyInputBoxResult(MessageBoxResult.Cancel);
                 }
             });
-            return result;
+            */
+            return null; // result;
         }
     }
 }

@@ -7,10 +7,6 @@
         <ResourceDictionary Source="OptionsDataTemplates.xaml" />
     </ResourceDictionary.MergedDictionaries>
 
-    <DataTemplate x:Key="NINA.Photon.Plugin.ASA.ViewModels.MountModelVM_Dockable">
-        <view:MountModelView />
-    </DataTemplate>
-
     <DataTemplate x:Key="NINA.Photon.Plugin.ASA.ViewModels.MountModelBuilderVM_Dockable">
         <view:MountModelBuilderView />
     </DataTemplate>

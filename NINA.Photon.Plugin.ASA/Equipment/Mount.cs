@@ -341,12 +341,14 @@ namespace NINA.Photon.Plugin.ASA.Equipment
 
         public void DeleteAlignment()
         {
+            /*
             const string command = ":delalig#";
             var rawResponse = this.mountCommander.SendCommandString(command, true);
             if (!string.IsNullOrWhiteSpace(rawResponse.TrimEnd('#')))
             {
                 throw new Exception($"Failed to delete alignment. {command} returned {rawResponse}");
             }
+            */
         }
 
         public Response<int> GetAlignmentStarCount()

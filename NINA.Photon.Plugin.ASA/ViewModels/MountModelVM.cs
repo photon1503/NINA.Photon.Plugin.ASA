@@ -37,7 +37,7 @@ using NINA.Equipment.Interfaces;
 
 namespace NINA.Photon.Plugin.ASA.ViewModels
 {
-    [Export(typeof(IDockableVM))]
+    //[Export(typeof(IDockableVM))]
     public class MountModelVM : DockableVM, IMountModelVM, ITelescopeConsumer, IMountConsumer
     {
         private readonly IMount mount;
@@ -653,12 +653,14 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
 
         public void DeleteAlignment()
         {
+            /*
             if (Connected)
             {
                 mount.DeleteAlignment();
                 LoadedAlignmentModel.Clear();
                 ModelLoaded = false;
             }
+            */
         }
 
         public int GetAlignmentStarCount()

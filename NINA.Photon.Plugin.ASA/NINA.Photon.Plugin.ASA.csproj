@@ -445,12 +445,6 @@
     <Compile Include="View\MountModelBuilderView.xaml.cs">
       <DependentUpon>MountModelBuilderView.xaml</DependentUpon>
     </Compile>
-    <Compile Include="View\MountModelView.xaml.cs">
-      <DependentUpon>MountModelView.xaml</DependentUpon>
-    </Compile>
-    <Compile Include="View\MyInputBoxView.xaml.cs">
-      <DependentUpon>MyInputBoxView.xaml</DependentUpon>
-    </Compile>
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
@@ -508,14 +502,6 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="View\MountModelBuilderView.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="View\MountModelView.xaml">
-      <SubType>Designer</SubType>
-      <Generator>MSBuild:Compile</Generator>
-    </Page>
-    <Page Include="View\MyInputBoxView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

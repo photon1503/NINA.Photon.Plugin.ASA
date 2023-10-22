@@ -13,15 +13,15 @@
 using NINA.Photon.Plugin.ASA.Converters;
 using System.ComponentModel;
 
-namespace NINA.Photon.Plugin.ASA.Model {
-
+namespace NINA.Photon.Plugin.ASA.Model
+{
     [TypeConverter(typeof(EnumStaticDescriptionTypeConverter))]
-    public enum ModelPointGenerationTypeEnum {
-
+    public enum ModelPointGenerationTypeEnum
+    {
         [Description("Golden Spiral")]
         GoldenSpiral = 0,
 
-        [Description("Sidereal Path")]
-        SiderealPath = 1
+        // [Description("Sidereal Path")]
+        // SiderealPath = 1
     }
 }

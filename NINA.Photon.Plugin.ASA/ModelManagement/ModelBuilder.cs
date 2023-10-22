@@ -34,7 +34,6 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows;
 
 namespace NINA.Photon.Plugin.ASA.ModelManagement
 {
@@ -398,7 +397,8 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
 
                     // Step 1: Clear alignment model
                     Logger.Info("Deleting current alignment model");
-                    this.mountModelMediator.DeleteAlignment();
+                    //this.mountModelMediator.DeleteAlignment();
+                    modelPoints1.Clear();
                     ct.ThrowIfCancellationRequested();
 
                     // Step 2: Start new alignment model
@@ -430,12 +430,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                     state.FailedPoints += numPendingFailures;
 
                     // Now that we're through with the work, we only abort on cancellation (not stop)
-                    builtModel = await FinishAlignment(state, ct);
-                    if ((double)builtModel.RMSError < state.BestModelRMS)
-                    {
-                        state.BestModelPoints = state.ValidPoints.Select(p => p.Clone()).ToImmutableList();
-                        state.BestModelRMS = (double)builtModel.RMSError;
-                    }
+                    await FinishAlignment(state, ct);
 
                     var retriesRemaining = options.NumRetries - state.BuildAttempt + 1;
                     if (state.FailedPoints == 0)
@@ -473,6 +468,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                         }
                         else
                         {
+                            /*
                             if ((double)builtModel.RMSError > state.BestModelRMS)
                             {
                                 Notification.ShowInformation($"Restoring earlier build iteration that produced a lower RMS model");
@@ -483,8 +479,10 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
 
                                 builtModel = await FinishAlignment(state, ct);
                             }
+                            */
 
                             numFailedRMSPoints = state.ValidPoints.Count(p => p.ModelPointState == ModelPointStateEnum.FailedRMS);
+                            /*
                             if (options.RemoveHighRMSPointsAfterBuild && numFailedRMSPoints > 0)
                             {
                                 // Stop showing progress during final point removal and model query
@@ -511,6 +509,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
 
                                 builtModel = await FinishAlignment(state, ct, overrideMaxPointRMS: double.PositiveInfinity);
                             }
+                            */
                         }
                     }
                 }
@@ -520,7 +519,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 if (stopToken.IsCancellationRequested)
                 {
                     Notification.ShowInformation("ASA model build stopped");
-                    builtModel = await FinishAlignment(state, ct);
+                    await FinishAlignment(state, ct);
                 }
                 else
                 {
@@ -531,7 +530,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             return builtModel;
         }
 
-        private async Task<LoadedAlignmentModel> FinishAlignment(ModelBuilderState state, CancellationToken ct, double? overrideMaxPointRMS = null)
+        private async Task FinishAlignment(ModelBuilderState state, CancellationToken ct, double? overrideMaxPointRMS = null)
         {
             var completedPoints = state.ValidPoints.Count - state.FailedPoints;
             if (completedPoints > 2)
@@ -540,7 +539,13 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 Logger.Info("Completing alignment spec");
 
                 ct.ThrowIfCancellationRequested();
-                var filePath = "c:\\git\\NINA-ASA.pox";
+
+                // C:\ProgramData\ASA\Sequence
+                var programdata = System.Environment.GetFolderPath(System.Environment.SpecialFolder.CommonApplicationData);
+
+                string fileName = DateTime.Now.ToString("yyyy-MM-dd-HH-mm") + ".pox";
+
+                var filePath = Path.Combine(programdata, "ASA", "Sequence", "PointingPics", fileName);
                 using (StreamWriter writer = new StreamWriter(filePath))
                 {
                     int points = 1;
@@ -552,23 +557,26 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                             writer.WriteLine($"\"Number {points++}\"");
                             writer.WriteLine($"\"'{point.CaptureTime:yyyy-MM-ddTHH:mm:ss.ff}'\"");
                             writer.WriteLine($"\"{point.CaptureTime:mm:ss.ff}\"");
-                            writer.WriteLine($"\"5.0\"");  //TODO Exposure time
+                            writer.WriteLine($"\"{profileService.ActiveProfile.PlateSolveSettings.ExposureTime}\"");  //TODO Exposure time
                             writer.WriteLine(point.MountReportedRightAscension);
                             writer.WriteLine(point.PlateSolvedCoordinates.RA);
                             writer.WriteLine(point.MountReportedDeclination);
                             writer.WriteLine(point.PlateSolvedCoordinates.Dec);
-                            writer.WriteLine(point.MountReportedSideOfPier == PierSide.pierEast ? "\"1\"" : "\"-1\"");
+                            writer.WriteLine(point.MountReportedSideOfPier == PierSide.pierEast ? "\"-1\"" : "\"1\"");
                             writer.WriteLine("**************************");
                         }
                     }
-                    return null;
                 }
+
+                Logger.Info($"POX file {filePath} created!");
+                Notification.ShowSuccess($"POX file {filePath} created!");
+                return;
             }
             else
             {
                 Logger.Error("Not enough successful points to complete alignment spec");
                 Notification.ShowError("Not enough successful points to complete alignment spec");
-                return null;
+                return;
             }
         }
 

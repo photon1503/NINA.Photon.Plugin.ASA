@@ -269,23 +269,7 @@
                 VerticalAlignment="Center"
                 IsChecked="{Binding WestToEastSorting}"
                 ToolTip="{StaticResource WestToEast_Tooltip}" />
-            <TextBlock
-                Grid.Row="10"
-                Grid.Column="0"
-                HorizontalAlignment="Left"
-                VerticalAlignment="Center"
-                Text="Remove High RMS Points"
-                ToolTip="{StaticResource RemoveHighRMSPointsAfterBuild_Tooltip}" />
-            <CheckBox
-                Grid.Row="10"
-                Grid.Column="1"
-                Grid.ColumnSpan="2"
-                MinWidth="80"
-                Margin="5,5,0,0"
-                HorizontalAlignment="Left"
-                VerticalAlignment="Center"
-                IsChecked="{Binding RemoveHighRMSPointsAfterBuild}"
-                ToolTip="{StaticResource RemoveHighRMSPointsAfterBuild_Tooltip}" />
+
             <TextBlock
                 Grid.Row="11"
                 Grid.Column="0"
@@ -445,31 +429,6 @@
                     </Binding.ValidationRules>
                 </Binding>
             </ninactrl:UnitTextBox>
-
-            <TextBlock
-                Grid.Row="18"
-                Grid.Column="0"
-                HorizontalAlignment="Left"
-                VerticalAlignment="Center"
-                Text="WOL Broadcast IP"
-                ToolTip="{StaticResource WolBroadcastIP_Tooltip}" />
-            <TextBox
-                Grid.Row="18"
-                Grid.Column="1"
-                Grid.ColumnSpan="2"
-                MinWidth="80"
-                Margin="5,5,0,0"
-                HorizontalAlignment="Left"
-                VerticalAlignment="Center"
-                ToolTip="{StaticResource WolBroadcastIP_Tooltip}">
-                <TextBox.Text>
-                    <Binding Path="WolBroadcastIP" UpdateSourceTrigger="LostFocus">
-                        <Binding.ValidationRules>
-                            <rules:IsValidIPAddressRule />
-                        </Binding.ValidationRules>
-                    </Binding>
-                </TextBox.Text>
-            </TextBox>
         </Grid>
     </DataTemplate>
 </ResourceDictionary>
