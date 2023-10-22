@@ -561,15 +561,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 modelBuildTask = null;
                 modelBuildCts = null;
                 modelBuildStopCts = null;
-                if (builtModel == null)
-                {
-                    Notification.ShowError($"Failed to build ASA model");
-                    return false;
-                }
-                else
-                {
-                    Notification.ShowInformation($"ASA model build completed. {builtModel.AlignmentStarCount} stars, RMS error {builtModel.RMSError:0.##} arcsec");
-                }
+                Notification.ShowInformation($"ASA model build completed. {builtModel.AlignmentStarCount} stars, RMS error {builtModel.RMSError:0.##} arcsec");
                 return true;
             }
             catch (OperationCanceledException)
