@@ -567,7 +567,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                             writer.WriteLine(point.PlateSolvedCoordinates.RA);
                             writer.WriteLine(point.MountReportedDeclination);
                             writer.WriteLine(point.PlateSolvedCoordinates.Dec);
-                            writer.WriteLine(point.MountReportedSideOfPier == PierSide.pierEast ? "\"-1\"" : "\"1\"");
+                            writer.WriteLine(point.MountReportedSideOfPier == PierSide.pierEast ? "\"1\"" : "\"-1\"");
                             writer.WriteLine("**************************");
                         }
                     }
@@ -1136,8 +1136,13 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 var plateSolvedRightAscension = AstrometricTime.FromAngle(Angle.ByHours(plateSolvedCoordinates.RA));
                 var plateSolvedDeclination = CoordinateAngle.FromAngle(Angle.ByDegree(plateSolvedCoordinates.Dec));
                 point.PlateSolvedCoordinates = plateSolvedCoordinates;
-                point.PlateSolvedRightAscension = plateSolveResult.Coordinates.RA; //plateSolvedRightAscension;
-                point.PlateSolvedDeclination = plateSolveResult.Coordinates.Dec; //plateSolvedDeclination;
+
+                //point.PlateSolvedRightAscension = plateSolveResult.Coordinates.RA; //plateSolvedRightAscension;
+                //point.PlateSolvedDeclination = plateSolveResult.Coordinates.Dec; //plateSolvedDeclination;
+
+                point.PlateSolvedRightAscension = plateSolvedCoordinates.RA;        // Beta 3 - use JNOW
+                point.PlateSolvedDeclination = plateSolvedCoordinates.Dec;
+
                 if (AddModelPointToAlignmentSpec(point))
                 {
                     success = true;
