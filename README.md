@@ -20,6 +20,11 @@ download end extract the archive to %localappdata%\NINA\Plugins from https://git
 - Start building your model using the plugin.
 - Load the created POX file from %programdata%\ASA\Sequence\NINA-ASA-*.pox into AutoSlew
 
+## Changelog
+
+### 2023-10-22
+-  Added option for non-legacy mounts. The generated POX file looks slightly different.
+
 ## Known issues
 
 - Telescope needs to be connected before starting the model builder

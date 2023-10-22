@@ -1297,6 +1297,28 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             }
         }
 
+        public double GridAltToDegrees(double altitute)
+        {
+            return altitute * (180 / Math.PI);
+        }
+
+        public double GridAzToDegrees(double azimuth)
+        {
+            azimuth = azimuth * (180 / Math.PI);
+
+            if (azimuth <= 90)
+            {
+                // North to East
+                azimuth = 90 - azimuth;
+            }
+            else
+            {
+                // West to South
+                azimuth = 270 - azimuth;
+            }
+            return azimuth;
+        }
+
         public ICommand ClearPointsCommand { get; private set; }
         public ICommand GeneratePointsCommand { get; private set; }
         public ICommand BuildCommand { get; private set; }
