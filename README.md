@@ -21,7 +21,7 @@ download end extract the archive to %localappdata%\NINA\Plugins from https://git
 - Load the created POX file from %programdata%\ASA\Sequence\NINA-ASA-*.pox into AutoSlew
 
 ## Changelog
-
+[See here](https://github.com/photon1503/NINA.Photon.Plugin.ASA/blob/master/CHANGELOG.md)
 
 
 ## Known issues
