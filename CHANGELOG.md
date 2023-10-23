@@ -9,6 +9,8 @@ Changed:
  
 Fix:
 - Fixed Progress status bar
+- Fixed Telescope position in plot
+- Fixed live plot update
 - Fixed IsLegacyDDM option
 - Fixed Error "Object reference not set to an instance ..." after successful model build
 

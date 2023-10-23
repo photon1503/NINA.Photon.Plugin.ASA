@@ -660,8 +660,8 @@
                             Size="8"
                             Opacity="0.6"
                             TextColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}"
-                            X="{Binding ScopePosition.X}"
-                            Y="{Binding ScopePosition.Y}" />
+                            X="{Binding TelescopePosition.X}"
+                            Y="{Binding TelescopePosition.Y}" />
                         <oxy:LineAnnotation
                             MaximumY="90"
                             Text="Dome Az"

@@ -265,6 +265,9 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
         public void UpdateDeviceInfo(TelescopeInfo deviceInfo)
         {
             this.TelescopeInfo = deviceInfo;
+
+            TelescopePosition = new DataPoint(deviceInfo.Azimuth, deviceInfo.Altitude);
+            RaisePropertyChanged(nameof(TelescopeInfo2));
         }
 
         private static readonly Angle DomeShutterOpeningRefreshTolerance = Angle.ByDegree(1.0);
@@ -310,6 +313,8 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             }
         }
 
+        public TelescopeInfo TelescopeInfo2 { get; private set; }
+
         private TelescopeInfo telescopeInfo = DeviceInfo.CreateDefaultInstance<TelescopeInfo>();
 
         public TelescopeInfo TelescopeInfo
@@ -322,6 +327,21 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 if (Connected)
                 {
                     ScopePosition = new DataPoint(telescopeInfo.Azimuth, telescopeInfo.Altitude);
+                }
+            }
+        }
+
+        private DataPoint telescopePosition;
+
+        public DataPoint TelescopePosition
+        {
+            get => telescopePosition;
+            set
+            {
+                if (telescopePosition.X != value.X || telescopePosition.Y != value.Y)
+                {
+                    telescopePosition = value;
+                    RaisePropertyChanged();
                 }
             }
         }
