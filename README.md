@@ -5,6 +5,8 @@ This project was forked from the TenMicron plugin by [ghilios](https://github.co
 
 Many thanks for the great work!
 
+<img width="500" alt="image" src="https://github.com/photon1503/NINA.Photon.Plugin.ASA/assets/14548927/5b8b6940-2fb1-4c91-9dcc-ca5618206fa0">
+
 ## ASA specific modifications
 - Removed 10u specific implementations. This version will basically connect to any telescope supported by NINA
 - Removed Mount info
