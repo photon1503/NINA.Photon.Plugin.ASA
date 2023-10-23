@@ -399,7 +399,6 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                     // Step 1: Clear alignment model
                     Logger.Info("Deleting current alignment model");
                     //this.mountModelMediator.DeleteAlignment();
-                    modelPoints1.Clear();
                     ct.ThrowIfCancellationRequested();
 
                     // Step 2: Start new alignment model

@@ -22,18 +22,18 @@ download end extract the archive to %localappdata%\NINA\Plugins from https://git
 
 ## Changelog
 
-### 2023-10-22
--  Added option for non-legacy mounts. The generated POX file looks slightly different.
+
 
 ## Known issues
 
 - Azimuth graph does not update - need to switch between (NINA) tabs to refresh
-- Error message "Object reference not set to an instance ..." after successful model build
+- Scope position not shown in graphics
 - Telescope needs to be connected before starting the model builder
 
 ## TODOs
 - [x] Remove Mount model, since this is 10u specific
-- [ ] Add option for destination path of POX file
+- [x] ~~Add option for destination path of POX file~~ File will be generated at standard ASA location.
 - [x] Dynamically create filename
 - [x] Remove sidereal path option
+- [ ] Remove "Point Max RMS" option
 - [ ] Fix errors :-)

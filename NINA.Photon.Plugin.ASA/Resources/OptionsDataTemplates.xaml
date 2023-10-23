@@ -390,28 +390,10 @@
                 Grid.Column="0"
                 HorizontalAlignment="Left"
                 VerticalAlignment="Center"
-                Text="Disable Refraction Correction"
-                ToolTip="{StaticResource DisableRefractionCorrection_Tooltip}" />
-            <CheckBox
-                Grid.Row="16"
-                Grid.Column="1"
-                Grid.ColumnSpan="2"
-                MinWidth="80"
-                Margin="5,5,0,0"
-                HorizontalAlignment="Left"
-                VerticalAlignment="Center"
-                IsChecked="{Binding DisableRefractionCorrection}"
-                ToolTip="{StaticResource DisableRefractionCorrection_Tooltip}" />
-
-            <TextBlock
-                Grid.Row="17"
-                Grid.Column="0"
-                HorizontalAlignment="Left"
-                VerticalAlignment="Center"
                 Text="Dec Jitter σ"
                 ToolTip="{StaticResource PlateSolveSubframePercentage_Tooltip}" />
             <ninactrl:UnitTextBox
-                Grid.Row="17"
+                Grid.Row="16"
                 Grid.Column="1"
                 MinWidth="80"
                 Margin="5,5,0,0"
@@ -430,13 +412,13 @@
                 </Binding>
             </ninactrl:UnitTextBox>
             <TextBlock
-                 Grid.Row="18"
+                 Grid.Row="17"
                  Grid.Column="0"
                  VerticalAlignment="Center"
                  Text="Legacy DDM mount"
                   ToolTip="" />
             <CheckBox
-                 Grid.Row="18"
+                 Grid.Row="17"
                  Grid.Column="1"
                  MinWidth="80"
                  Margin="5,5,0,0"

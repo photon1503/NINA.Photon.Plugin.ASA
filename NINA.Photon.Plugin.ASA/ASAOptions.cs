@@ -63,7 +63,7 @@ namespace NINA.Photon.Plugin.ASA
             alternateDirectionsBetweenIterations = optionsAccessor.GetValueBoolean("AlternateDirectionsBetweenIterations", true);
             minPointAzimuth = optionsAccessor.GetValueDouble("MinPointAzimuth", 0.5d);
             maxPointAzimuth = optionsAccessor.GetValueDouble("MaxPointAzimuth", 359.5d);
-            disableRefractionCorrection = optionsAccessor.GetValueBoolean("DisableRefractionCorrection", false);
+            disableRefractionCorrection = false; // optionsAccessor.GetValueBoolean("DisableRefractionCorrection", false);
             //ipAddress = optionsAccessor.GetValueString("IPAddress", "");
             //macAddress = optionsAccessor.GetValueString("MACAddress", "");
             //wolBroadcastIP = optionsAccessor.GetValueString("WolBroadcastIP", "");
@@ -589,7 +589,7 @@ namespace NINA.Photon.Plugin.ASA
                 if (isLegacyDDM != value)
                 {
                     isLegacyDDM = value;
-                    optionsAccessor.SetValueBoolean("DisableRefractionCorrection", isLegacyDDM);
+                    optionsAccessor.SetValueBoolean("IsLegacyDDM", isLegacyDDM);
                     RaisePropertyChanged();
                 }
             }

@@ -10,6 +10,7 @@
 
 #endregion "copyright"
 
+using Accord.Statistics.Filters;
 using NINA.Astrometry;
 using NINA.Astrometry.Interfaces;
 using NINA.Core.Model;
@@ -551,6 +552,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 {
                     throw new Exception("Model build already in progress");
                 }
+                Notification.ShowInformation("Model build started");
 
                 BuildInProgress = true;
                 modelBuildCts = new CancellationTokenSource();
@@ -561,7 +563,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 modelBuildTask = null;
                 modelBuildCts = null;
                 modelBuildStopCts = null;
-                Notification.ShowInformation($"ASA model build completed. {builtModel.AlignmentStarCount} stars, RMS error {builtModel.RMSError:0.##} arcsec");
+                Notification.ShowInformation($"ASA model build completed");
                 return true;
             }
             catch (OperationCanceledException)

@@ -23,10 +23,11 @@ using NINA.Profile.Interfaces;
 using System;
 using System.Collections.Generic;
 
-namespace NINA.Photon.Plugin.ASA.ModelManagement {
-
-    public class ModelPointGenerator : IModelPointGenerator {
-        public const int MAX_POINTS = 100;
+namespace NINA.Photon.Plugin.ASA.ModelManagement
+{
+    public class ModelPointGenerator : IModelPointGenerator
+    {
+        public const int MAX_POINTS = 1000;
 
         // Epsilon to optimize average nearest neighbor distance
         private const double EPSILON = 0.36d;
@@ -39,7 +40,8 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement {
         private readonly IWeatherDataMediator weatherDataMediator;
         private readonly IMountMediator mountMediator;
 
-        public ModelPointGenerator(IProfileService profileService, ITelescopeMediator telescopeMediator, IWeatherDataMediator weatherDataMediator, IASAOptions options, IMountMediator mountMediator) {
+        public ModelPointGenerator(IProfileService profileService, ITelescopeMediator telescopeMediator, IWeatherDataMediator weatherDataMediator, IASAOptions options, IMountMediator mountMediator)
+        {
             this.profileService = profileService;
             this.telescopeMediator = telescopeMediator;
             this.weatherDataMediator = weatherDataMediator;
@@ -47,10 +49,14 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement {
             this.mountMediator = mountMediator;
         }
 
-        public List<ModelPoint> GenerateGoldenSpiral(int numPoints, CustomHorizon horizon) {
-            if (numPoints > MAX_POINTS) {
+        public List<ModelPoint> GenerateGoldenSpiral(int numPoints, CustomHorizon horizon)
+        {
+            if (numPoints > MAX_POINTS)
+            {
                 throw new Exception($"ASA mounts do not support more than {MAX_POINTS} points");
-            } else if (numPoints < 3) {
+            }
+            else if (numPoints < 3)
+            {
                 throw new Exception("At least 3 points required for a viable model");
             }
 
@@ -60,10 +66,12 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement {
             int minViableNumPoints = 0;
             int maxViableNumPoints = int.MaxValue;
             int currentNumPoints = numPoints;
-            while (true) {
+            while (true)
+            {
                 points.Clear();
                 int validPoints = 0;
-                for (int i = 0; i < currentNumPoints; ++i) {
+                for (int i = 0; i < currentNumPoints; ++i)
+                {
                     // (azimuth) theta = 2 * pi * i / goldenRatio
                     // (altitude) phi = arccos(1 - 2 * (i + epsilon) / (n - 1 + 2 * epsilon))
                     var azimuth = Angle.ByRadians(2.0d * Math.PI * i / GOLDEN_RATIO);
@@ -71,68 +79,90 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement {
                     var inverseAltitude = Angle.ByRadians(Math.Acos(1.0d - 2.0d * ((double)i + EPSILON) / ((currentNumPoints * 2) - 1.0d + 2.0d * EPSILON)));
                     // The golden spiral algorithm uses theta from 0 - 180, where theta 0 is zenith
                     var altitudeDegrees = 90.0d - AstroUtil.EuclidianModulus(inverseAltitude.Degree, 180.0);
-                    if (altitudeDegrees < 0.0d || double.IsNaN(altitudeDegrees)) {
+                    if (altitudeDegrees < 0.0d || double.IsNaN(altitudeDegrees))
+                    {
                         continue;
                     }
 
                     var azimuthDegrees = AstroUtil.EuclidianModulus(azimuth.Degree, 360.0);
-                    if (altitudeDegrees < 0.1d) {
+                    if (altitudeDegrees < 0.1d)
+                    {
                         altitudeDegrees = 0.1d;
                     }
-                    if (altitudeDegrees > 89.9) {
+                    if (altitudeDegrees > 89.9)
+                    {
                         altitudeDegrees = 89.9;
                     }
 
                     var horizonAltitude = horizon.GetAltitude(azimuthDegrees);
                     ModelPointStateEnum creationState;
-                    if (altitudeDegrees < options.MinPointAltitude || altitudeDegrees > options.MaxPointAltitude) {
+                    if (altitudeDegrees < options.MinPointAltitude || altitudeDegrees > options.MaxPointAltitude)
+                    {
                         creationState = ModelPointStateEnum.OutsideAltitudeBounds;
-                    } else if (azimuthDegrees < options.MinPointAzimuth || azimuthDegrees >= options.MaxPointAzimuth) {
+                    }
+                    else if (azimuthDegrees < options.MinPointAzimuth || azimuthDegrees >= options.MaxPointAzimuth)
+                    {
                         creationState = ModelPointStateEnum.OutsideAzimuthBounds;
-                    } else if (altitudeDegrees >= horizonAltitude) {
+                    }
+                    else if (altitudeDegrees >= horizonAltitude)
+                    {
                         ++validPoints;
                         creationState = ModelPointStateEnum.Generated;
-                    } else {
+                    }
+                    else
+                    {
                         creationState = ModelPointStateEnum.BelowHorizon;
                     }
                     points.Add(
-                        new ModelPoint(telescopeMediator) {
+                        new ModelPoint(telescopeMediator)
+                        {
                             Altitude = altitudeDegrees,
                             Azimuth = azimuthDegrees,
                             ModelPointState = creationState
                         });
                 }
 
-                if (validPoints == numPoints) {
+                if (validPoints == numPoints)
+                {
                     return points;
-                } else if (validPoints < numPoints) {
+                }
+                else if (validPoints < numPoints)
+                {
                     // After excluding points below the horizon, we are short. Remember where we currently are, and try more points in another iteration.
                     // This may take several iterations, but it is guaranteed to converge
                     minViableNumPoints = currentNumPoints;
                     var nextNumPoints = Math.Min(maxViableNumPoints, currentNumPoints + (numPoints - validPoints));
-                    if (nextNumPoints == currentNumPoints) {
-                        if (validPoints < numPoints) {
+                    if (nextNumPoints == currentNumPoints)
+                    {
+                        if (validPoints < numPoints)
+                        {
                             Notification.ShowInformation($"Only {validPoints} could be generated. Continuing");
                             Logger.Warning($"Only {validPoints} could be generated. Continuing");
                         }
                         return points;
                     }
                     currentNumPoints = nextNumPoints;
-                } else {
+                }
+                else
+                {
                     // After excluding points below the horizon, we still have too many.
                     maxViableNumPoints = currentNumPoints - 1;
                     var nextNumPoints = Math.Max(minViableNumPoints + 1, currentNumPoints - (validPoints - numPoints));
-                    if (nextNumPoints == currentNumPoints) {
+                    if (nextNumPoints == currentNumPoints)
+                    {
                         // Next run will be the last
                         currentNumPoints = nextNumPoints - 1;
-                    } else {
+                    }
+                    else
+                    {
                         currentNumPoints = nextNumPoints;
                     }
                 }
             }
         }
 
-        private TopocentricCoordinates ToTopocentric(Coordinates coordinates, DateTime dateTime) {
+        private TopocentricCoordinates ToTopocentric(Coordinates coordinates, DateTime dateTime)
+        {
             var coordinatesAtTime = new Coordinates(Angle.ByHours(coordinates.RA), Angle.ByDegree(coordinates.Dec), coordinates.Epoch, new ConstantDateTime(dateTime));
             var latitude = Angle.ByDegree(profileService.ActiveProfile.AstrometrySettings.Latitude);
             var longitude = Angle.ByDegree(profileService.ActiveProfile.AstrometrySettings.Longitude);
@@ -153,14 +183,18 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement {
                 wavelength: wavelength);
         }
 
-        public List<ModelPoint> GenerateSiderealPath(Coordinates coordinates, Angle raDelta, DateTime startTime, DateTime endTime, CustomHorizon horizon) {
-            if (endTime < startTime) {
+        public List<ModelPoint> GenerateSiderealPath(Coordinates coordinates, Angle raDelta, DateTime startTime, DateTime endTime, CustomHorizon horizon)
+        {
+            if (endTime < startTime)
+            {
                 throw new Exception($"End time ({endTime}) comes before start time ({startTime})");
             }
-            if (endTime > (startTime + TimeSpan.FromDays(1))) {
+            if (endTime > (startTime + TimeSpan.FromDays(1)))
+            {
                 throw new Exception($"End time ({endTime}) is more than 1 day beyond start time ({startTime})");
             }
-            if (TimeSpan.FromHours(raDelta.Hours) <= TimeSpan.FromSeconds(1)) {
+            if (TimeSpan.FromHours(raDelta.Hours) <= TimeSpan.FromSeconds(1))
+            {
                 throw new Exception($"RA delta ({raDelta}) cannot be less than 1 arc second");
             }
 
@@ -170,13 +204,15 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement {
             var meridianLowerLimit = 360.0d - meridianLimitDegrees - 0.1d;
             var points = new List<ModelPoint>();
             var decJitterSigmaDegrees = this.options.DecJitterSigmaDegrees;
-            while (true) {
+            while (true)
+            {
                 points.Clear();
                 int validPoints = 0;
 
                 var currentTime = startTime;
                 var raDeltaTime = TimeSpan.FromHours(raDelta.Hours);
-                while (currentTime < endTime) {
+                while (currentTime < endTime)
+                {
                     var nextCoordinates = coordinates.Clone();
 
                     var decJitter = NormalDistribution.Random(mean: 0.0, stdDev: decJitterSigmaDegrees);
@@ -190,30 +226,40 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement {
                     var altitudeDegrees = pointCoordinates.Altitude.Degree;
 
                     // Make sure no point is within the meridian limits
-                    if (azimuthDegrees < meridianUpperLimit) {
+                    if (azimuthDegrees < meridianUpperLimit)
+                    {
                         Logger.Info($"Point Alt={altitudeDegrees:0.##}, Az={azimuthDegrees:0.##} within meridian limit. Adjusting azimuth to {meridianUpperLimit:0.##}");
                         azimuthDegrees = meridianUpperLimit;
                     }
-                    if (azimuthDegrees > meridianLowerLimit) {
+                    if (azimuthDegrees > meridianLowerLimit)
+                    {
                         Logger.Info($"Point Alt={altitudeDegrees:0.##}, Az={azimuthDegrees:0.##} within meridian limit. Adjusting azimuth to {meridianLowerLimit:0.##}");
                         azimuthDegrees = meridianLowerLimit;
                     }
 
                     var horizonAltitude = horizon.GetAltitude(azimuthDegrees);
                     ModelPointStateEnum creationState;
-                    if (altitudeDegrees < options.MinPointAltitude || altitudeDegrees > options.MaxPointAltitude) {
+                    if (altitudeDegrees < options.MinPointAltitude || altitudeDegrees > options.MaxPointAltitude)
+                    {
                         creationState = ModelPointStateEnum.OutsideAltitudeBounds;
-                    } else if (azimuthDegrees < options.MinPointAzimuth || azimuthDegrees >= options.MaxPointAzimuth) {
+                    }
+                    else if (azimuthDegrees < options.MinPointAzimuth || azimuthDegrees >= options.MaxPointAzimuth)
+                    {
                         creationState = ModelPointStateEnum.OutsideAzimuthBounds;
-                    } else if (altitudeDegrees >= horizonAltitude) {
+                    }
+                    else if (altitudeDegrees >= horizonAltitude)
+                    {
                         ++validPoints;
                         creationState = ModelPointStateEnum.Generated;
-                    } else {
+                    }
+                    else
+                    {
                         creationState = ModelPointStateEnum.BelowHorizon;
                     }
 
                     points.Add(
-                        new ModelPoint(telescopeMediator) {
+                        new ModelPoint(telescopeMediator)
+                        {
                             Altitude = altitudeDegrees,
                             Azimuth = azimuthDegrees,
                             ModelPointState = creationState
@@ -221,9 +267,12 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement {
                     currentTime += raDeltaTime;
                 }
 
-                if (validPoints <= MAX_POINTS) {
+                if (validPoints <= MAX_POINTS)
+                {
                     return points;
-                } else {
+                }
+                else
+                {
                     // We have too many points, so increase until we're below the limit. This algorithm is guaranteed to converge as we always increase the ra delta
                     var increaseRatio = (double)validPoints / MAX_POINTS;
                     var nextRaDelta = Angle.ByDegree(raDelta.Degree * increaseRatio);
