@@ -42,6 +42,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using System.Windows.Threading;
 
 namespace NINA.Photon.Plugin.ASA.ViewModels
 {
@@ -62,6 +63,11 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
         private IProgress<ApplicationStatus> stepProgress;
         private bool disposed = false;
         private CancellationTokenSource disconnectCts;
+
+        private readonly SynchronizationContext synchronizationContext =
+        Application.Current?.Dispatcher != null
+        ? new DispatcherSynchronizationContext(Application.Current.Dispatcher)
+        : null;
 
         [ImportingConstructor]
         public MountModelBuilderVM(IProfileService profileService, IApplicationStatusMediator applicationStatusMediator, ITelescopeMediator telescopeMediator, IDomeMediator domeMediator, IFramingAssistantVM framingAssistant, INighttimeCalculator nighttimeCalculator) :
@@ -143,6 +149,28 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             this.StopBuildCommand = new AsyncCommand<bool>(StopBuildModel);
             this.CoordsFromFramingCommand = new AsyncCommand<bool>(CoordsFromFraming);
             this.CoordsFromScopeCommand = new AsyncCommand<bool>(CoordsFromScope);
+
+            // progress
+
+            if (SynchronizationContext.Current == synchronizationContext)
+            {
+                this.progress = new Progress<ApplicationStatus>(p =>
+                {
+                    p.Source = this.Title;
+                    this.applicationStatusMediator.StatusUpdate(p);
+                });
+            }
+            else
+            {
+                synchronizationContext.Send(_ =>
+                {
+                    this.progress = new Progress<ApplicationStatus>(p =>
+                    {
+                        p.Source = this.Title;
+                        this.applicationStatusMediator.StatusUpdate(p);
+                    });
+                }, null);
+            }
         }
 
         private void ModelBuilderOptions_PropertyChanged(object sender, PropertyChangedEventArgs e)

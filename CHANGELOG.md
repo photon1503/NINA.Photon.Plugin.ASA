@@ -8,6 +8,7 @@ Changed:
 - Removed disableRefractionCorrection option from settings. ASA DDM has RefractionCorrection enabled permanently.
  
 Fix:
+- Fixed Progress status bar
 - Fixed IsLegacyDDM option
 - Fixed Error "Object reference not set to an instance ..." after successful model build
 

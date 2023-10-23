@@ -34,6 +34,7 @@ using NINA.Core.Enum;
 using System.Windows;
 using System.Linq;
 using NINA.Equipment.Interfaces;
+using System.Windows.Threading;
 
 namespace NINA.Photon.Plugin.ASA.ViewModels
 {
@@ -49,6 +50,11 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
         private bool disposed = false;
         private CancellationTokenSource disconnectCts;
         private readonly object alignmentModelLoadLock = new object();
+
+        private readonly SynchronizationContext synchronizationContext =
+       Application.Current?.Dispatcher != null
+       ? new DispatcherSynchronizationContext(Application.Current.Dispatcher)
+       : null;
 
         [ImportingConstructor]
         public MountModelVM(IProfileService profileService, IApplicationStatusMediator applicationStatusMediator, ITelescopeMediator telescopeMediator) :
@@ -84,6 +90,26 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             this.telescopeMediator = telescopeMediator;
             this.modelAccessor = modelAccessor;
             this.disconnectCts = new CancellationTokenSource();
+
+            if (SynchronizationContext.Current == synchronizationContext)
+            {
+                this.progress = new Progress<ApplicationStatus>(p =>
+                {
+                    p.Source = this.Title;
+                    this.applicationStatusMediator.StatusUpdate(p);
+                });
+            }
+            else
+            {
+                synchronizationContext.Send(_ =>
+                {
+                    this.progress = new Progress<ApplicationStatus>(p =>
+                    {
+                        p.Source = this.Title;
+                        this.applicationStatusMediator.StatusUpdate(p);
+                    });
+                }, null);
+            }
 
             this.ModelNames = new AsyncObservableCollection<string>() { GetUnselectedModelName() };
             this.SelectedModelName = GetUnselectedModelName();
@@ -339,6 +365,8 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 await LoadModelNames(this.disconnectCts.Token);
                 await LoadAlignmentModel(this.disconnectCts.Token);
             }, this.disconnectCts.Token);
+
+            this.progress.Report(new ApplicationStatus() { });
             Connected = true;
         }
 
