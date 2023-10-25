@@ -1,8 +1,8 @@
 # ASA Model Builder NINA Plugin
 
+A [N.I.N.A](https://nighttime-imaging.eu/) plugin for building a telescope model for ASA mounts.
+
 This project was forked from the TenMicron plugin by [ghilios](https://github.com/ghilios) at https://github.com/ghilios/NINA.Joko.Plugin.TenMicron
-
-
 Many thanks for the great work!
 
 <img width="500" alt="image" src="https://github.com/photon1503/NINA.Photon.Plugin.ASA/assets/14548927/5b8b6940-2fb1-4c91-9dcc-ca5618206fa0">
@@ -10,13 +10,14 @@ Many thanks for the great work!
 
 ## Setup
 
-download end extract the archive to %localappdata%\NINA\Plugins from https://github.com/photon1503/NINA.Photon.Plugin.ASA/releases/latest
+download end extract the archive to `%localappdata%\NINA\Plugins` from https://github.com/photon1503/NINA.Photon.Plugin.ASA/releases/latest
 
 ## Usage
 
 - Configure the settings on the plugin options page
+- Always sync your telescope to a know position before starting any model build. Can by easily done by using plate solve directly in N.I.N.A
 - Start building your model using the plugin.
-- Load the created POX file from %programdata%\ASA\Sequence\NINA-ASA-*.pox into AutoSlew
+- Load the created POX file from `%programdata%\ASA\Sequence\NINA-ASA-*.pox` into AutoSlew and calculate the model
 
 ## Changelog
 [See here](https://github.com/photon1503/NINA.Photon.Plugin.ASA/blob/master/CHANGELOG.md)
