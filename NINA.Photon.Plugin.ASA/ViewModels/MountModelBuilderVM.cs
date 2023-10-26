@@ -144,11 +144,14 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
 
             this.GeneratePointsCommand = new AsyncCommand<bool>(GeneratePoints);
             this.ClearPointsCommand = new AsyncCommand<bool>(ClearPoints);
+
             this.BuildCommand = new AsyncCommand<bool>(BuildModel);
             this.CancelBuildCommand = new AsyncCommand<bool>(CancelBuildModel);
             this.StopBuildCommand = new AsyncCommand<bool>(StopBuildModel);
             this.CoordsFromFramingCommand = new AsyncCommand<bool>(CoordsFromFraming);
             this.CoordsFromScopeCommand = new AsyncCommand<bool>(CoordsFromScope);
+            this.ImportCommand = new AsyncCommand<bool>(ImportPoints);
+            this.ExportCommand = new AsyncCommand<bool>(ExportPoints);
 
             // progress
 
@@ -1016,6 +1019,16 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
         }
         */
 
+        private Task<bool> ImportPoints(object o)
+        {
+            return Task.FromResult(true);
+        }
+
+        private Task<bool> ExportPoints(object o)
+        {
+            return Task.FromResult(true);
+        }
+
         public ModelPointGenerationTypeEnum ModelPointGenerationType
         {
             get => this.modelBuilderOptions.ModelPointGenerationType;
@@ -1376,5 +1389,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
         public ICommand StopBuildCommand { get; private set; }
         public ICommand CoordsFromFramingCommand { get; private set; }
         public ICommand CoordsFromScopeCommand { get; private set; }
+        public ICommand ExportCommand { get; private set; }
+        public ICommand ImportCommand { get; private set; }
     }
 }
