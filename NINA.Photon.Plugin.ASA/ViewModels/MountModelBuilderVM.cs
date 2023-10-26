@@ -11,10 +11,15 @@
 #endregion "copyright"
 
 using Accord.Statistics.Filters;
+using ASCOM.DeviceInterface;
+using CsvHelper;
+using Microsoft.Win32;
 using NINA.Astrometry;
 using NINA.Astrometry.Interfaces;
+using NINA.Core.Enum;
 using NINA.Core.Model;
 using NINA.Core.Utility;
+using NINA.Core.Utility.Converters;
 using NINA.Core.Utility.Notification;
 using NINA.Equipment.Equipment;
 using NINA.Equipment.Equipment.MyDome;
@@ -1021,11 +1026,111 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
 
         private Task<bool> ImportPoints(object o)
         {
+            OpenFileDialog openFileDialog = new OpenFileDialog
+            {
+                Title = "Select a File",
+                Filter = "Grid Files|*.grd|All Files|*.*"
+            };
+
+            string programDataPath = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+
+            openFileDialog.InitialDirectory = Path.Combine(programDataPath, @"ASA\Sequence\Grids");
+            bool? result = openFileDialog.ShowDialog();
+
+            if (result == true)
+            {
+                // The user selected a file
+                string selectedFileName = openFileDialog.FileName;
+
+                this.ModelPoints.Clear();
+                this.DisplayModelPoints.Clear();
+
+                /*
+                    1                           Number of points
+                    -0.895125152281524          Azimuth (Pi / 180)
+                    1.08333591598397            Alitute (Pi / 180)
+                    "true"                      isMousePoint
+                    "False"                     onlySlew
+                    1                           PierSide
+                */
+                string[] lines = File.ReadAllLines(selectedFileName);
+                int numberOfPoints = int.Parse(lines[0]);
+
+                var points = new List<ModelPoint>();
+
+                for (int lineNo = 1; lineNo <= numberOfPoints * 5; lineNo += 5)
+                {
+                    double azimuth = double.Parse(lines[lineNo]);
+                    double altitude = double.Parse(lines[lineNo + 1]);
+                    bool isMousePoint;
+                    bool.TryParse(lines[lineNo + 2].Trim('"'), out isMousePoint);
+                    bool onlySlew;
+                    bool.TryParse(lines[lineNo + 3].Trim('"'), out onlySlew);
+
+                    int pierSide = int.Parse(lines[lineNo + 4]);
+
+                    double pointAzimuth = azimuth * ((double)180 / Math.PI);
+                    if (isMousePoint)
+                        pointAzimuth = 180 - pointAzimuth;
+
+                    double pointAltitude = altitude * ((double)180 / Math.PI);
+
+                    //MessageBox.Show($"point Alt {pointAltitude.ToString()}, Az {pointAzimuth.ToString()} onlySlew {onlySlew.ToString()}");
+
+                    if (!onlySlew)
+                    {
+                        points.Add(
+                           new ModelPoint(telescopeMediator)
+                           {
+                               Altitude = pointAltitude,
+                               Azimuth = pointAzimuth,
+
+                               //writer.WriteLine(point.MountReportedSideOfPier == PierSide.pierEast ? "\"1\"" : "\"-1\"");
+                               //MountReportedSideOfPier = pierSide == 1 ? PierSide.pierEast : PierSide.pierWest,
+                               ModelPointState = ModelPointStateEnum.Generated
+                           });
+                    }
+                }
+
+                this.ModelPoints = ImmutableList.ToImmutableList(points);
+
+                this.DisplayModelPoints = new AsyncObservableCollection<ModelPoint>(points);
+            }
+
             return Task.FromResult(true);
         }
 
         private Task<bool> ExportPoints(object o)
         {
+            SaveFileDialog openFileDialog = new SaveFileDialog
+            {
+                Title = "Select a File",
+                Filter = "Grid Files|*.grd|All Files|*.*"
+            };
+
+            string programDataPath = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+
+            openFileDialog.InitialDirectory = Path.Combine(programDataPath, @"ASA\Sequence\Grids");
+            bool? result = openFileDialog.ShowDialog();
+
+            if (result == true)
+            {
+                // The user selected a file
+                string selectedFileName = openFileDialog.FileName;
+                using (StreamWriter writer = new StreamWriter(selectedFileName))
+                {
+                    writer.WriteLine(this.DisplayModelPoints.Count);
+
+                    foreach (ModelPoint p in this.DisplayModelPoints)
+                    {
+                        writer.WriteLine(p.Azimuth * (Math.PI / 180));
+                        writer.WriteLine(p.Altitude * (Math.PI / 180));
+                        writer.WriteLine("\"false\"");
+                        writer.WriteLine("\"False\"");
+                        writer.WriteLine(p.Azimuth < 180 ? "0" : "1");
+                    }
+                }
+            }
             return Task.FromResult(true);
         }
 
