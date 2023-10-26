@@ -1,42 +1,26 @@
 # ASA Model Builder NINA Plugin
 
+A [N.I.N.A](https://nighttime-imaging.eu/) plugin for building a telescope model for ASA mounts.
+
 This project was forked from the TenMicron plugin by [ghilios](https://github.com/ghilios) at https://github.com/ghilios/NINA.Joko.Plugin.TenMicron
-
-
 Many thanks for the great work!
 
-## ASA specific modifications
-- Removed 10u specific implementations. This version will basically connect to any telescope supported by NINA
-- Removed Mount info
-- Instead of writing the plate solved points directly to the mount, a POX file will be created
+<img width="500" alt="image" src="https://github.com/photon1503/NINA.Photon.Plugin.ASA/assets/14548927/5b8b6940-2fb1-4c91-9dcc-ca5618206fa0">
 
 
 ## Setup
 
-download end extract the archive to %localappdata%\NINA\Plugins from https://github.com/photon1503/NINA.Photon.Plugin.ASA/releases/latest
+download end extract the archive to `%localappdata%\NINA\Plugins` from https://github.com/photon1503/NINA.Photon.Plugin.ASA/releases/latest
 
 ## Usage
 
+- Configure the settings on the plugin options page
+- Always sync your telescope to a know position before starting any model build. Can by easily done by using plate solve directly in N.I.N.A
 - Start building your model using the plugin.
-- Load the created POX file from %programdata%\ASA\Sequence\NINA-ASA-*.pox into AutoSlew
+- Load the created POX file from `%programdata%\ASA\Sequence\NINA-ASA-*.pox` into AutoSlew and calculate the model
 
 ## Changelog
-
-
-
-## Known issues
-
-- Azimuth graph does not update - need to switch between (NINA) tabs to refresh
-- Scope position not shown in graphics
-- Telescope needs to be connected before starting the model builder
-
-## TODOs
-- [x] Remove Mount model, since this is 10u specific
-- [x] ~~Add option for destination path of POX file~~ File will be generated at standard ASA location.
-- [x] Dynamically create filename
-- [x] Remove sidereal path option
-- [ ] Remove "Point Max RMS" option
-- [ ] Fix errors :-)
+[See here](https://github.com/photon1503/NINA.Photon.Plugin.ASA/blob/master/CHANGELOG.md)
 
 ### Disclaimer
 
