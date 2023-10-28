@@ -51,22 +51,23 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyMetadata("Homepage", "")]
 
 //[Optional] Common tags that quickly describe your plugin
-[assembly: AssemblyMetadata("Tags", "Mount,Model Builder,ASA,ASA")]
+[assembly: AssemblyMetadata("Tags", "Mount,Model Builder,ASA,ASA DDM")]
 
 //[Optional] A link that will show a log of all changes in between your plugin's versions
-[assembly: AssemblyMetadata("ChangelogURL", "https://github.com/photon1503/NINA.Photon.Plugin.ASA/commits/develop")]
+[assembly: AssemblyMetadata("ChangelogURL", "https://github.com/photon1503/NINA.Photon.Plugin.ASA/CHANGELOG.md")]
 
 //[Optional] The url to a featured logo that will be displayed in the plugin list next to the name
-[assembly: AssemblyMetadata("FeaturedImageURL", "https://github.com/photon1503/NINA.Photon.Plugin.ASA/releases/download/resources/GM1000HPS.jpg")]
+[assembly: AssemblyMetadata("FeaturedImageURL", "https://github.com/photon1503/NINA.Photon.Plugin.ASA/blob/master/NINA.Photon.Plugin.ASA/Resources/asa.png?raw=true")]
+
 //[Optional] A url to an example screenshot of your plugin in action
-[assembly: AssemblyMetadata("ScreenshotURL", "https://github.com/photon1503/NINA.Photon.Plugin.ASA/releases/download/resources/ASAToolsScreenshot.JPG")]
+[assembly: AssemblyMetadata("ScreenshotURL", "https://user-images.githubusercontent.com/14548927/277363713-5b8b6940-2fb1-4c91-9dcc-ca5618206fa0.png")]
 //[Optional] An additional url to an example example screenshot of your plugin in action
-[assembly: AssemblyMetadata("AltScreenshotURL", "https://github.com/photon1503/NINA.Photon.Plugin.ASA/releases/download/resources/ASAToolsAltScreenshot.JPG")]
+[assembly: AssemblyMetadata("AltScreenshotURL", "https://user-images.githubusercontent.com/14548927/277363713-5b8b6940-2fb1-4c91-9dcc-ca5618206fa0.png")]
 //[Optional] An in-depth description of your plugin
 [assembly: AssemblyMetadata("LongDescription", @"This plugin provides building pointing models for ASA mounts.
 
-Cloned from https://github.com/ghilios/NINA.Joko.Plugin.TenMicron and adopted for ASA
-Many thanks for the great work @ghilios
+This project is based on @ghilios TenMicron plugin (https://github.com/ghilios/NINA.Joko.Plugin.TenMicron)
+Many thanks for the great work!
 
 # Features #
 
