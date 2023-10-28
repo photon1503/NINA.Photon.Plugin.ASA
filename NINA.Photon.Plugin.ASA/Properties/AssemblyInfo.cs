@@ -19,8 +19,8 @@ using System.Runtime.InteropServices;
 
 // [MANDATORY] The assembly versioning
 //Should be incremented for each new release build of a plugin
-[assembly: AssemblyVersion("2.1.0.1")]
-[assembly: AssemblyFileVersion("2.1.0.1")]
+[assembly: AssemblyVersion("1.0.0.0")]
+[assembly: AssemblyFileVersion("1.0.0.0")]
 
 // [MANDATORY] The name of your plugin
 [assembly: AssemblyTitle("ASA Tools")]
@@ -65,28 +65,23 @@ using System.Runtime.InteropServices;
 //[Optional] An in-depth description of your plugin
 [assembly: AssemblyMetadata("LongDescription", @"This plugin provides building pointing models for ASA mounts.
 
-* NOTE: This plugin is still in active development *
-
 Cloned from https://github.com/ghilios/NINA.Joko.Plugin.TenMicron and adopted for ASA
+Many thanks for the great work @ghilios
 
 # Features #
 
 * Build full sky models using Golden Spiral in an Imaging tab dock
-* Sidereal Path model point generation that creates points along the sidereal path of a DSO
-* Advanced Sequencer items to build, load, and save models as part of a sequence
 * MW4 and NINA horizons supported. Load the horizon file in NINA Options -> General
 * Dome optimization to reduce dome slews during model build
-* View and save loaded alignment models
-* Load and Delete existing alignment models
-* Remove the worst alignment star from a loaded alignment model
-* Retry individual points that have high RMS
+* Export and import grids (compatible for Sequence)
 * Retry model build failures using only the failed points, unless a maximum number of failures is exceeded
-* Advanced Sequencer item to set tracking rates not exposed by the ASCOM driver
 
-# Coming Soon #
-
-* Altitude-aware dome shutter calculations. By setting a dome shutter width in the model builder settings, a wider dome slit clearance will be used for higher altitudes to further reduce the number of dome slews
-* Advanced Sequencer item to build full-sky models
+# Usage #
+Configure the settings on the plugin options page
+Always sync your telescope to a know position before starting any model build. Can by easily done by using plate solve directly in N.I.N.A
+Also clear your old (current) configuration in Autoslew
+Start building your model using the plugin.
+Load the created POX file from %programdata%\ASA\Sequence\NINA-ASA-*.pox into AutoSlew and calculate the model
 
 # Getting Help #
 
