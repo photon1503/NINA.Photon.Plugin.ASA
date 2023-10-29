@@ -1,6 +1,6 @@
 [CmdletBinding(DefaultParameterSetName='NoArchive')]
 param(
-    [Parameter(Mandatory, HelpMessage="Assembly File Path")]
+    [Parameter(Mandatory, HelpMessage="Path to the compiled plugin assembly (dll)")]
     [string]$file,
 
     [Parameter(HelpMessage="The installer url that should be put into the manifest")]
@@ -8,6 +8,9 @@ param(
 
     [Parameter(Mandatory=$false, ParameterSetName='Archive', HelpMessage="If the assembly should be packed into a zip file")]
     [switch]$createArchive,
+
+    [Parameter(Mandatory=$false, ParameterSetName='Archive', HelpMessage="If all files in the assembly's directory should be included in the zip file")]
+    [switch]$includeAll,
 
     [Parameter(ParameterSetName='Archive', HelpMessage="Name of the zip archive")]
     [string]$archiveName
@@ -19,11 +22,13 @@ Write-Output $file
 Write-Output "-------------"
 Write-Output "-------------"
 
-
+$installerType = "DLL"
 
 ## Create a zip archive if parameter is given and use that checksum instead
 if($createArchive) {
     Write-Output "Creating zip archive"
+    $installerType = "ARCHIVE"
+	
     if(!$archiveName) {
         $archiveName = [io.path]::GetFileNameWithoutExtension($file)
     }
@@ -33,7 +38,13 @@ if($createArchive) {
         Remove-Item $zipfile
     }
 
-    Compress-Archive -Path $file -Destination $zipfile
+	$compressFiles = $file
+	
+	if($includeAll) {
+		$compressFiles = [System.IO.Path]::GetDirectoryName($file) + "\*"
+	}
+	
+    Compress-Archive -Path $compressFiles -Destination $zipfile
     Write-Output "-------------"
     Write-Output "-------------"
     $checksum = Get-FileHash $zipfile
@@ -46,8 +57,26 @@ $bytes = [System.IO.File]::ReadAllBytes($file)
 $assembly = [Reflection.Assembly]::Load($bytes)
 
 $meta = [reflection.customattributedata]::GetCustomAttributes($assembly)
-$manifest = @{
-    Descriptions = @{}
+$manifest = [ordered]@{
+    Name = ""
+    Identifier = ""
+    Version = @{}
+    Author = ""
+    Homepage = ""
+    Repository = ""
+    License = ""
+    LicenseURL = ""
+    ChangelogURL = ""
+    Tags = ""
+    MinimumApplicationVersion = @{}
+    Descriptions = [ordered]@{
+        ShortDescription = ""
+        LongDescription = ""
+        FeaturedImageURL = ""
+        ScreenshotURL = ""
+        AltScreenshotURL = ""
+    }
+    Installer = @{}
 }
 
 
@@ -61,7 +90,7 @@ foreach($val in $meta) {
 	}
 	if($val.AttributeType -like "System.Reflection.AssemblyFileVersionAttribute") {
         $version = $val.ConstructorArguments[0].Value.Split(".");
-		$manifest["Version"] = @{
+		$manifest["Version"] = [ordered]@{
             Major = $version[0]
             Minor = $version[1]
             Patch = $version[2]
@@ -83,12 +112,15 @@ foreach($val in $meta) {
 	if($val.AttributeType -like "System.Reflection.AssemblyMetadataAttribute" -And $val.ConstructorArguments[0].Value -like "LicenseURL" ) {
 		$manifest["LicenseURL"] = $val.ConstructorArguments[1].Value
 	}
+	if($val.AttributeType -like "System.Reflection.AssemblyMetadataAttribute" -And $val.ConstructorArguments[0].Value -like "ChangelogURL" ) {
+		$manifest["ChangelogURL"] = $val.ConstructorArguments[1].Value
+	}
 	if($val.AttributeType -like "System.Reflection.AssemblyMetadataAttribute" -And $val.ConstructorArguments[0].Value -like "Tags" ) {
         $manifest["Tags"] = $val.ConstructorArguments[1].Value.Split(",");
 	}
 	if($val.AttributeType -like "System.Reflection.AssemblyMetadataAttribute" -And $val.ConstructorArguments[0].Value -like "MinimumApplicationVersion" ) {
         $version = $val.ConstructorArguments[1].Value.Split(".");
-		$manifest["MinimumApplicationVersion"] = @{
+		$manifest["MinimumApplicationVersion"] = [ordered]@{
             Major = $version[0]
             Minor = $version[1]
             Patch = $version[2]
@@ -114,9 +146,9 @@ foreach($val in $meta) {
 
 #Installer property gen
 
-$manifest["Installer"] = @{
+$manifest["Installer"] = [ordered]@{
     URL = $installerUrl
-    Type = "DLL"
+    Type = $installerType
     Checksum = $checksum.Hash
     ChecksumType = $checksum.Algorithm
 }

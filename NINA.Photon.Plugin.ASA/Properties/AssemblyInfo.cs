@@ -33,7 +33,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyCompany("Gerald Hitz (photon)")]
 // The product name that this plugin is part of
 [assembly: AssemblyProduct("ASA Tools")]
-[assembly: AssemblyCopyright("Copyright ©  2023")]
+[assembly: AssemblyCopyright("Copyright © 2023")]
 
 // The minimum Version of N.I.N.A. that this plugin is compatible with
 [assembly: AssemblyMetadata("MinimumApplicationVersion", "2.1.0.9001")]
@@ -54,7 +54,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyMetadata("Tags", "Mount,Model Builder,ASA,ASA DDM")]
 
 //[Optional] A link that will show a log of all changes in between your plugin's versions
-[assembly: AssemblyMetadata("ChangelogURL", "https://github.com/photon1503/NINA.Photon.Plugin.ASA/CHANGELOG.md")]
+[assembly: AssemblyMetadata("ChangelogURL", "https://github.com/photon1503/NINA.Photon.Plugin.ASA/blob/master/CHANGELOG.md")]
 
 //[Optional] The url to a featured logo that will be displayed in the plugin list next to the name
 [assembly: AssemblyMetadata("FeaturedImageURL", "https://github.com/photon1503/NINA.Photon.Plugin.ASA/blob/master/NINA.Photon.Plugin.ASA/Resources/asa.png?raw=true")]
@@ -78,11 +78,11 @@ Many thanks for the great work!
 * Retry model build failures using only the failed points, unless a maximum number of failures is exceeded
 
 # Usage #
-Configure the settings on the plugin options page
-Always sync your telescope to a know position before starting any model build. Can by easily done by using plate solve directly in N.I.N.A
-Also clear your old (current) configuration in Autoslew
-Start building your model using the plugin.
-Load the created POX file from %programdata%\ASA\Sequence\NINA-ASA-*.pox into AutoSlew and calculate the model
+* Configure the settings on the plugin options page
+* Always sync your telescope to a know position before starting any model build. Can by easily done by using plate solve directly in N.I.N.A
+* Also clear your old (current) configuration in Autoslew
+* Start building your model using the plugin.
+* Load the created POX file from %programdata%\ASA\Sequence\NINA-ASA-*.pox into AutoSlew and calculate the model
 
 # Getting Help #
 
