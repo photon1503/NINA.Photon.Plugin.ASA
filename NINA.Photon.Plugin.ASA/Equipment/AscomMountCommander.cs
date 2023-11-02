@@ -10,30 +10,36 @@
 
 #endregion "copyright"
 
-using ASCOM.DriverAccess;
+using ASCOM.Com.DriverAccess;
 using NINA.Photon.Plugin.ASA.Exceptions;
 using NINA.Photon.Plugin.ASA.Interfaces;
 
-namespace NINA.Photon.Plugin.ASA.Equipment {
-
-    public class AscomMountCommander : IMountCommander {
+namespace NINA.Photon.Plugin.ASA.Equipment
+{
+    public class AscomMountCommander : IMountCommander
+    {
         private readonly Telescope ascomTelescope;
 
-        public AscomMountCommander(Telescope ascomTelescope) {
+        public AscomMountCommander(Telescope ascomTelescope)
+        {
             this.ascomTelescope = ascomTelescope;
         }
 
-        public void SendCommandBlind(string command, bool raw) {
+        public void SendCommandBlind(string command, bool raw)
+        {
             ascomTelescope.CommandBlind(command, raw);
         }
 
-        public bool SendCommandBool(string command, bool raw) {
+        public bool SendCommandBool(string command, bool raw)
+        {
             return ascomTelescope.CommandBool(command, raw);
         }
 
-        public string SendCommandString(string command, bool raw) {
+        public string SendCommandString(string command, bool raw)
+        {
             var result = ascomTelescope.CommandString(command, raw);
-            if (result == null) {
+            if (result == null)
+            {
                 throw new CommandFailedException(command);
             }
             return result;

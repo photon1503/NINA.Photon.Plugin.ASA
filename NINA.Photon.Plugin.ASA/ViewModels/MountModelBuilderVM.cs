@@ -10,16 +10,12 @@
 
 #endregion "copyright"
 
-using Accord.Statistics.Filters;
-using ASCOM.DeviceInterface;
-using CsvHelper;
+using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
 using NINA.Astrometry;
 using NINA.Astrometry.Interfaces;
-using NINA.Core.Enum;
 using NINA.Core.Model;
 using NINA.Core.Utility;
-using NINA.Core.Utility.Converters;
 using NINA.Core.Utility.Notification;
 using NINA.Equipment.Equipment;
 using NINA.Equipment.Equipment.MyDome;
@@ -147,16 +143,16 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             this.profileService.ActiveProfile.DomeSettings.PropertyChanged += DomeSettings_PropertyChanged;
             this.LoadHorizon();
 
-            this.GeneratePointsCommand = new AsyncCommand<bool>(GeneratePoints);
-            this.ClearPointsCommand = new AsyncCommand<bool>(ClearPoints);
+            this.GeneratePointsCommand = new AsyncRelayCommand(GeneratePoints);
+            this.ClearPointsCommand = new AsyncRelayCommand(ClearPoints);
 
-            this.BuildCommand = new AsyncCommand<bool>(BuildModel);
-            this.CancelBuildCommand = new AsyncCommand<bool>(CancelBuildModel);
-            this.StopBuildCommand = new AsyncCommand<bool>(StopBuildModel);
-            this.CoordsFromFramingCommand = new AsyncCommand<bool>(CoordsFromFraming);
-            this.CoordsFromScopeCommand = new AsyncCommand<bool>(CoordsFromScope);
-            this.ImportCommand = new AsyncCommand<bool>(ImportPoints);
-            this.ExportCommand = new AsyncCommand<bool>(ExportPoints);
+            this.BuildCommand = new AsyncRelayCommand(BuildModel);
+            this.CancelBuildCommand = new AsyncRelayCommand(CancelBuildModel);
+            this.StopBuildCommand = new AsyncRelayCommand(StopBuildModel);
+            this.CoordsFromFramingCommand = new AsyncRelayCommand(CoordsFromFraming);
+            this.CoordsFromScopeCommand = new AsyncRelayCommand(CoordsFromScope);
+            this.ImportCommand = new AsyncRelayCommand(ImportPoints);
+            this.ExportCommand = new AsyncRelayCommand(ExportPoints);
 
             // progress
 
@@ -426,7 +422,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             Connected = false;
         }
 
-        private Task<bool> GeneratePoints(object o)
+        private Task<bool> GeneratePoints()
         {
             try
             {
@@ -450,7 +446,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             }
         }
 
-        private Task<bool> ClearPoints(object o)
+        private Task<bool> ClearPoints()
         {
             this.ModelPoints.Clear();
             this.DisplayModelPoints.Clear();
@@ -643,7 +639,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             }
         }
 
-        private Task<bool> BuildModel(object o)
+        private Task<bool> BuildModel()
         {
             if (modelBuildCts != null)
             {
@@ -668,7 +664,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             return DoBuildModel(modelPoints, options, CancellationToken.None);
         }
 
-        private async Task<bool> CancelBuildModel(object o)
+        private async Task<bool> CancelBuildModel()
         {
             try
             {
@@ -686,7 +682,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             }
         }
 
-        private async Task<bool> StopBuildModel(object o)
+        private async Task<bool> StopBuildModel()
         {
             try
             {
@@ -704,7 +700,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             }
         }
 
-        private Task<bool> CoordsFromFraming(object o)
+        private Task<bool> CoordsFromFraming()
         {
             try
             {
@@ -717,7 +713,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             }
         }
 
-        private Task<bool> CoordsFromScope(object o)
+        private Task<bool> CoordsFromScope()
         {
             try
             {
@@ -1024,7 +1020,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
         }
         */
 
-        private Task<bool> ImportPoints(object o)
+        private Task<bool> ImportPoints()
         {
             OpenFileDialog openFileDialog = new OpenFileDialog
             {
@@ -1100,7 +1096,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             return Task.FromResult(true);
         }
 
-        private Task<bool> ExportPoints(object o)
+        private Task<bool> ExportPoints()
         {
             SaveFileDialog openFileDialog = new SaveFileDialog
             {

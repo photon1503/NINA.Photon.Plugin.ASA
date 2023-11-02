@@ -16,20 +16,27 @@ using NINA.Sequencer;
 using NINA.Sequencer.Utility.DateTimeProvider;
 using System;
 
-namespace NINA.Photon.Plugin.ASA.Utility {
-
+namespace NINA.Photon.Plugin.ASA.Utility
+{
     [JsonObject(MemberSerialization.OptIn)]
-    public class NowDateTimeProvider : IDateTimeProvider {
-
-        public NowDateTimeProvider(ICustomDateTime dateTime) {
+    public class NowDateTimeProvider : IDateTimeProvider
+    {
+        public NowDateTimeProvider(ICustomDateTime dateTime)
+        {
             this.DateTime = dateTime;
         }
 
         public string Name { get; } = "Now";
         public ICustomDateTime DateTime { get; private set; }
 
-        public DateTime GetDateTime(ISequenceEntity context) {
+        public DateTime GetDateTime(ISequenceEntity context)
+        {
             return DateTime.Now;
+        }
+
+        public TimeOnly GetRolloverTime(ISequenceEntity context)
+        {
+            return new TimeOnly(12, 0, 0);
         }
     }
 }

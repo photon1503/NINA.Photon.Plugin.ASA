@@ -21,30 +21,35 @@ using System.ComponentModel.Composition;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace NINA.Photon.Plugin.ASA.SequenceItems {
-
+namespace NINA.Photon.Plugin.ASA.SequenceItems
+{
     [ExportMetadata("Name", "Save Model")]
     [ExportMetadata("Description", "Saves the pointing model currently loaded on the mount")]
     [ExportMetadata("Icon", "SaveSVG")]
     [ExportMetadata("Category", "ASA")]
     [Export(typeof(ISequenceItem))]
     [JsonObject(MemberSerialization.OptIn)]
-    public class SaveModel : SequenceItem, IValidatable {
-
+    public class SaveModel : SequenceItem, IValidatable
+    {
         [ImportingConstructor]
-        public SaveModel() : this(ASAPlugin.MountModelMediator) {
+        public SaveModel() : this(ASAPlugin.MountModelMediator)
+        {
         }
 
-        public SaveModel(IMountModelMediator mountModelMediator) {
+        public SaveModel(IMountModelMediator mountModelMediator)
+        {
             this.mountModelMediator = mountModelMediator;
         }
 
-        private SaveModel(SaveModel cloneMe) : this(cloneMe.mountModelMediator) {
+        private SaveModel(SaveModel cloneMe) : this(cloneMe.mountModelMediator)
+        {
             CopyMetaData(cloneMe);
         }
 
-        public override object Clone() {
-            return new SaveModel(this) {
+        public override object Clone()
+        {
+            return new SaveModel(this)
+            {
                 ModelName = ModelName
             };
         }
@@ -53,34 +58,43 @@ namespace NINA.Photon.Plugin.ASA.SequenceItems {
         private IMountModelMediator mountModelMediator;
         private IList<string> issues = new List<string>();
 
-        public IList<string> Issues {
+        public IList<string> Issues
+        {
             get => issues;
-            set {
+            set
+            {
                 issues = value;
                 RaisePropertyChanged();
             }
         }
 
-        public string ModelName {
+        public string ModelName
+        {
             get => modelName;
-            set {
-                if (modelName != value) {
+            set
+            {
+                if (modelName != value)
+                {
                     modelName = value;
                     RaisePropertyChanged();
                 }
             }
         }
 
-        public override Task Execute(IProgress<ApplicationStatus> progress, CancellationToken token) {
-            if (!mountModelMediator.SaveModel(ModelName)) {
+        public override Task Execute(IProgress<ApplicationStatus> progress, CancellationToken token)
+        {
+            if (!mountModelMediator.SaveModel(ModelName))
+            {
                 throw new Exception($"Failed to save ASA model {ModelName}");
             }
             return Task.CompletedTask;
         }
 
-        public bool Validate() {
+        public bool Validate()
+        {
             var i = new List<string>();
-            if (!mountModelMediator.GetInfo().Connected) {
+            if (!mountModelMediator.GetInfo().Connected)
+            {
                 i.Add("ASA mount not connected");
             }
 
@@ -88,11 +102,13 @@ namespace NINA.Photon.Plugin.ASA.SequenceItems {
             return i.Count == 0;
         }
 
-        public override void AfterParentChanged() {
+        public override void AfterParentChanged()
+        {
             Validate();
         }
 
-        public override string ToString() {
+        public override string ToString()
+        {
             return $"Category: {Category}, Item: {nameof(SaveModel)}, ModelName: {ModelName}";
         }
     }

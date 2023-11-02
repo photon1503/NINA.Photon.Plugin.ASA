@@ -14,7 +14,6 @@ using NINA.Photon.Plugin.ASA.Equipment;
 using NINA.Photon.Plugin.ASA.Interfaces;
 using NINA.Photon.Plugin.ASA.Model;
 using NINA.Core.Model;
-using NINA.Core.Utility;
 using NINA.Core.Utility.Notification;
 using NINA.Equipment.Equipment;
 using NINA.Equipment.Equipment.MyTelescope;
@@ -35,6 +34,9 @@ using System.Windows;
 using System.Linq;
 using NINA.Equipment.Interfaces;
 using System.Windows.Threading;
+using CommunityToolkit.Mvvm.Input;
+using NINA.Core.Utility;
+using RelayCommand = CommunityToolkit.Mvvm.Input.RelayCommand;
 
 namespace NINA.Photon.Plugin.ASA.ViewModels
 {
@@ -114,25 +116,24 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             this.ModelNames = new AsyncObservableCollection<string>() { GetUnselectedModelName() };
             this.SelectedModelName = GetUnselectedModelName();
 
-            this.RefreshCommand = new AsyncCommand<bool>(async o =>
+            this.RefreshCommand = new AsyncRelayCommand<bool>(async o =>
             {
                 await LoadModelNames(this.disconnectCts.Token);
                 await LoadAlignmentModel(this.disconnectCts.Token);
-                return true;
             });
-            this.DeleteSelectedModelCommand = new AsyncCommand<bool>(DeleteSelectedModel);
-            this.LoadSelectedModelCommand = new AsyncCommand<bool>(LoadSelectedModel);
-            this.SaveSelectedModelCommand = new AsyncCommand<bool>(SaveSelectedModel);
-            this.SaveAsModelCommand = new AsyncCommand<bool>(SaveAsModel);
-            this.DeleteWorstStarCommand = new AsyncCommand<bool>(DeleteWorstStar);
-            this.ClearAlignmentCommand = new RelayCommand(o => DeleteAlignment());
+            this.DeleteSelectedModelCommand = new AsyncRelayCommand(DeleteSelectedModel);
+            this.LoadSelectedModelCommand = new AsyncRelayCommand(LoadSelectedModel);
+            this.SaveSelectedModelCommand = new AsyncRelayCommand(SaveSelectedModel);
+            this.SaveAsModelCommand = new AsyncRelayCommand(SaveAsModel);
+            this.DeleteWorstStarCommand = new AsyncRelayCommand(DeleteWorstStar);
+            this.ClearAlignmentCommand = new RelayCommand(DeleteAlignment);
 
             mountModelMediator.RegisterHandler(this);
             this.telescopeMediator.RegisterConsumer(this);
             this.mountMediator.RegisterConsumer(this);
         }
 
-        private Task<bool> DeleteWorstStar(object o)
+        private Task<bool> DeleteWorstStar()
         {
             try
             {
@@ -178,7 +179,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             }
         }
 
-        private Task<bool> DeleteSelectedModel(object o)
+        private Task<bool> DeleteSelectedModel()
         {
             try
             {
@@ -197,7 +198,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             }
         }
 
-        private Task<bool> LoadSelectedModel(object o)
+        private Task<bool> LoadSelectedModel()
         {
             try
             {
@@ -216,7 +217,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             }
         }
 
-        private Task<bool> SaveSelectedModel(object o)
+        private Task<bool> SaveSelectedModel()
         {
             try
             {
@@ -238,7 +239,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             }
         }
 
-        private Task<bool> SaveAsModel(object o)
+        private Task<bool> SaveAsModel()
         {
             try
             {

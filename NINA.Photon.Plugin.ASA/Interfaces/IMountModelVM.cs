@@ -19,7 +19,7 @@ using System.Threading.Tasks;
 
 namespace NINA.Photon.Plugin.ASA.Interfaces
 {
-    public interface IMountModelVM : IDeviceVM<MountModelInfo>, IDockableVM
+    public interface IMountModelVM : IDockableVM
     {
         string GetModelName(int modelIndex);
 
@@ -56,5 +56,7 @@ namespace NINA.Photon.Plugin.ASA.Interfaces
             double localSiderealTime);
 
         Task<LoadedAlignmentModel> GetLoadedAlignmentModel(CancellationToken ct);
+
+        MountModelInfo GetDeviceInfo();
     }
 }

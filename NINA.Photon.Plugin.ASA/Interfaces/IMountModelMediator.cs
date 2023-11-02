@@ -11,7 +11,8 @@
 #endregion "copyright"
 
 using NINA.Core.Enum;
-using NINA.Equipment.Interfaces.Mediator;
+using NINA.Core.Interfaces;
+using NINA.Equipment.Interfaces;
 using NINA.Photon.Plugin.ASA.Equipment;
 using NINA.Photon.Plugin.ASA.Model;
 using System.Threading;
@@ -19,7 +20,8 @@ using System.Threading.Tasks;
 
 namespace NINA.Photon.Plugin.ASA.Interfaces
 {
-    public interface IMountModelMediator : IDeviceMediator<IMountModelVM, IMountModelConsumer, MountModelInfo>
+    public interface IMountModelMediator : IMediator<IMountModelVM>
+
     {
         string GetModelName(int modelIndex);
 
@@ -56,5 +58,7 @@ namespace NINA.Photon.Plugin.ASA.Interfaces
             double localSiderealTime);
 
         Task<LoadedAlignmentModel> GetLoadedAlignmentModel(CancellationToken ct);
+
+        MountModelInfo GetInfo();
     }
 }
