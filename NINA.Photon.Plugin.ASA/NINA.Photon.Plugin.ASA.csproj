@@ -7,7 +7,9 @@
     <UseWPF>true</UseWPF>
     <ImportWindowsDesktopTargets>true</ImportWindowsDesktopTargets>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <!--CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies-->
   </PropertyGroup>
+
   <ItemGroup>
     <Compile Update="Grammars\AlignmentModelInfo.g4.lexer.cs">
       <DependentUpon>AlignmentModelInfo.g4</DependentUpon>
@@ -79,7 +81,7 @@
      <PackageReference Include="Microsoft.Windows.Compatibility" Version="7.0.0" />
   </ItemGroup>
   <ItemGroup>
-  <PackageReference Include="Antlr4.Runtime.Standard" Version="4.11.1" />
+    <PackageReference Include="Antlr4.Runtime.Standard" Version="4.11.1" />
     <PackageReference Include="Antlr4BuildTasks" Version="12.1.0" PrivateAssets="all" />
     <PackageReference Include="AsyncEnumerator" Version="4.0.2" />
     <PackageReference Include="Dirkster.AvalonDock" Version="4.72.1" />
