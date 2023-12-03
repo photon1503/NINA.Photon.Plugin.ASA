@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net7.0-windows</TargetFramework>
+    <TargetFramework>net8.0-windows</TargetFramework>
     <OutputType>Library</OutputType>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <UseWindowsForms>true</UseWindowsForms>
@@ -9,7 +9,6 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <!--CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies-->
   </PropertyGroup>
-
   <ItemGroup>
     <Compile Update="Grammars\AlignmentModelInfo.g4.lexer.cs">
       <DependentUpon>AlignmentModelInfo.g4</DependentUpon>
@@ -41,7 +40,6 @@
     <Compile Update="Grammars\Time.g4.parser.cs">
       <DependentUpon>Time.g4</DependentUpon>
     </Compile>
-   
   </ItemGroup>
   <ItemGroup>
     <Antlr4 Include="Grammars\Angle.g4">
@@ -73,19 +71,17 @@
     <PackageReference Include="ASCOM.Common.Components" Version="1.0.110" />
     <PackageReference Include="ASCOM.Exception.Library" Version="6.6.1" />
     <PackageReference Include="ASCOM.Tools" Version="1.0.110" />
-    <PackageReference Include="NINA.Plugin" Version="3.0.0.1056-nightly" />
-    <PackageReference Include="System.Data.DataSetExtensions" Version="4.5.0" />
-     <PackageReference Include="Microsoft.DotNet.UpgradeAssistant.Extensions.Default.Analyzers" Version="0.4.355802">
+    <PackageReference Include="Microsoft.DotNet.UpgradeAssistant.Extensions.Default.Analyzers" Version="0.4.421302">
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-     <PackageReference Include="Microsoft.Windows.Compatibility" Version="7.0.0" />
+    <PackageReference Include="Microsoft.Windows.Compatibility" Version="8.0.0" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Antlr4.Runtime.Standard" Version="4.11.1" />
-    <PackageReference Include="Antlr4BuildTasks" Version="12.1.0" PrivateAssets="all" />
+    <PackageReference Include="Antlr4.Runtime.Standard" Version="4.13.1" />
+    <PackageReference Include="Antlr4BuildTasks" Version="12.7.0" PrivateAssets="all" />
     <PackageReference Include="AsyncEnumerator" Version="4.0.2" />
     <PackageReference Include="Dirkster.AvalonDock" Version="4.72.1" />
-        <PackageReference Include="System.ValueTuple" Version="4.5.0" />
+    <PackageReference Include="NINA.Plugin" Version="3.0.0.1085-nightly" />
   </ItemGroup>
   <ItemGroup>
     <Page Remove="Properties\DesignTimeResources.xaml" />
@@ -95,7 +91,6 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-  
   <PropertyGroup>
     <PostBuildEvent>call postbuild.bat</PostBuildEvent>
   </PropertyGroup>
