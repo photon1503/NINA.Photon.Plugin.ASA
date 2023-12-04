@@ -1,9 +1,6 @@
 if not exist "%localappdata%\NINA\Plugins" (
         mkdir  "%localappdata%\NINA\Plugins"
 )
-if not exist "%localappdata%\NINA\Plugin\ASA Tools" (
-        mkdir  "%localappdata%\NINA\Plugins\ASA Tools"
-)
 
 xcopy C:\git\NINA.Photon.Plugin.ASA\NINA.Photon.Plugin.ASA\bin\Release\net8.0-windows\NINA.Photon.Plugin.ASA.dll "%localappdata%\NINA\Plugins\3.0.0\ASA Tools" /h/k/r/y
 

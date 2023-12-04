@@ -25,6 +25,7 @@ using NINA.Equipment.Interfaces;
 using NINA.Photon.Plugin.ASA.ModelManagement;
 using NINA.PlateSolving.Interfaces;
 using RelayCommand = CommunityToolkit.Mvvm.Input.RelayCommand;
+using NINA.WPF.Base.Mediator;
 
 namespace NINA.Photon.Plugin.ASA
 {
@@ -64,6 +65,7 @@ namespace NINA.Photon.Plugin.ASA
             Mount = new Mount(MountCommander);
             MountMediator = new MountMediator();
             MountModelMediator = new MountModelMediator();
+            ApplicationStatusMediator = new ApplicationStatusMediator();
             DateTime = new SystemDateTime();
             ModelAccessor = new ModelAccessor(telescopeMediator, MountModelMediator, DateTime);
             ModelPointGenerator = new ModelPointGenerator(profileService, telescopeMediator, weatherDataMediator, ASAOptions, MountMediator);
@@ -92,5 +94,7 @@ namespace NINA.Photon.Plugin.ASA
         public static IModelPointGenerator ModelPointGenerator { get; private set; }
 
         public static IMountModelBuilderMediator MountModelBuilderMediator { get; private set; }
+
+        public static IApplicationStatusMediator ApplicationStatusMediator { get; private set; }
     }
 }
