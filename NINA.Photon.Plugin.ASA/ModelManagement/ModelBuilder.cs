@@ -562,10 +562,13 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                             writer.WriteLine($"\"'{point.CaptureTime:yyyy-MM-ddTHH:mm:ss.ff}'\"");
                             writer.WriteLine($"\"{point.CaptureTime:mm:ss.ff}\"");
                             writer.WriteLine($"\"{profileService.ActiveProfile.PlateSolveSettings.ExposureTime}\"");  //TODO Exposure time
-                            writer.WriteLine(point.MountReportedRightAscension);
-                            writer.WriteLine(point.PlateSolvedCoordinates.RA);
-                            writer.WriteLine(point.MountReportedDeclination);
-                            writer.WriteLine(point.PlateSolvedCoordinates.Dec);
+                            //write MountReportedRightAscension with "." as decimal separator
+
+                            writer.WriteLine(point.MountReportedDeclination.ToString().Replace(",", "."));
+                            writer.WriteLine(point.MountReportedRightAscension.ToString().Replace(",", "."));
+                            writer.WriteLine(point.PlateSolvedCoordinates.RA.ToString().Replace(",", "."));
+                            writer.WriteLine(point.MountReportedDeclination.ToString().Replace(",", "."));
+                            writer.WriteLine(point.PlateSolvedCoordinates.Dec.ToString().Replace(",", "."));
                             writer.WriteLine(point.MountReportedSideOfPier == PierSide.pierEast ? "\"1\"" : "\"-1\"");
                             writer.WriteLine("**************************");
                         }
