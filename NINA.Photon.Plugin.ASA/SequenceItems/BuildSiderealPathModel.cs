@@ -34,6 +34,7 @@ using System.Threading.Tasks;
 
 namespace NINA.Photon.Plugin.ASA.SequenceItems
 {
+    /*
     [ExportMetadata("Name", "Build Sidereal Path Model")]
     [ExportMetadata("Description", "Builds a model following the sidereal path of the container's target")]
     [ExportMetadata("Icon", "BuildSVG")]
@@ -462,7 +463,7 @@ namespace NINA.Photon.Plugin.ASA.SequenceItems
             }
 
             return;
-            /*
+            
             try {
                 ModelPoints = mountModelBuilderMediator.GenerateSiderealPath(
                     Coordinates,
@@ -475,7 +476,7 @@ namespace NINA.Photon.Plugin.ASA.SequenceItems
             } catch (Exception e) {
                 Notification.ShowError($"Failed to generate sidereal path model: {e.Message}");
             }
-            */
+            
         }
 
         public bool Validate()
@@ -523,4 +524,5 @@ namespace NINA.Photon.Plugin.ASA.SequenceItems
             return $"Category: {Category}, Item: {nameof(BuildSiderealPathModel)}, Coordinates: {Coordinates?.Coordinates}, Inherited: {Inherited}, RADelta: {SiderealTrackRADeltaDegrees}, Start: {SelectedSiderealPathStartDateTimeProvider?.Name} ({SiderealTrackStartOffsetMinutes} minutes), Start: {SelectedSiderealPathEndDateTimeProvider?.Name} ({SiderealTrackEndOffsetMinutes} minutes), NumRetries: {BuilderNumRetries}, MaxFailedPoints: {MaxFailedPoints}, MaxPointRMS: {MaxPointRMS}";
         }
     }
+    */
 }

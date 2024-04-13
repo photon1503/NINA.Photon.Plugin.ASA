@@ -26,6 +26,7 @@ using System.Threading.Tasks;
 
 namespace NINA.Photon.Plugin.ASA.SequenceItems {
 
+/*
     [ExportMetadata("Name", "Set Tracking Rate")]
     [ExportMetadata("Description", "Sets a standard tracking rate")]
     [ExportMetadata("Icon", "SpeedometerSVG")]
@@ -120,5 +121,5 @@ namespace NINA.Photon.Plugin.ASA.SequenceItems {
         public override string ToString() {
             return $"Category: {Category}, Item: {nameof(SetTrackingRate)}, TrackingMode: {TrackingMode}";
         }
-    }
+        */
 }

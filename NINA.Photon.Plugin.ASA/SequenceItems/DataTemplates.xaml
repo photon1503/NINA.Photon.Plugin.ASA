@@ -23,7 +23,7 @@
             </mini:MiniSequenceItem.SequenceItemContent>
         </mini:MiniSequenceItem>
     </DataTemplate>
-    <DataTemplate DataType="{x:Type local:LoadModel}">
+    <!--DataTemplate DataType="{x:Type local:LoadModel}">
         <view:SequenceBlockView DataContext="{Binding}">
             <view:SequenceBlockView.SequenceItemContent>
                 <StackPanel Orientation="Horizontal">
@@ -37,7 +37,7 @@
                 </StackPanel>
             </view:SequenceBlockView.SequenceItemContent>
         </view:SequenceBlockView>
-    </DataTemplate>
+    </DataTemplate-->
 
     <DataTemplate x:Key="NINA.Photon.Plugin.ASA.SequenceItems.SaveModel_Mini">
         <mini:MiniSequenceItem>
@@ -48,7 +48,7 @@
             </mini:MiniSequenceItem.SequenceItemContent>
         </mini:MiniSequenceItem>
     </DataTemplate>
-    <DataTemplate DataType="{x:Type local:SaveModel}">
+    <!--DataTemplate DataType="{x:Type local:SaveModel}">
         <view:SequenceBlockView DataContext="{Binding}">
             <view:SequenceBlockView.SequenceItemContent>
                 <StackPanel Orientation="Horizontal">
@@ -62,7 +62,7 @@
                 </StackPanel>
             </view:SequenceBlockView.SequenceItemContent>
         </view:SequenceBlockView>
-    </DataTemplate>
+    </DataTemplate-->
 
     <DataTemplate x:Key="ModelPointCountDetails">
         <StackPanel Orientation="Horizontal">
@@ -414,23 +414,23 @@
         </StackPanel>
     </WrapPanel>
 
-    <DataTemplate DataType="{x:Type local:BuildSiderealPathModel}">
+    <!--DataTemplate DataType="{x:Type local:BuildSiderealPathModel}">
         <view:SequenceBlockView DataContext="{Binding}">
             <view:SequenceBlockView.SequenceItemContent>
                 <ContentPresenter Content="{StaticResource BuildSiderealPathModelDetails}" />
             </view:SequenceBlockView.SequenceItemContent>
         </view:SequenceBlockView>
-    </DataTemplate>
+    </DataTemplate-->
 
-    <DataTemplate DataType="{x:Type local:BuildGoldenSpiralModel}">
+    <!--DataTemplate DataType="{x:Type local:BuildGoldenSpiralModel}">
         <view:SequenceBlockView DataContext="{Binding}">
             <view:SequenceBlockView.SequenceItemContent>
                 <ContentPresenter Content="{StaticResource BuildGoldenSpiralModelDetails}" />
             </view:SequenceBlockView.SequenceItemContent>
         </view:SequenceBlockView>
-    </DataTemplate>
+    </DataTemplate-->
 
-    <DataTemplate x:Key="NINA.Photon.Plugin.ASA.SequenceItems.SetTrackingRate_Mini">
+    <!--DataTemplate x:Key="NINA.Photon.Plugin.ASA.SequenceItems.SetTrackingRate_Mini">
         <mini:MiniSequenceItem>
             <mini:MiniSequenceItem.SequenceItemContent>
                 <StackPanel Orientation="Horizontal">
@@ -438,9 +438,9 @@
                 </StackPanel>
             </mini:MiniSequenceItem.SequenceItemContent>
         </mini:MiniSequenceItem>
-    </DataTemplate>
+    </DataTemplate-->
 
-    <DataTemplate DataType="{x:Type local:SetTrackingRate}">
+    <!--DataTemplate DataType="{x:Type local:SetTrackingRate}">
         <view:SequenceBlockView DataContext="{Binding}">
             <view:SequenceBlockView.SequenceItemContent>
                 <StackPanel Orientation="Horizontal">
@@ -459,5 +459,5 @@
                 </StackPanel>
             </view:SequenceBlockView.SequenceItemContent>
         </view:SequenceBlockView>
-    </DataTemplate>
+    </DataTemplate-->
 </ResourceDictionary>
