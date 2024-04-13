@@ -21,9 +21,8 @@ using System.ComponentModel.Composition;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace NINA.Photon.Plugin.ASA.SequenceItems {
-
-/*
+namespace NINA.Photon.Plugin.ASA.SequenceItems
+{
     [ExportMetadata("Name", "Save Model")]
     [ExportMetadata("Description", "Saves the pointing model currently loaded on the mount")]
     [ExportMetadata("Icon", "SaveSVG")]
@@ -113,5 +112,4 @@ namespace NINA.Photon.Plugin.ASA.SequenceItems {
             return $"Category: {Category}, Item: {nameof(SaveModel)}, ModelName: {ModelName}";
         }
     }
-    */
 }

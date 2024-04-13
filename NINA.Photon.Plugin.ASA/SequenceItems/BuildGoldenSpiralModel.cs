@@ -29,7 +29,6 @@ using System.Threading.Tasks;
 
 namespace NINA.Photon.Plugin.ASA.SequenceItems {
 
-/*
     [ExportMetadata("Name", "Build Golden Spiral Model")]
     [ExportMetadata("Description", "Builds a full sky model using a Golden Spiral")]
     [ExportMetadata("Icon", "BuildSVG")]
@@ -204,5 +203,4 @@ namespace NINA.Photon.Plugin.ASA.SequenceItems {
             return $"Category: {Category}, Item: {nameof(BuildGoldenSpiralModel)}, GoldenSpiralPointCount: {GoldenSpiralPointCount}, NumRetries: {BuilderNumRetries}, MaxFailedPoints: {MaxFailedPoints}, MaxPointRMS: {MaxPointRMS}";
         }
     }
-    */
 }
