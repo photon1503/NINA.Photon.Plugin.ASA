@@ -27,6 +27,7 @@ using NINA.Photon.Plugin.ASA.Utility;
 using NINA.PlateSolving;
 using NINA.PlateSolving.Interfaces;
 using NINA.Profile.Interfaces;
+using NINA.Sequencer.SequenceItem.Platesolving;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -562,9 +563,17 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                             writer.WriteLine($"\"'{point.CaptureTime:yyyy-MM-ddTHH:mm:ss.ff}'\"");
                             writer.WriteLine($"\"{point.CaptureTime:mm:ss.ff}\"");
                             writer.WriteLine($"\"{profileService.ActiveProfile.PlateSolveSettings.ExposureTime}\"");  //TODO Exposure time
-                            writer.WriteLine(point.MountReportedRightAscension);
+                            if (point.IsSyncPoint)
+                                writer.WriteLine(point.PlateSolvedCoordinates.RA);
+                            else
+                                writer.WriteLine(point.MountReportedRightAscension);
+
                             writer.WriteLine(point.PlateSolvedCoordinates.RA);
-                            writer.WriteLine(point.MountReportedDeclination);
+                            if (point.IsSyncPoint)
+                                writer.WriteLine(point.PlateSolvedCoordinates.Dec);
+                            else
+                                writer.WriteLine(point.MountReportedDeclination);
+                  
                             writer.WriteLine(point.PlateSolvedCoordinates.Dec);
                             writer.WriteLine(point.MountReportedSideOfPier == PierSide.pierEast ? "\"1\"" : "\"-1\"");
                             writer.WriteLine("**************************");
@@ -705,6 +714,60 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             IProgress<ApplicationStatus> stepProgress)
         {
             var eligiblePoints = state.ValidPoints.Where(IsPointEligibleForBuild).ToList();
+
+            Logger.Info($"Sync is {(state.Options.UseSync ? "enabled" : "disabled")}");
+
+            if (state.Options.UseSync == true)
+            {
+                Logger.Info("Adding sync points to eligible points");
+                // add sync point to eligible points
+
+                ModelPoint syncPointEast = new ModelPoint(telescopeMediator)
+                {
+                    Altitude = state.Options.SyncEastAltitude,
+                    Azimuth = state.Options.SyncEastAzimuth,
+                    IsSyncPoint = true,
+                    ModelPointState = ModelPointStateEnum.Generated
+                };
+
+                ModelPoint lastSyncPoint = null;
+                ModelPoint syncPointWest = new ModelPoint(telescopeMediator)
+                {
+                    Altitude = state.Options.SyncWestAltitude,
+                    Azimuth = state.Options.SyncWestAzimuth,
+                    IsSyncPoint = true,
+                    ModelPointState = ModelPointStateEnum.Generated
+                };
+
+                var PointsWithSync = new List<ModelPoint>();
+
+                foreach (var point in eligiblePoints)
+                {
+                    if (lastSyncPoint == null ||  
+                        Math.Abs(lastSyncPoint.Azimuth - point.Azimuth) >= state.Options.SyncEveryHA ||
+                        Math.Abs(lastSyncPoint.Azimuth - point.Azimuth) > 180)
+                    {
+
+                        // is the point east or west of the meridian?
+                        if (point.Azimuth < 180)
+                        {
+                            PointsWithSync.Add(syncPointEast);
+                            lastSyncPoint = syncPointEast;
+                        }
+                        else
+                        {
+                            PointsWithSync.Add(syncPointWest);
+                            lastSyncPoint = syncPointWest;
+                        }
+                    }
+                    PointsWithSync.Add(point);
+
+                }
+                eligiblePoints = PointsWithSync;
+            } else
+                Logger.Info("Not adding sync points.");
+
+
             var nextPoint = eligiblePoints.OrderBy(p => p, state.PointAzimuthComparer).FirstOrDefault();
             PointNextUp?.Invoke(this, new PointNextUpEventArgs() { Point = nextPoint });
 

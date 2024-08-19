@@ -71,6 +71,16 @@ namespace NINA.Photon.Plugin.ASA
             driverID = optionsAccessor.GetValueString("DriverID", "");
             decJitterSigmaDegrees = optionsAccessor.GetValueDouble(nameof(DecJitterSigmaDegrees), 1.0d);
             isLegacyDDM = optionsAccessor.GetValueBoolean("IsLegacyDDM", true);
+            highAltitudeStars = optionsAccessor.GetValueInt32("HighAltitudeStars", 10);
+            highAltitudeMin = optionsAccessor.GetValueInt32("HighAltitudeMin", 70);
+            highAltitudeMax = optionsAccessor.GetValueInt32("HighAltitudeMax", 89);
+            useSync = optionsAccessor.GetValueBoolean("UseSync", false);
+            syncEveryHA = optionsAccessor.GetValueDouble("SyncEveryHA", 30.0d);
+            syncEastAltitude = optionsAccessor.GetValueDouble("SyncEastAltitude", 65.0d);
+            syncWestAltitude = optionsAccessor.GetValueDouble("SyncWestAltitude", 65.0d);
+            syncEastAzimuth = optionsAccessor.GetValueDouble("SyncEastAzimuth", 90.0d);
+            syncWestAzimuth = optionsAccessor.GetValueDouble("SyncWestAzimuth", 270.0d);
+            
         }
 
         public void ResetDefaults()
@@ -108,6 +118,15 @@ namespace NINA.Photon.Plugin.ASA
             Port = 3490;
             DriverID = "";
             DecJitterSigmaDegrees = 1.0d;
+            HighAltitudeStars = 10;
+            UseSync = false;
+            HighAltitudeMin = 60;
+            HighAltitudeMax = 89;
+            SyncEveryHA = 30.0d;
+            SyncEastAltitude = 65.0d;
+            SyncWestAltitude = 65.0d;
+            SyncEastAzimuth = 90.0d;
+            SyncWestAzimuth = 270.0d;
         }
 
         private int minPointAltitude;
@@ -302,6 +321,141 @@ namespace NINA.Photon.Plugin.ASA
                 {
                     westToEastSorting = value;
                     optionsAccessor.SetValueBoolean("WestToEastSorting", westToEastSorting);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private int highAltitudeStars;
+        public int HighAltitudeStars
+        {
+            get => highAltitudeStars;
+            set
+            {
+                if (highAltitudeStars != value)
+                {
+                    highAltitudeStars = value;
+                    optionsAccessor.SetValueInt32("HighAltitudeStars", highAltitudeStars);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+
+        private int highAltitudeMin;
+        public int HighAltitudeMin
+        {
+            get => highAltitudeMin;
+            set
+            {
+                if (highAltitudeMin != value)
+                {
+                    highAltitudeMin = value;
+                    optionsAccessor.SetValueInt32("HighAltitudeMin", highAltitudeMin);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private int highAltitudeMax;
+        public int HighAltitudeMax
+        {
+            get => highAltitudeMax;
+            set
+            {
+                if (highAltitudeMax != value)
+                {
+                    highAltitudeMax = value;
+                    optionsAccessor.SetValueInt32("HighAltitudeMax", highAltitudeMax);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private double syncEveryHA;
+        public double SyncEveryHA
+        {
+            get => syncEveryHA;
+            set
+            {
+                if (syncEveryHA != value)
+                {
+                    syncEveryHA = value;
+                    optionsAccessor.SetValueDouble("SyncEveryHA", syncEveryHA);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private bool useSync;
+        public bool UseSync
+        {
+            get => useSync;
+            set
+            {
+                if (useSync != value)
+                {
+                    useSync = value;
+                    optionsAccessor.SetValueBoolean("UseSync", useSync);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private double syncEastAltitude;
+        public double SyncEastAltitude
+            {
+            get => syncEastAltitude;
+            set
+            {
+                if (syncEastAltitude != value)
+                {
+                    syncEastAltitude = value;
+                    optionsAccessor.SetValueDouble("SyncEastAltitude", syncEastAltitude);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private double syncWestAltitude;
+        public double SyncWestAltitude
+        {
+            get => syncWestAltitude;
+            set
+            {
+                if (syncWestAltitude != value)
+                {
+                    syncWestAltitude = value;
+                    optionsAccessor.SetValueDouble("SyncWestAltitude", syncWestAltitude);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+     
+        private double syncEastAzimuth;
+        public double SyncEastAzimuth
+        {
+            get => syncEastAzimuth;
+            set
+            {
+                if (syncEastAzimuth != value)
+                {
+                    syncEastAzimuth = value;
+                    optionsAccessor.SetValueDouble("SyncEastAzimuth", syncEastAzimuth);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+        private double syncWestAzimuth;
+        public double SyncWestAzimuth
+            {
+            get => syncWestAzimuth;
+            set
+            {
+                if (syncWestAzimuth != value)
+                {
+                    syncWestAzimuth = value;
+                    optionsAccessor.SetValueDouble("SyncWestAzimuth", syncWestAzimuth);
                     RaisePropertyChanged();
                 }
             }

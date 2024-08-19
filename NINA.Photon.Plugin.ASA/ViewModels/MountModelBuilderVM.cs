@@ -145,6 +145,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
 
             this.GeneratePointsCommand = new AsyncRelayCommand(GeneratePoints);
             this.ClearPointsCommand = new AsyncRelayCommand(ClearPoints);
+            this.AddHighAltitudeCommand = new AsyncRelayCommand(AddHighAltitude);
 
             this.BuildCommand = new AsyncRelayCommand(BuildModel);
             this.CancelBuildCommand = new AsyncRelayCommand(CancelBuildModel);
@@ -446,6 +447,59 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             }
         }
 
+        private Task<bool> AddHighAltitude()
+        {
+            // Define altitude range and number of stars
+            double Altmin = this.HighAltitudeMin;
+            double Altmax = this.HighAltitudeMax;
+            int stars = this.HighAltitudeStars;
+
+            var newPoints = new List<ModelPoint>();
+
+            // Golden angle in radians
+            double goldenAngle = Math.PI * (3 - Math.Sqrt(5));
+            double azimuthStep = 360.0 / stars;
+            double azimuthOffset = azimuthStep / 2.0; // Offset to ensure equal distance to 0 and 360
+
+            // Loop to create model points
+            for (int i = 0; i < stars; i++)
+            {
+                // Calculate latitude and longitude using the golden angle method
+                double latitude = Math.Asin(-1.0 + 2.0 * (i + 0.5) / stars);
+                double longitude = goldenAngle * i;
+
+                // Convert latitude to altitude within the specified range
+                double normalizedLatitude = (latitude + Math.PI / 2) / Math.PI; // Normalize to [0, 1]
+                double Alt = Altmin + normalizedLatitude * (Altmax - Altmin); // Map to [Altmin, Altmax]
+
+                // Convert longitude to azimuth and apply offset
+                double Az = ((longitude * 180 / Math.PI) + azimuthOffset) % 360; // Convert to degrees, apply offset, and wrap around
+
+                // Create and add model point
+                newPoints.Add(new ModelPoint(telescopeMediator)
+                {
+                    Altitude = Alt,
+                    Azimuth = Az,
+                    ModelPointState = ModelPointStateEnum.Generated
+                });
+            }
+
+            // Retrieve existing points
+            var existingModelPoints = this.ModelPoints.ToList();
+            var existingDisplayModelPoints = this.DisplayModelPoints.ToList();
+
+            // Add new points to existing points
+            existingModelPoints.AddRange(newPoints);
+            existingDisplayModelPoints.AddRange(newPoints);
+
+            // Update ModelPoints and DisplayModelPoints
+            this.ModelPoints = existingModelPoints.ToImmutableList();
+            this.DisplayModelPoints = new AsyncObservableCollection<ModelPoint>(existingDisplayModelPoints);
+
+            return Task.FromResult(true);
+        }
+
+
         private Task<bool> ClearPoints()
         {
             this.ModelPoints.Clear();
@@ -593,6 +647,11 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             modelBuilderOptions.RemoveHighRMSPointsAfterBuild = options.RemoveHighRMSPointsAfterBuild;
             modelBuilderOptions.PlateSolveSubframePercentage = options.PlateSolveSubframePercentage;
             modelBuilderOptions.DisableRefractionCorrection = options.DisableRefractionCorrection;
+            modelBuilderOptions.UseSync = options.UseSync;
+            modelBuilderOptions.SyncEastAltitude = options.SyncEastAltitude;
+            modelBuilderOptions.SyncWestAltitude = options.SyncWestAltitude;
+            modelBuilderOptions.SyncEastAzimuth = options.SyncEastAzimuth;
+            modelBuilderOptions.SyncWestAzimuth = options.SyncWestAzimuth;
             return DoBuildModel(modelPoints, options, ct);
         }
 
@@ -658,7 +717,12 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 DomeShutterWidth_mm = modelBuilderOptions.DomeShutterWidth_mm,
                 MaxFailedPoints = MaxFailedPoints,
                 RemoveHighRMSPointsAfterBuild = modelBuilderOptions.RemoveHighRMSPointsAfterBuild,
-                PlateSolveSubframePercentage = modelBuilderOptions.PlateSolveSubframePercentage
+                PlateSolveSubframePercentage = modelBuilderOptions.PlateSolveSubframePercentage,
+                UseSync = modelBuilderOptions.UseSync,
+                SyncEastAltitude = modelBuilderOptions.SyncEastAltitude,
+                SyncWestAltitude = modelBuilderOptions.SyncWestAltitude,
+                SyncEastAzimuth = modelBuilderOptions.SyncEastAzimuth,
+                SyncWestAzimuth = modelBuilderOptions.SyncWestAzimuth
             };
             var modelPoints = ModelPoints.ToList();
             return DoBuildModel(modelPoints, options, CancellationToken.None);
@@ -1156,6 +1220,120 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             }
         }
 
+        public int HighAltitudeStars
+        {
+            get => this.modelBuilderOptions.HighAltitudeStars;
+            set
+            {
+                if (this.modelBuilderOptions.HighAltitudeStars != value)
+                {
+                    this.modelBuilderOptions.HighAltitudeStars = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        public int HighAltitudeMin
+        {
+            get => this.modelBuilderOptions.HighAltitudeMin;
+            set
+            {
+                if (this.modelBuilderOptions.HighAltitudeMin != value)
+                {
+                    this.modelBuilderOptions.HighAltitudeMin = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        public int HighAltitudeMax
+            {
+            get => this.modelBuilderOptions.HighAltitudeMax;
+            set
+            {
+                if (this.modelBuilderOptions.HighAltitudeMax != value)
+                {
+                    this.modelBuilderOptions.HighAltitudeMax = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        public double SyncEveryHA 
+            {
+            get => this.modelBuilderOptions.SyncEveryHA;
+            set {
+                if (this.modelBuilderOptions.SyncEveryHA != value) {
+                    this.modelBuilderOptions.SyncEveryHA = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+        public double SyncEastAltitude
+        {
+            get => this.modelBuilderOptions.SyncEastAltitude;
+            set
+            {
+                if (this.modelBuilderOptions.SyncEastAltitude != value)
+                {
+                    this.modelBuilderOptions.SyncEastAltitude = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+        public double SyncWestAltitude
+        {
+            get => this.modelBuilderOptions.SyncWestAltitude;
+            set
+            {
+                if (this.modelBuilderOptions.SyncWestAltitude != value)
+                {
+                    this.modelBuilderOptions.SyncWestAltitude = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        public double SyncEastAzimuth 
+            {
+            get => this.modelBuilderOptions.SyncEastAzimuth;
+            set
+            {
+                if (this.modelBuilderOptions.SyncEastAzimuth != value)
+                {
+                    this.modelBuilderOptions.SyncEastAzimuth = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        public double SyncWestAzimuth
+        {
+            get => this.modelBuilderOptions.SyncWestAzimuth;
+            set
+            {
+                if (this.modelBuilderOptions.SyncWestAzimuth != value)
+                {
+                    this.modelBuilderOptions.SyncWestAzimuth = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        public bool UseSync 
+        {
+            get => this.modelBuilderOptions.UseSync;
+            set
+            {
+                if (this.modelBuilderOptions.UseSync != value)
+                {
+                    this.modelBuilderOptions.UseSync = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+
         public int SiderealTrackStartOffsetMinutes
         {
             get => this.modelBuilderOptions.SiderealTrackStartOffsetMinutes;
@@ -1484,6 +1662,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
         }
 
         public ICommand ClearPointsCommand { get; private set; }
+        public ICommand AddHighAltitudeCommand { get; private set; }
         public ICommand GeneratePointsCommand { get; private set; }
         public ICommand BuildCommand { get; private set; }
         public ICommand CancelBuildCommand { get; private set; }

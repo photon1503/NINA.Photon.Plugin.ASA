@@ -35,6 +35,13 @@ namespace NINA.Photon.Plugin.ASA.Interfaces
         public bool AlternateDirectionsBetweenIterations { get; set; } = true;
         public bool DisableRefractionCorrection { get; set; } = false;
         public bool IsLegacyDDM { get; set; } = false;
+
+        public bool UseSync { get; set; } = false;
+        public double SyncEveryHA { get; set; } = 0.0d;
+        public double SyncEastAltitude { get; set; } = 0.0d;
+        public double SyncWestAltitude { get; set; } = 0.0d;    
+        public double SyncEastAzimuth { get; set; } = 0.0d;
+        public double SyncWestAzimuth { get; set; } = 0.0d;
     }
 
     public class PointNextUpEventArgs : EventArgs

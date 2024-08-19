@@ -81,6 +81,20 @@ namespace NINA.Photon.Plugin.ASA.Model
             }
         }
 
+        private bool isSyncPoint = false;
+        public bool IsSyncPoint
+            {
+            get => isSyncPoint;
+            set
+            {
+                if (isSyncPoint != value)
+                {
+                    isSyncPoint = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
         private PierSide expectedDomeSideOfPier = PierSide.pierUnknown;
 
         public PierSide ExpectedDomeSideOfPier
@@ -385,7 +399,8 @@ namespace NINA.Photon.Plugin.ASA.Model
                 PlateSolvedRightAscension = PlateSolvedRightAscension,
                 PlateSolvedDeclination = PlateSolvedDeclination,
                 RMSError = RMSError,
-                CaptureTime = CaptureTime
+                CaptureTime = CaptureTime,
+                IsSyncPoint = IsSyncPoint
             };
         }
 
@@ -409,6 +424,7 @@ namespace NINA.Photon.Plugin.ASA.Model
             PlateSolvedDeclination = p.PlateSolvedDeclination;
             RMSError = p.RMSError;
             CaptureTime = p.CaptureTime;
+            IsSyncPoint = p.IsSyncPoint;
         }
     }
 }
