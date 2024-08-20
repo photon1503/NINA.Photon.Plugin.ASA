@@ -714,6 +714,8 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             IProgress<ApplicationStatus> stepProgress)
         {
             var eligiblePoints = state.ValidPoints.Where(IsPointEligibleForBuild).ToList();
+            var eligiblePointsOrdered = eligiblePoints.OrderBy(p => p, state.PointAzimuthComparer).ToList();
+
 
             Logger.Info($"Sync is {(state.Options.UseSync ? "enabled" : "disabled")}");
 
@@ -741,40 +743,55 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
 
                 var PointsWithSync = new List<ModelPoint>();
 
-                foreach (var point in eligiblePoints)
+                int idx = 0;
+                bool addSyncPoint = false;
+                foreach (var point in eligiblePointsOrdered)
                 {
+
+
                     if (lastSyncPoint == null ||  
                         Math.Abs(lastSyncPoint.Azimuth - point.Azimuth) >= state.Options.SyncEveryHA ||
                         Math.Abs(lastSyncPoint.Azimuth - point.Azimuth) > 180)
                     {
-
+                        ModelPoint syncPoint;
                         // is the point east or west of the meridian?
                         if (point.Azimuth < 180)
                         {
-                            PointsWithSync.Add(syncPointEast);
-                            lastSyncPoint = syncPointEast;
+                            syncPoint= new ModelPoint(telescopeMediator);
+                            syncPoint.CopyFrom(syncPointEast);
+                      
                         }
                         else
                         {
-                            PointsWithSync.Add(syncPointWest);
-                            lastSyncPoint = syncPointWest;
+                            syncPoint = new ModelPoint(telescopeMediator);
+                            syncPoint.CopyFrom(syncPointWest);
                         }
+                        syncPoint.ModelIndex = idx++;
+                        PointsWithSync.Add(syncPoint);
+                        addSyncPoint = true;
                     }
+                    point.ModelIndex = idx++;
                     PointsWithSync.Add(point);
 
+                    if (addSyncPoint)
+                    {
+                        addSyncPoint = false;
+                        lastSyncPoint = point;
+                    }
+
                 }
-                eligiblePoints = PointsWithSync;
+                eligiblePointsOrdered = PointsWithSync;
             } else
                 Logger.Info("Not adding sync points.");
 
+            var nextPoint = eligiblePointsOrdered.FirstOrDefault();
 
-            var nextPoint = eligiblePoints.OrderBy(p => p, state.PointAzimuthComparer).FirstOrDefault();
             PointNextUp?.Invoke(this, new PointNextUpEventArgs() { Point = nextPoint });
 
-            Logger.Info($"Processing {eligiblePoints.Count} points. First point Alt={nextPoint.Altitude:0.###}, Az={nextPoint.Azimuth:0.###}, MinDomeAz={nextPoint.MinDomeAzimuth:0.###}, MaxDomeAz={nextPoint.MaxDomeAzimuth:0.###}");
+            Logger.Info($"Processing {eligiblePointsOrdered.Count} points. First point Alt={nextPoint.Altitude:0.###}, Az={nextPoint.Azimuth:0.###}, MinDomeAz={nextPoint.MinDomeAzimuth:0.###}, MaxDomeAz={nextPoint.MaxDomeAzimuth:0.###}");
             if (state.UseDome)
             {
-                _ = SlewDomeIfNecessary(state, eligiblePoints, ct);
+                _ = SlewDomeIfNecessary(state, eligiblePointsOrdered, ct);
             }
 
             while (nextPoint != null)
@@ -878,7 +895,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 // Refresh dome azimuth ranges between each iteration
                 PreStep3_CacheDomeAzimuthRanges(state);
 
-                var eligibleForNextPoint = eligiblePoints.Where(p => IsPointEligibleForBuild(p)).ToList();
+                var eligibleForNextPoint = eligiblePointsOrdered.Where(p => IsPointEligibleForBuild(p)).ToList();
                 if (state.Options.MinimizeMeridianFlips)
                 {
                     if (eligibleForNextPoint.Any(p => p.ExpectedDomeSideOfPier == nextPoint.ExpectedDomeSideOfPier))
@@ -894,11 +911,13 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 if (state.UseDome)
                 {
                     var nextCandidates = eligibleForNextPoint.Where(p => IsPointVisibleThroughDome(p, 0.0d));
-                    nextPoint = nextCandidates.OrderBy(p => p, state.PointAzimuthComparer).FirstOrDefault();
+                    //nextPoint = nextCandidates.OrderBy(p => p, state.PointAzimuthComparer).FirstOrDefault();
+                    nextPoint = nextCandidates.FirstOrDefault();
                     if (nextPoint == null)
                     {
                         // No points remaining visible through the slit. Widen the search to all eligible points on this side of the pier and slew the dome
-                        nextPoint = eligibleForNextPoint.OrderBy(p => p, state.PointAzimuthComparer).FirstOrDefault();
+                        //nextPoint = eligibleForNextPoint.OrderBy(p => p, state.PointAzimuthComparer).FirstOrDefault();
+                        nextPoint = eligibleForNextPoint.FirstOrDefault();
                         if (nextPoint != null)
                         {
                             Logger.Info($"Next point not visible through dome. Dome slew required. Alt={nextPoint.Altitude:0.###}, Az={nextPoint.Azimuth:0.###}, MinDomeAz={nextPoint.MinDomeAzimuth:0.###}, MaxDomeAz={nextPoint.MaxDomeAzimuth:0.###}, CurrentDomeAz={domeMediator.GetInfo().Azimuth:0.###}");
@@ -912,9 +931,11 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 }
                 else
                 {
-                    nextPoint = eligibleForNextPoint.OrderBy(p => p, state.PointAzimuthComparer).FirstOrDefault();
+                    // nextPoint = eligibleForNextPoint.OrderBy(p => p, state.PointAzimuthComparer).FirstOrDefault();
+                    nextPoint = eligibleForNextPoint.FirstOrDefault();
                 }
 
+                
                 PointNextUp?.Invoke(this, new PointNextUpEventArgs() { Point = nextPoint });
                 if (nextPoint == null)
                 {

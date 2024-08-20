@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.0.2.1
+
+- Fixed number of total points in the .pox file
+- Added option to create sync points
+- Added option to create additional points for high altitudes
 
 ## [Beta 4] - 2023-10-23
 

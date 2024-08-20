@@ -652,6 +652,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             modelBuilderOptions.SyncWestAltitude = options.SyncWestAltitude;
             modelBuilderOptions.SyncEastAzimuth = options.SyncEastAzimuth;
             modelBuilderOptions.SyncWestAzimuth = options.SyncWestAzimuth;
+            modelBuilderOptions.SyncEveryHA = options.SyncEveryHA;
             return DoBuildModel(modelPoints, options, ct);
         }
 
@@ -722,7 +723,8 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 SyncEastAltitude = modelBuilderOptions.SyncEastAltitude,
                 SyncWestAltitude = modelBuilderOptions.SyncWestAltitude,
                 SyncEastAzimuth = modelBuilderOptions.SyncEastAzimuth,
-                SyncWestAzimuth = modelBuilderOptions.SyncWestAzimuth
+                SyncWestAzimuth = modelBuilderOptions.SyncWestAzimuth,
+                SyncEveryHA = modelBuilderOptions.SyncEveryHA
             };
             var modelPoints = ModelPoints.ToList();
             return DoBuildModel(modelPoints, options, CancellationToken.None);
@@ -1263,7 +1265,8 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             {
             get => this.modelBuilderOptions.SyncEveryHA;
             set {
-                if (this.modelBuilderOptions.SyncEveryHA != value) {
+                if (this.modelBuilderOptions.SyncEveryHA != value) 
+                {
                     this.modelBuilderOptions.SyncEveryHA = value;
                     RaisePropertyChanged();
                 }
