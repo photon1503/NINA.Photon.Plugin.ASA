@@ -550,7 +550,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 using (StreamWriter writer = new StreamWriter(filePath))
                 {
                     int points = 1;
-                    writer.WriteLine(completedPoints); // Total Number of images
+                    writer.WriteLine(state.ValidPoints.Count()); // Total Number of images
                     foreach (var point in state.ValidPoints)
                     {
                         if (point.ModelPointState == ModelPointStateEnum.AddedToModel)
@@ -562,7 +562,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                             writer.WriteLine(text);
                             writer.WriteLine($"\"'{point.CaptureTime:yyyy-MM-ddTHH:mm:ss.ff}'\"");
                             writer.WriteLine($"\"{point.CaptureTime:mm:ss.ff}\"");
-                            writer.WriteLine($"\"{profileService.ActiveProfile.PlateSolveSettings.ExposureTime}\"");  //TODO Exposure time
+                            writer.WriteLine($"\"{profileService.ActiveProfile.PlateSolveSettings.ExposureTime}\"");  
                             if (point.IsSyncPoint)
                                 writer.WriteLine(point.PlateSolvedCoordinates.RA);
                             else
