@@ -652,6 +652,10 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             modelBuilderOptions.SyncWestAltitude = options.SyncWestAltitude;
             modelBuilderOptions.SyncEastAzimuth = options.SyncEastAzimuth;
             modelBuilderOptions.SyncWestAzimuth = options.SyncWestAzimuth;
+            modelBuilderOptions.RefEastAltitude = options.RefEastAltitude;
+            modelBuilderOptions.RefWestAltitude = options.RefWestAltitude;
+            modelBuilderOptions.RefEastAzimuth = options.RefEastAzimuth;
+            modelBuilderOptions.RefWestAzimuth = options.RefWestAzimuth;
             modelBuilderOptions.SyncEveryHA = options.SyncEveryHA;
             return DoBuildModel(modelPoints, options, ct);
         }
@@ -724,7 +728,11 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 SyncWestAltitude = modelBuilderOptions.SyncWestAltitude,
                 SyncEastAzimuth = modelBuilderOptions.SyncEastAzimuth,
                 SyncWestAzimuth = modelBuilderOptions.SyncWestAzimuth,
-                SyncEveryHA = modelBuilderOptions.SyncEveryHA
+                SyncEveryHA = modelBuilderOptions.SyncEveryHA,
+                RefEastAltitude = modelBuilderOptions.RefEastAltitude,
+                RefWestAltitude = modelBuilderOptions.RefWestAltitude,
+                RefEastAzimuth = modelBuilderOptions.RefEastAzimuth,
+                RefWestAzimuth = modelBuilderOptions.RefWestAzimuth
             };
             var modelPoints = ModelPoints.ToList();
             return DoBuildModel(modelPoints, options, CancellationToken.None);
@@ -1318,6 +1326,58 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 if (this.modelBuilderOptions.SyncWestAzimuth != value)
                 {
                     this.modelBuilderOptions.SyncWestAzimuth = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        public double RefEastAltitude
+        {
+            get => this.modelBuilderOptions.RefEastAltitude;
+            set
+            {
+                if (this.modelBuilderOptions.RefEastAltitude != value)
+                {
+                    this.modelBuilderOptions.RefEastAltitude = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        public double RefWestAltitude
+        {
+            get => this.modelBuilderOptions.RefWestAltitude;
+            set
+            {
+                if (this.modelBuilderOptions.RefWestAltitude != value)
+                {
+                    this.modelBuilderOptions.RefWestAltitude = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        public double RefEastAzimuth
+        {
+            get => this.modelBuilderOptions.RefEastAzimuth;
+            set
+            {
+                if (this.modelBuilderOptions.RefEastAzimuth != value)
+                {
+                    this.modelBuilderOptions.RefEastAzimuth = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        public double RefWestAzimuth
+        {
+            get => this.modelBuilderOptions.RefWestAzimuth;
+            set
+            {
+                if (this.modelBuilderOptions.RefWestAzimuth != value)
+                {
+                    this.modelBuilderOptions.RefWestAzimuth = value;
                     RaisePropertyChanged();
                 }
             }

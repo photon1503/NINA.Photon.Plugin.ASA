@@ -48,6 +48,7 @@
                         <Grid.RowDefinitions>
                             <RowDefinition />
                             <RowDefinition />
+                            <RowDefinition />
                         </Grid.RowDefinitions>
                         <TextBlock
                             Grid.Row="0" Grid.Column="0"
@@ -69,7 +70,31 @@
                                 </DataTemplate>
                             </ComboBox.ItemTemplate>
                         </ComboBox>
-                        <UniformGrid Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="3" Rows="1" Columns="2">
+                        <TextBlock
+     Grid.Row="1" Grid.Column="0"
+     HorizontalAlignment="Left"
+     VerticalAlignment="Center"
+     Text="Stars"
+     ToolTip="{StaticResource Stars_Tooltip}" />
+                        <ninactrl:UnitTextBox
+     Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"
+     MinWidth="80"
+     Margin="10,5,0,0"
+     HorizontalAlignment="Left"
+     VerticalAlignment="Center"
+     Unit="stars"
+     ToolTip="{StaticResource Stars_Tooltip}">
+                            <Binding Path="GoldenSpiralStarCount" UpdateSourceTrigger="LostFocus">
+                                <Binding.ValidationRules>
+                                    <rules:IntRangeRule>
+                                        <rules:IntRangeRule.ValidRange>
+                                            <rules:IntRangeChecker Maximum="1000" Minimum="3" />
+                                        </rules:IntRangeRule.ValidRange>
+                                    </rules:IntRangeRule>
+                                </Binding.ValidationRules>
+                            </Binding>
+                        </ninactrl:UnitTextBox>
+                        <UniformGrid Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3" Rows="1" Columns="2">
                             <Button
                                 Height="30"
                                 Margin="10,10,5,10"
@@ -102,58 +127,7 @@
                         </UniformGrid>
                     </Grid>
                 </GroupBox>
-                <GroupBox>
-                    <GroupBox.Style>
-                        <Style TargetType="{x:Type GroupBox}" BasedOn="{StaticResource StandardGroupBox}">
-                            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
-                            <Setter Property="BorderThickness" Value="0,0,0,1" />
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding ElementName=PART_ModelPointGenerationTypeList, Path=SelectedItem}" Value="1">
-                                    <Setter Property="FrameworkElement.Visibility" Value="Collapsed" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </GroupBox.Style>
-                    <GroupBox.Header>
-                        <Grid Height="36" Margin="5">
-                            <TextBlock
-                                VerticalAlignment="Center"
-                                FontSize="18"
-                                Text="Golden Spiral Options" />
-                        </Grid>
-                    </GroupBox.Header>
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" SharedSizeGroup="SettingsCol0" />
-                            <ColumnDefinition Width="Auto" SharedSizeGroup="SettingsCol1" />
-                            <ColumnDefinition Width="Auto" SharedSizeGroup="SettingsCol2" />
-                        </Grid.ColumnDefinitions>
-                        <TextBlock
-                            Grid.Row="0" Grid.Column="0"
-                            HorizontalAlignment="Left"
-                            VerticalAlignment="Center"
-                            Text="Stars"
-                            ToolTip="{StaticResource Stars_Tooltip}" />
-                        <ninactrl:UnitTextBox
-                            Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2"
-                            MinWidth="80"
-                            Margin="10,5,0,0"
-                            HorizontalAlignment="Left"
-                            VerticalAlignment="Center"
-                            Unit="stars"
-                            ToolTip="{StaticResource Stars_Tooltip}">
-                            <Binding Path="GoldenSpiralStarCount" UpdateSourceTrigger="LostFocus">
-                                <Binding.ValidationRules>
-                                    <rules:IntRangeRule>
-                                        <rules:IntRangeRule.ValidRange>
-                                            <rules:IntRangeChecker Maximum="1000" Minimum="3" />
-                                        </rules:IntRangeRule.ValidRange>
-                                    </rules:IntRangeRule>
-                                </Binding.ValidationRules>
-                            </Binding>
-                        </ninactrl:UnitTextBox>
-                    </Grid>
-                </GroupBox>
+               
                 <!-- high altitude /-->
 
            
@@ -313,6 +287,8 @@
                             <RowDefinition />
                             <RowDefinition />
                             <RowDefinition />
+                            <RowDefinition />
+                            <RowDefinition />
 
                         </Grid.RowDefinitions>
                         <TextBlock
@@ -338,7 +314,7 @@
                    HorizontalAlignment="Left"
                    VerticalAlignment="Center"
                    Text="Add Sync Point every"
-                   ToolTip="Hour Angle" />
+                   ToolTip="Degrees Azimuth" />
                         <ninactrl:UnitTextBox
                Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"
                MinWidth="80"
@@ -353,7 +329,7 @@
                             </Binding>
 
                         </ninactrl:UnitTextBox>
-
+<!-- East Sync Point -->
 
                         <TextBlock
                    Grid.Row="2" Grid.Column="0"
@@ -361,39 +337,44 @@
                    VerticalAlignment="Center"
                    Text="East Sync Point"
                    ToolTip="Hour Angle" />
+                        
                         <ninactrl:UnitTextBox
-               Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="1"
-               MinWidth="80"
-               Margin="10,5,0,0"
-               HorizontalAlignment="Left"
-               VerticalAlignment="Center"
-               Unit="↕ Altitude"
-               IsEnabled="True"
-               ToolTip="Altitude">
-                            <Binding Path="SyncEastAltitude">
+                   Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="1"
+                   MinWidth="80"
+                   Margin="10,5,0,0"
+                   HorizontalAlignment="Left"
+                   VerticalAlignment="Center"
+                   Unit="↕ Altitude"
+                   IsEnabled="True"
+                   ToolTip="Altitude">
+                                <Binding Path="SyncEastAltitude">
 
                             </Binding>
                         </ninactrl:UnitTextBox>
+
                         <ninactrl:UnitTextBox
-Grid.Row="2" Grid.Column="2" Grid.ColumnSpan="1"
-MinWidth="80"
-Margin="10,5,0,0"
-HorizontalAlignment="Left"
-VerticalAlignment="Center"
-Unit="↔ Azimuth"
-IsEnabled="True"
-ToolTip="Azimuth">
+                            Grid.Row="2" Grid.Column="2" Grid.ColumnSpan="1"
+                            MinWidth="80"
+                            Margin="10,5,0,0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Unit="↔ Azimuth"
+                            IsEnabled="True"
+                            ToolTip="Azimuth">  
                             <Binding Path="SyncEastAzimuth">
 
                             </Binding>
                         </ninactrl:UnitTextBox>
-
+                        
+      <!-- East Ref Point -->
+                      
                         <TextBlock
                    Grid.Row="3" Grid.Column="0"
                    HorizontalAlignment="Left"
                    VerticalAlignment="Center"
-                   Text="West Sync Point"
+                   Text="East Ref Point"
                    ToolTip="Hour Angle" />
+
                         <ninactrl:UnitTextBox
                Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="1"
                MinWidth="80"
@@ -403,24 +384,96 @@ ToolTip="Azimuth">
                Unit="↕ Altitude"
                IsEnabled="True"
                ToolTip="Altitude">
+                            <Binding Path="RefEastAltitude">
+
+                            </Binding>
+                        </ninactrl:UnitTextBox>
+
+                        <ninactrl:UnitTextBox
+                Grid.Row="3" Grid.Column="2" Grid.ColumnSpan="1"
+                MinWidth="80"
+                Margin="10,5,0,0"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                Unit="↔ Azimuth"
+                IsEnabled="True"
+                ToolTip="Azimuth">
+                            <Binding Path="RefEastAzimuth">
+
+                            </Binding>
+                        </ninactrl:UnitTextBox>
+                      
+     <!-- West Sync Point -->
+
+                        <TextBlock
+                   Grid.Row="4" Grid.Column="0"
+                   HorizontalAlignment="Left"
+                   VerticalAlignment="Center"
+                   Text="West Sync Point"
+                   ToolTip="Hour Angle" />
+                        <ninactrl:UnitTextBox
+                   Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="1"
+                   MinWidth="80"
+                   Margin="10,5,0,0"
+                   HorizontalAlignment="Left"
+                   VerticalAlignment="Center"
+                   Unit="↕ Altitude"
+                   IsEnabled="True"
+                   ToolTip="Altitude">
                             <Binding Path="SyncWestAltitude">
 
                             </Binding>
                         </ninactrl:UnitTextBox>
                         <ninactrl:UnitTextBox
-Grid.Row="3" Grid.Column="2" Grid.ColumnSpan="1"
-MinWidth="80"
-Margin="10,5,0,0"
-HorizontalAlignment="Left"
-VerticalAlignment="Center"
-Unit="↔ Azimuth"
-IsEnabled="True"
-ToolTip="Azimuth">
+                Grid.Row="4" Grid.Column="2" Grid.ColumnSpan="1"
+                MinWidth="80"
+                Margin="10,5,0,0"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                Unit="↔ Azimuth"
+                IsEnabled="True"
+                ToolTip="Azimuth">
                             <Binding Path="SyncWestAzimuth">
 
                             </Binding>
                         </ninactrl:UnitTextBox>
 
+                        <!-- West Ref Point -->
+
+                        <TextBlock
+                   Grid.Row="5" Grid.Column="0"
+                   HorizontalAlignment="Left"
+                   VerticalAlignment="Center"
+                   Text="West Ref Point"
+                   ToolTip="Hour Angle" />
+
+                        <ninactrl:UnitTextBox
+                   Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="1"
+                   MinWidth="80"
+                   Margin="10,5,0,0"
+                   HorizontalAlignment="Left"
+                   VerticalAlignment="Center"
+                   Unit="↕ Altitude"
+                   IsEnabled="True"
+                   ToolTip="Altitude">
+                            <Binding Path="RefWestAltitude">
+
+                            </Binding>
+                        </ninactrl:UnitTextBox>
+
+                        <ninactrl:UnitTextBox
+                            Grid.Row="5" Grid.Column="2" Grid.ColumnSpan="1"
+                            MinWidth="80"
+                            Margin="10,5,0,0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Unit="↔ Azimuth"
+                            IsEnabled="True"
+                            ToolTip="Azimuth">
+                            <Binding Path="RefWestAzimuth">
+
+                            </Binding>
+                        </ninactrl:UnitTextBox>
                     </Grid>
                 </GroupBox>
                 <!-- sync options end -->

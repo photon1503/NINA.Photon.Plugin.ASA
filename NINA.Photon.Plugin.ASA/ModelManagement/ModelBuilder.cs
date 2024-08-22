@@ -61,6 +61,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
 
         public event EventHandler<PointNextUpEventArgs> PointNextUp;
 
+
         public ModelBuilder(
             IProfileService profileService, IMountModelMediator mountModelMediator, IMount mount, ITelescopeMediator telescopeMediator, IDomeMediator domeMediator, ICameraMediator cameraMediator,
             IDomeSynchronization domeSynchronization, IPlateSolverFactory plateSolverFactory, IImagingMediator imagingMediator, IFilterWheelMediator filterWheelMediator,
@@ -149,6 +150,11 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             public ModelBuilderOptions Options { get; private set; }
             public ImmutableList<ModelPoint> ModelPoints { get; private set; }
             public ImmutableList<ModelPoint> ValidPoints { get; private set; }
+
+            public void UpdateValidPoints(ImmutableList<ModelPoint> validPoints)
+            {
+                ValidPoints = validPoints;
+            }
             public ImmutableList<ModelPoint> BestModelPoints { get; set; } = ImmutableList.Create<ModelPoint>();
             public double BestModelRMS { get; set; } = double.PositiveInfinity;
             public SemaphoreSlim ProcessingSemaphore { get; private set; }
@@ -550,14 +556,19 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 using (StreamWriter writer = new StreamWriter(filePath))
                 {
                     int points = 1;
-                    writer.WriteLine(state.ValidPoints.Count()); // Total Number of images
+                    // get number of validpoints with modelpointsate == AddedToModel
+                    int numPoints = state.ValidPoints.Count(p => p.ModelPointState == ModelPointStateEnum.AddedToModel);
+                    writer.WriteLine(numPoints); // Total Number of images
                     foreach (var point in state.ValidPoints)
                     {
                         if (point.ModelPointState == ModelPointStateEnum.AddedToModel)
                         {
                             string text = $"\"Number {points++}\"";
                             if (!state.Options.IsLegacyDDM)
-                                text = $"\"Number {points++} no pointing correction\"";
+                                if (point.IsSyncPoint)
+                                    text = $"\"Number {points++} sync point\"";
+                                else
+                                    text = $"\"Number {points++} no pointing correction\"";
 
                             writer.WriteLine(text);
                             writer.WriteLine($"\"'{point.CaptureTime:yyyy-MM-ddTHH:mm:ss.ff}'\"");
@@ -716,6 +727,8 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             var eligiblePoints = state.ValidPoints.Where(IsPointEligibleForBuild).ToList();
             var eligiblePointsOrdered = eligiblePoints.OrderBy(p => p, state.PointAzimuthComparer).ToList();
 
+      
+         
 
             Logger.Info($"Sync is {(state.Options.UseSync ? "enabled" : "disabled")}");
 
@@ -794,6 +807,24 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 _ = SlewDomeIfNecessary(state, eligiblePointsOrdered, ct);
             }
 
+
+            ModelPoint refPointEast = new ModelPoint(telescopeMediator)
+            {
+                Altitude = state.Options.RefEastAltitude,
+                Azimuth = state.Options.RefEastAzimuth,
+                IsSyncPoint = true,
+                ModelPointState = ModelPointStateEnum.Generated
+            };
+
+
+            ModelPoint refPoinWest = new ModelPoint(telescopeMediator)
+            {
+                Altitude = state.Options.RefWestAltitude,
+                Azimuth = state.Options.RefWestAzimuth,
+                IsSyncPoint = true,
+                ModelPointState = ModelPointStateEnum.Generated
+            };
+
             while (nextPoint != null)
             {
                 ct.ThrowIfCancellationRequested();
@@ -802,6 +833,17 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 bool success = false;
                 try
                 {
+                    if (nextPoint.IsSyncPoint)
+                    {
+                        var refPoint = nextPoint.Azimuth < 180 ? refPointEast : refPoinWest;
+     
+                       
+                        if (!await SlewTelescopeToPoint(state, refPoint, ct))
+                        {
+                            Logger.Error($"Failed to slew to reference point{refPoint}. Continuing to the next point");
+                        }
+                    }
+
                     if (!await SlewTelescopeToPoint(state, nextPoint, ct))
                     {
                         Logger.Error($"Failed to slew to {nextPoint}. Continuing to the next point");
@@ -942,6 +984,9 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                     Logger.Info("No points remaining");
                 }
             }
+
+            //TODO: Need to update state.ValidPoints with the ordered list
+            state.UpdateValidPoints(eligiblePointsOrdered.ToImmutableList());
         }
 
         private async Task<bool> SlewDomeIfNecessary(ModelBuilderState state, List<ModelPoint> sideOfPierPoints, CancellationToken ct)

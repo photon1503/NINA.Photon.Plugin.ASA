@@ -1,5 +1,8 @@
 # Changelog
 
+## 3.0.2.2
+ - Added reference points
+	
 ## 3.0.2.1
 
 - Fixed number of total points in the .pox file

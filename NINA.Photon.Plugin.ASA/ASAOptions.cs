@@ -78,9 +78,14 @@ namespace NINA.Photon.Plugin.ASA
             syncEveryHA = optionsAccessor.GetValueDouble("SyncEveryHA", 30.0d);
             syncEastAltitude = optionsAccessor.GetValueDouble("SyncEastAltitude", 65.0d);
             syncWestAltitude = optionsAccessor.GetValueDouble("SyncWestAltitude", 65.0d);
+            refEastAltitude = optionsAccessor.GetValueDouble("RefEastAltitude", 35.0d);
+            refWestAltitude = optionsAccessor.GetValueDouble("RefWestAltitude", 35.0d);
             syncEastAzimuth = optionsAccessor.GetValueDouble("SyncEastAzimuth", 90.0d);
             syncWestAzimuth = optionsAccessor.GetValueDouble("SyncWestAzimuth", 270.0d);
-            
+            refEastAzimuth = optionsAccessor.GetValueDouble("RefEastAzimuth", 90.0d);
+            refWestAzimuth = optionsAccessor.GetValueDouble("RefWestAzimuth", 270.0d);
+
+
         }
 
         public void ResetDefaults()
@@ -127,7 +132,12 @@ namespace NINA.Photon.Plugin.ASA
             SyncWestAltitude = 65.0d;
             SyncEastAzimuth = 90.0d;
             SyncWestAzimuth = 270.0d;
+            RefEastAltitude = 35.0d;
+            RefWestAltitude = 35.0d;
+            RefEastAzimuth = 90.0d;
+            RefWestAzimuth = 270.0d;
         }
+    
 
         private int minPointAltitude;
 
@@ -460,6 +470,67 @@ namespace NINA.Photon.Plugin.ASA
                 }
             }
         }
+
+    private double refEastAltitude;
+    public double RefEastAltitude
+        {
+        get => refEastAltitude;
+            set
+            {
+                if (refEastAltitude != value)
+                {
+                    refEastAltitude = value;
+                    optionsAccessor.SetValueDouble("RefEastAltitude", refEastAltitude);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+    private double refWestAltitude;
+    public double RefWestAltitude
+        {
+            get => refWestAltitude;
+            set
+            {
+                if (refWestAltitude != value)
+                {
+                    refWestAltitude = value;
+                    optionsAccessor.SetValueDouble("RefWestAltitude", refWestAltitude);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+    private double refEastAzimuth;
+    public double RefEastAzimuth
+        {
+        get => refEastAzimuth;
+            set
+            {
+                if (refEastAzimuth != value)
+                {
+                    refEastAzimuth = value;
+                    optionsAccessor.SetValueDouble("RefEastAzimuth", refEastAzimuth);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+    private double refWestAzimuth;
+    public double RefWestAzimuth
+        {
+        get => refWestAzimuth;
+            set
+            {
+                if (refWestAzimuth != value)
+                {
+                    refWestAzimuth = value;
+                    optionsAccessor.SetValueDouble("RefWestAzimuth", refWestAzimuth);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
 
         private int builderNumRetries;
 

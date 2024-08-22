@@ -42,6 +42,12 @@ namespace NINA.Photon.Plugin.ASA.Interfaces
         public double SyncWestAltitude { get; set; } = 0.0d;    
         public double SyncEastAzimuth { get; set; } = 0.0d;
         public double SyncWestAzimuth { get; set; } = 0.0d;
+
+        public double RefEastAltitude { get; set; } = 0.0d;
+        public double RefWestAltitude { get; set; } = 0.0d;
+        public double RefEastAzimuth { get; set; } = 0.0d;
+        public double RefWestAzimuth { get; set; } = 0.0d;
+
     }
 
     public class PointNextUpEventArgs : EventArgs

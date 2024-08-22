@@ -26,6 +26,12 @@ namespace NINA.Photon.Plugin.ASA.Interfaces
         double SyncWestAltitude { get; set; }
         double SyncEastAzimuth { get; set; }
         double SyncWestAzimuth { get; set; }
+
+        double RefEastAltitude { get; set; }
+        double RefWestAltitude { get; set; }
+        double RefEastAzimuth { get; set; }
+        double RefWestAzimuth { get; set; }
+
         int GoldenSpiralStarCount { get; set; }
 
         string SiderealTrackStartTimeProvider { get; set; }
