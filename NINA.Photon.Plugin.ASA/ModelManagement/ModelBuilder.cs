@@ -570,6 +570,14 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                                 else
                                     text = $"\"Number {points++} no pointing correction\"";
 
+                            /* convert MountReportedRightAscension to J2000 */
+
+                            Coordinates mnt = new Coordinates(point.MountReportedRightAscension, point.MountReportedDeclination, Epoch.JNOW, Coordinates.RAType.Degrees);
+                            mnt = mnt.Transform(Epoch.J2000);
+                            point.MountReportedRightAscension = mnt.RA;
+                            point.MountReportedDeclination = mnt.Dec;
+                                                    
+
                             writer.WriteLine(text);
                             writer.WriteLine($"\"'{point.CaptureTime:yyyy-MM-ddTHH:mm:ss.ff}'\"");
                             writer.WriteLine($"\"{point.CaptureTime:mm:ss.ff}\"");
@@ -1258,17 +1266,16 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 Logger.Info($"Unadjusted: {plateSolveResult.Coordinates}, Adjusted {plateSolvedCoordinatesTimeAdjusted2}");
 
                 var plateSolvedCoordinatesTimeAdjusted = plateSolveResult.Coordinates;
-                var plateSolvedCoordinates = plateSolvedCoordinatesTimeAdjusted.Transform(Epoch.JNOW);
-                Logger.Info($"JNOW Unadjusted: {plateSolvedCoordinates}, Adjusted {plateSolvedCoordinatesTimeAdjusted2.Transform(Epoch.JNOW)}");
+                var plateSolvedCoordinates = plateSolvedCoordinatesTimeAdjusted.Transform(Epoch.J2000);
+                Logger.Info($"JNOW Unadjusted: {plateSolvedCoordinates}, Adjusted {plateSolvedCoordinatesTimeAdjusted2.Transform(Epoch.J2000)}");
 
                 var plateSolvedRightAscension = AstrometricTime.FromAngle(Angle.ByHours(plateSolvedCoordinates.RA));
                 var plateSolvedDeclination = CoordinateAngle.FromAngle(Angle.ByDegree(plateSolvedCoordinates.Dec));
                 point.PlateSolvedCoordinates = plateSolvedCoordinates;
 
-                //point.PlateSolvedRightAscension = plateSolveResult.Coordinates.RA; //plateSolvedRightAscension;
-                //point.PlateSolvedDeclination = plateSolveResult.Coordinates.Dec; //plateSolvedDeclination;
+   
 
-                point.PlateSolvedRightAscension = plateSolvedCoordinates.RA;        // Beta 3 - use JNOW
+                point.PlateSolvedRightAscension = plateSolvedCoordinates.RA;      
                 point.PlateSolvedDeclination = plateSolvedCoordinates.Dec;
 
                 if (AddModelPointToAlignmentSpec(point))
