@@ -1,5 +1,8 @@
 # Changelog
 
+## 3.1.0.0
+ - Transform points for POX file to J2000
+	
 ## 3.0.2.2
  - Added reference points
 	
