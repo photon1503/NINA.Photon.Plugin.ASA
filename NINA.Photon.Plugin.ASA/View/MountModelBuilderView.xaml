@@ -856,6 +856,41 @@
                     <GroupBox.Header>
                         <Grid Height="36" Margin="5">
                             <TextBlock
+    VerticalAlignment="Center"
+    FontSize="18"
+    Text="Solve" />
+                        </Grid>
+                    </GroupBox.Header>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" SharedSizeGroup="SettingsCol0" />
+                            <ColumnDefinition Width="Auto" SharedSizeGroup="SettingsCol1" />
+                            <ColumnDefinition Width="Auto" SharedSizeGroup="SettingsCol2" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition />
+                            <RowDefinition />
+                            <RowDefinition />
+                        </Grid.RowDefinitions>
+
+                        <UniformGrid Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="3" Grid.RowSpan="2" Rows="1" Columns="2">
+                            <Button
+                                Height="30"
+                                 Margin="5,10,10,10"
+                                 Command="{Binding SolveCommand}"    >
+                                <TextBlock Foreground="{StaticResource ButtonForegroundBrush}" Text="Solve Folder" ToolTip="Solve folder and create POX-file" />
+                            </Button>
+
+                            
+                        </UniformGrid>
+                    </Grid>
+                </GroupBox>
+
+
+                <GroupBox>
+                    <GroupBox.Header>
+                        <Grid Height="36" Margin="5">
+                            <TextBlock
                     VerticalAlignment="Center"
                     FontSize="18"
                     Text="Export/Import" />

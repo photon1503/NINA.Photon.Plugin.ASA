@@ -58,6 +58,7 @@ namespace NINA.Photon.Plugin.ASA.Interfaces
     public interface IModelBuilder
     {
         Task<LoadedAlignmentModel> Build(IList<ModelPoint> modelPoints, ModelBuilderOptions options, CancellationToken ct = default, CancellationToken stopToken = default, IProgress<ApplicationStatus> overallProgress = null, IProgress<ApplicationStatus> stepProgress = null);
+        Task<bool> SolveFolder(string path, ModelBuilderOptions options, CancellationToken ct = default, CancellationToken stopToken = default, IProgress<ApplicationStatus> overallProgress = null, IProgress<ApplicationStatus> stepProgress = null);
 
         event EventHandler<PointNextUpEventArgs> PointNextUp;
     }

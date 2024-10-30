@@ -26,6 +26,8 @@ using NINA.Photon.Plugin.ASA.ModelManagement;
 using NINA.PlateSolving.Interfaces;
 using RelayCommand = CommunityToolkit.Mvvm.Input.RelayCommand;
 using NINA.WPF.Base.Mediator;
+using NINA.Image.ImageData;
+using NINA.Image.Interfaces;
 
 namespace NINA.Photon.Plugin.ASA
 {
@@ -45,7 +47,7 @@ namespace NINA.Photon.Plugin.ASA
         [ImportingConstructor]
         public ASAPlugin(
             IProfileService profileService, ITelescopeMediator telescopeMediator, IApplicationStatusMediator applicationStatusMediator, IDomeMediator domeMediator, IDomeSynchronization domeSynchronization,
-            IPlateSolverFactory plateSolverFactory, IImagingMediator imagingMediator, IFilterWheelMediator filterWheelMediator, IWeatherDataMediator weatherDataMediator, ICameraMediator cameraMediator)
+            IPlateSolverFactory plateSolverFactory, IImagingMediator imagingMediator, IFilterWheelMediator filterWheelMediator, IWeatherDataMediator weatherDataMediator, ICameraMediator cameraMediator, IImageDataFactory imageDataFactory)
         {
             if (Settings.Default.UpdateSettings)
             {
@@ -69,8 +71,9 @@ namespace NINA.Photon.Plugin.ASA
             DateTime = new SystemDateTime();
             ModelAccessor = new ModelAccessor(telescopeMediator, MountModelMediator, DateTime);
             ModelPointGenerator = new ModelPointGenerator(profileService, telescopeMediator, weatherDataMediator, ASAOptions, MountMediator);
-            ModelBuilder = new ModelBuilder(profileService, MountModelMediator, Mount, telescopeMediator, domeMediator, cameraMediator, domeSynchronization, plateSolverFactory, imagingMediator, filterWheelMediator, weatherDataMediator);
+            ModelBuilder = new ModelBuilder(profileService, MountModelMediator, Mount, telescopeMediator, domeMediator, cameraMediator, domeSynchronization, plateSolverFactory, imagingMediator, filterWheelMediator, weatherDataMediator, imageDataFactory);
             MountModelBuilderMediator = new MountModelBuilderMediator();
+            
         }
 
         public static ASAOptions ASAOptions { get; private set; }

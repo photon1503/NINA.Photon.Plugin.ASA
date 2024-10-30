@@ -10,6 +10,8 @@
 
 #endregion "copyright"
 
+using Accord.IO;
+using ASCOM.Common.Alpaca;
 using NINA.Astrometry;
 using NINA.Core.Enum;
 using NINA.Core.Model;
@@ -19,6 +21,7 @@ using NINA.Core.Utility.Notification;
 using NINA.Equipment.Interfaces;
 using NINA.Equipment.Interfaces.Mediator;
 using NINA.Equipment.Model;
+using NINA.Image.ImageData;
 using NINA.Image.Interfaces;
 using NINA.Photon.Plugin.ASA.Exceptions;
 using NINA.Photon.Plugin.ASA.Interfaces;
@@ -28,7 +31,11 @@ using NINA.PlateSolving;
 using NINA.PlateSolving.Interfaces;
 using NINA.Profile.Interfaces;
 using NINA.Sequencer.SequenceItem.Platesolving;
+using NINA.WPF.Base.Mediator;
+using nom.tam.fits;
+using SharpCompress.Common;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Collections.ObjectModel;
@@ -36,9 +43,15 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Forms;
+using System.Windows.Shapes;
+using static EDSDKLib.EDSDK;
+using static System.Windows.Forms.AxHost;
 
 namespace NINA.Photon.Plugin.ASA.ModelManagement
 {
+
+
     public class ModelBuilder : IModelBuilder
     {
         private static IComparer<double> DOUBLE_COMPARER = Comparer<double>.Default;
@@ -46,6 +59,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
         private readonly IMount mount;
         private readonly IMountModelMediator mountModelMediator;
         private readonly IImagingMediator imagingMediator;
+        private readonly IImageDataFactory imageDataFactory;
         private readonly IWeatherDataMediator weatherDataMediator;
         private readonly ITelescopeMediator telescopeMediator;
         private readonly ICameraMediator cameraMediator;
@@ -65,8 +79,9 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
         public ModelBuilder(
             IProfileService profileService, IMountModelMediator mountModelMediator, IMount mount, ITelescopeMediator telescopeMediator, IDomeMediator domeMediator, ICameraMediator cameraMediator,
             IDomeSynchronization domeSynchronization, IPlateSolverFactory plateSolverFactory, IImagingMediator imagingMediator, IFilterWheelMediator filterWheelMediator,
-            IWeatherDataMediator weatherDataMediator)
+            IWeatherDataMediator weatherDataMediator, IImageDataFactory imageDataFactory)
         {
+            this.imageDataFactory = imageDataFactory;
             this.mountModelMediator = mountModelMediator;
             this.imagingMediator = imagingMediator;
             this.mount = mount;
@@ -77,7 +92,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             this.weatherDataMediator = weatherDataMediator;
             this.profileService = profileService;
             this.plateSolverFactory = plateSolverFactory;
-            this.filterWheelMediator = filterWheelMediator;
+            this.filterWheelMediator = filterWheelMediator;             
         }
 
         private class ModelBuilderState
@@ -204,6 +219,136 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 }
             }
         }
+
+
+        
+
+
+        public async Task<bool> SolveFolder(string folder,
+                                                    ModelBuilderOptions options, 
+                                                    CancellationToken ct = default, 
+                                                    CancellationToken stopToken = default, 
+                                                    IProgress<ApplicationStatus> overallProgress = null, 
+                                                    IProgress<ApplicationStatus> stepProgress = null)
+        {
+           
+
+            // open and create new POX file
+            string programDataPath = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+            string poxFileName = System.IO.Path.Combine(folder, @"PointingErrors-NINA.pox");
+            
+
+            
+            /* Read all FITS files in the folder */
+            string[] files = Directory.GetFiles(folder, "*.fits");
+
+            
+            Logger.Info($"Start Platesolve for {files.Count()} files in folder {folder}");
+
+            var plateSolver = plateSolverFactory.GetPlateSolver(profileService.ActiveProfile.PlateSolveSettings);
+            var blindSolver = options.AllowBlindSolves ? plateSolverFactory.GetBlindSolver(profileService.ActiveProfile.PlateSolveSettings) : null;
+            var solver = plateSolverFactory.GetImageSolver(plateSolver, blindSolver);
+            var parameter = new PlateSolveParameter()
+            {
+                Binning = profileService.ActiveProfile.PlateSolveSettings.Binning,
+                Coordinates = telescopeMediator.GetCurrentPosition(),
+                DownSampleFactor = profileService.ActiveProfile.PlateSolveSettings.DownSampleFactor,
+                FocalLength = profileService.ActiveProfile.TelescopeSettings.FocalLength,
+                MaxObjects = profileService.ActiveProfile.PlateSolveSettings.MaxObjects,
+                PixelSize = profileService.ActiveProfile.CameraSettings.PixelSize,
+                Regions = profileService.ActiveProfile.PlateSolveSettings.Regions,
+                SearchRadius = profileService.ActiveProfile.PlateSolveSettings.SearchRadius,
+                DisableNotifications = true                
+            };
+
+            
+            POXlist poxList = new POXlist();
+            
+
+            int cnt = 1;
+            foreach (string file in files)
+            {
+                if (File.Exists(file))
+                {
+
+
+                    try
+                    {
+                        // Read FITS header
+                        nom.tam.fits.Fits fits = new nom.tam.fits.Fits(file);
+                        BasicHDU hdu = fits.ReadHDU();
+                        if (hdu != null)
+                        {
+                            // Get the header from the HDU
+                            Header header = hdu.Header;
+
+                            // Retrieve specific header values using their keywords
+                            string objectName = header.GetStringValue("OBJECT");
+                            double objctra = header.GetDoubleValue("OBJCTRA");
+                            double objctdec = header.GetDoubleValue("OBJCTDEC");
+                            string dateobs = header.GetStringValue("DATE-OBS");
+                            string pierSide = header.GetStringValue("NOTES");
+                            string expTime = header.GetStringValue("EXPTIME");
+
+                            fits.Close();
+
+                            // Plate solve
+                            Logger.Info($"Start Platesolve for {file}");
+
+
+                            IImageData image;
+                            try
+                            {
+                                string fullFileName = System.IO.Path.Combine(folder, file);
+                                image = await imageDataFactory.CreateFromFile(fullFileName, (int)profileService.ActiveProfile.CameraSettings.BitDepth, false, profileService.ActiveProfile.CameraSettings.RawConverter);
+                                Logger.Info($"{file} loaded with {image.Properties.Width}x{image.Properties.Height} pixels");
+                            }
+                            catch (Exception ex)
+                            {
+                                Logger.Error($"Failed to load image {file}: {ex.Message}");
+                                continue;
+                            }
+
+                            parameter.Coordinates = new Coordinates(Angle.ByHours(objctra), Angle.ByDegree(objctdec), Epoch.J2000);
+
+
+                            PlateSolveResult solved = null;
+                            try
+                            {
+                                solved = await solver.Solve(image, parameter, stepProgress, ct);
+                                if (solved?.Success != true)
+                                {
+                                    Logger.Error($"Failed to plate solve (2) {file}");
+                                    continue;
+                                }
+                                Logger.Info($"Plate solve successful for {file} at RA={solved.Coordinates.RA} DEC={solved.Coordinates.Dec}");
+                                poxList.Add(new POX(cnt++, dateobs, expTime, objctra, solved.Coordinates.RA, objctdec, solved.Coordinates.Dec, int.Parse(pierSide)));
+                            }
+                            catch (Exception ex)
+                            {
+                                Logger.Error($"Failed to plate solve (1) {file}: {ex.Message}");
+                                continue;
+                            }
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Error($"Error processing file {file}: {ex.Message}");
+                    }
+                }
+            }
+               
+
+            //await Task.WhenAll(tasks);
+
+            poxList.WritePOX(poxFileName);
+            poxList.Clear();
+            Logger.Info("ASA Platesolve finished");
+            Notification.ShowSuccess("ASA Folder solve finished");
+            return true;
+        }
+
+  
 
         public async Task<LoadedAlignmentModel> Build(IList<ModelPoint> modelPoints, ModelBuilderOptions options, CancellationToken ct = default, CancellationToken stopToken = default, IProgress<ApplicationStatus> overallProgress = null, IProgress<ApplicationStatus> stepProgress = null)
         {
@@ -416,8 +561,8 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                         throw new
                     */
 
-                    // Step 3: Add all successful points and clear failed points, which are applicable for retries
-                    Logger.Info("PrepareRetryPoint");
+                        // Step 3: Add all successful points and clear failed points, which are applicable for retries
+                        Logger.Info("PrepareRetryPoint");
                     Step3_PrepareRetryPoints(state, ct);
 
                     // From here on we can abort with either stop or cancel
@@ -552,7 +697,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
 
                 string fileName = DateTime.Now.ToString("NINA-ASA-yyyy-MM-dd-HH-mm") + ".pox";
 
-                var filePath = Path.Combine(programdata, "ASA", "Sequence", "PointingPics", fileName);
+                var filePath = System.IO.Path.Combine(programdata, "ASA", "Sequence", "PointingPics", fileName);
                 using (StreamWriter writer = new StreamWriter(filePath))
                 {
                     int points = 1;
@@ -572,10 +717,12 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
 
                             /* convert MountReportedRightAscension to J2000 */
 
-                            Coordinates mnt = new Coordinates(point.MountReportedRightAscension, point.MountReportedDeclination, Epoch.JNOW, Coordinates.RAType.Degrees);
+                            /*
+                            Coordinates mnt = new Coordinates(point.MountReportedRightAscension, point.MountReportedDeclination, Epoch.JNOW, Coordinates.RAType.Hours);
                             mnt = mnt.Transform(Epoch.J2000);
                             point.MountReportedRightAscension = mnt.RA;
                             point.MountReportedDeclination = mnt.Dec;
+                            */
                                                     
 
                             writer.WriteLine(text);
@@ -1219,7 +1366,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 throw;
             }
         }
-
+        
         private async Task<PlateSolveResult> SolveImage(ModelBuilderOptions options, IExposureData exposureData, CancellationToken ct)
         {
             var plateSolver = plateSolverFactory.GetPlateSolver(profileService.ActiveProfile.PlateSolveSettings);
@@ -1299,4 +1446,6 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             return success;
         }
     }
+
+    
 }
