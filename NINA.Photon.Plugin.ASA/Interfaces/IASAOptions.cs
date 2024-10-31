@@ -17,6 +17,21 @@ namespace NINA.Photon.Plugin.ASA.Interfaces
 {
     public interface IASAOptions : INotifyPropertyChanged
     {
+        int HighAltitudeStars { get; set; }
+        bool UseSync { get; set; }
+        int HighAltitudeMin { get; set; }
+        int HighAltitudeMax { get; set; }
+        double SyncEveryHA { get; set; }
+        double SyncEastAltitude { get; set; }
+        double SyncWestAltitude { get; set; }
+        double SyncEastAzimuth { get; set; }
+        double SyncWestAzimuth { get; set; }
+
+        double RefEastAltitude { get; set; }
+        double RefWestAltitude { get; set; }
+        double RefEastAzimuth { get; set; }
+        double RefWestAzimuth { get; set; }
+
         int GoldenSpiralStarCount { get; set; }
 
         string SiderealTrackStartTimeProvider { get; set; }

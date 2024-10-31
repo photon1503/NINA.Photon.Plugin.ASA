@@ -1,5 +1,16 @@
 # Changelog
 
+## 3.1.0.0
+ - Transform points for POX file to J2000
+	
+## 3.0.2.2
+ - Added reference points
+	
+## 3.0.2.1
+
+- Fixed number of total points in the .pox file
+- Added option to create sync points
+- Added option to create additional points for high altitudes
 
 ## [Beta 4] - 2023-10-23
 

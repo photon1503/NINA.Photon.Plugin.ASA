@@ -7,10 +7,16 @@ Many thanks for the great work!
 
 <img width="500" alt="image" src="https://github.com/photon1503/NINA.Photon.Plugin.ASA/assets/14548927/5b8b6940-2fb1-4c91-9dcc-ca5618206fa0">
 
-
 ## Setup
 
 download end extract the archive to `%localappdata%\NINA\Plugins` from https://github.com/photon1503/NINA.Photon.Plugin.ASA/releases/latest
+
+## Features
+
+- Generate a point model based on the golden spiral method
+- Fine-tuning of the model with additional high altitude points
+- Creation of sync points to improve telescope alignment and reduce hysteresis errors
+- Export import model points (i.e. for exchange with Sequence)
 
 ## Usage
 

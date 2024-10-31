@@ -19,7 +19,7 @@ using System.Threading.Tasks;
 
 namespace NINA.Photon.Plugin.ASA.Equipment
 {
-    public class MountModelMediator : DeviceMediator<IMountModelVM, IMountModelConsumer, MountModelInfo>, IMountModelMediator
+    public class MountModelMediator : Mediator<IMountModelVM>, IMountModelMediator
     {
         public void DeleteAlignment()
         {
@@ -100,6 +100,11 @@ namespace NINA.Photon.Plugin.ASA.Equipment
         public Task<LoadedAlignmentModel> GetLoadedAlignmentModel(CancellationToken ct)
         {
             return handler.GetLoadedAlignmentModel(ct);
+        }
+
+        public MountModelInfo GetInfo()
+        {
+            return handler.GetDeviceInfo();
         }
     }
 }

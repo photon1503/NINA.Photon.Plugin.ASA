@@ -18,33 +18,79 @@ using NINA.Photon.Plugin.ASA.Model;
 using NINA.Equipment.Interfaces;
 using System.Threading.Tasks;
 using System.Threading;
+using System.Collections.Generic;
 
-namespace NINA.Photon.Plugin.ASA.Equipment {
+namespace NINA.Photon.Plugin.ASA.Equipment
+{
+    public class MountMediator : Mediator<IMountVM>, IMountMediator
+    {
+        protected List<IMountConsumer> consumers = new List<IMountConsumer>();
 
-    public class MountMediator : DeviceMediator<IMountVM, IMountConsumer, MountInfo>, IMountMediator {
+        public void RegisterConsumer(IMountConsumer consumer)
+        {
+            lock (consumers)
+            {
+                consumers.Add(consumer);
+            }
+            if (handler != null)
+            {
+                var info = handler.GetDeviceInfo();
+                consumer.UpdateDeviceInfo(info);
+            }
+        }
 
-        public CoordinateAngle GetMountReportedDeclination() {
+        public void RemoveConsumer(IMountConsumer consumer)
+        {
+            lock (consumers)
+            {
+                consumers.Remove(consumer);
+            }
+        }
+
+        public CoordinateAngle GetMountReportedDeclination()
+        {
             return handler.GetMountReportedDeclination();
         }
 
-        public AstrometricTime GetMountReportedLocalSiderealTime() {
+        public AstrometricTime GetMountReportedLocalSiderealTime()
+        {
             return handler.GetMountReportedLocalSiderealTime();
         }
 
-        public AstrometricTime GetMountReportedRightAscension() {
+        public AstrometricTime GetMountReportedRightAscension()
+        {
             return handler.GetMountReportedRightAscension();
         }
 
-        public bool SetTrackingRate(TrackingMode trackingMode) {
+        public bool SetTrackingRate(TrackingMode trackingMode)
+        {
             return handler.SetTrackingRate(trackingMode);
         }
 
-        public bool Shutdown() {
+        public bool Shutdown()
+        {
             return handler.Shutdown();
         }
 
-        public Task<bool> PowerOn(CancellationToken ct) {
+        public Task<bool> PowerOn(CancellationToken ct)
+        {
             return handler.PowerOn(ct);
+        }
+
+        public MountInfo GetInfo()
+        {
+            return handler.GetDeviceInfo();
+        }
+
+        public void Broadcast(MountInfo deviceInfo)
+        {
+            lock (consumers)
+            {
+                foreach (IMountConsumer c in consumers)
+                {
+                    c.UpdateDeviceInfo(deviceInfo);
+                }
+            }
         }
     }
 }

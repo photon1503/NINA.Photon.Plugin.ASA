@@ -35,6 +35,19 @@ namespace NINA.Photon.Plugin.ASA.Interfaces
         public bool AlternateDirectionsBetweenIterations { get; set; } = true;
         public bool DisableRefractionCorrection { get; set; } = false;
         public bool IsLegacyDDM { get; set; } = false;
+
+        public bool UseSync { get; set; } = false;
+        public double SyncEveryHA { get; set; } = 0.0d;
+        public double SyncEastAltitude { get; set; } = 0.0d;
+        public double SyncWestAltitude { get; set; } = 0.0d;    
+        public double SyncEastAzimuth { get; set; } = 0.0d;
+        public double SyncWestAzimuth { get; set; } = 0.0d;
+
+        public double RefEastAltitude { get; set; } = 0.0d;
+        public double RefWestAltitude { get; set; } = 0.0d;
+        public double RefEastAzimuth { get; set; } = 0.0d;
+        public double RefWestAzimuth { get; set; } = 0.0d;
+
     }
 
     public class PointNextUpEventArgs : EventArgs
@@ -45,6 +58,7 @@ namespace NINA.Photon.Plugin.ASA.Interfaces
     public interface IModelBuilder
     {
         Task<LoadedAlignmentModel> Build(IList<ModelPoint> modelPoints, ModelBuilderOptions options, CancellationToken ct = default, CancellationToken stopToken = default, IProgress<ApplicationStatus> overallProgress = null, IProgress<ApplicationStatus> stepProgress = null);
+        Task<bool> SolveFolder(string path, ModelBuilderOptions options, CancellationToken ct = default, CancellationToken stopToken = default, IProgress<ApplicationStatus> overallProgress = null, IProgress<ApplicationStatus> stepProgress = null);
 
         event EventHandler<PointNextUpEventArgs> PointNextUp;
     }

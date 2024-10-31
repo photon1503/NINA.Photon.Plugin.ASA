@@ -17,10 +17,10 @@ using NINA.Equipment.Interfaces;
 using System.Threading.Tasks;
 using System.Threading;
 
-namespace NINA.Photon.Plugin.ASA.Interfaces {
-
-    public interface IMountVM : IDeviceVM<MountInfo>, IDockableVM {
-
+namespace NINA.Photon.Plugin.ASA.Interfaces
+{
+    public interface IMountVM : IDockableVM
+    {
         CoordinateAngle GetMountReportedDeclination();
 
         AstrometricTime GetMountReportedRightAscension();
@@ -34,5 +34,7 @@ namespace NINA.Photon.Plugin.ASA.Interfaces {
         Task<bool> PowerOn(CancellationToken ct);
 
         void SetDualAxisTracking(bool enabled);
+
+        MountInfo GetDeviceInfo();
     }
 }

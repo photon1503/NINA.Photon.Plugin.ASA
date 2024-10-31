@@ -10,16 +10,12 @@
 
 #endregion "copyright"
 
-using Accord.Statistics.Filters;
-using ASCOM.DeviceInterface;
-using CsvHelper;
+using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
 using NINA.Astrometry;
 using NINA.Astrometry.Interfaces;
-using NINA.Core.Enum;
 using NINA.Core.Model;
 using NINA.Core.Utility;
-using NINA.Core.Utility.Converters;
 using NINA.Core.Utility.Notification;
 using NINA.Equipment.Equipment;
 using NINA.Equipment.Equipment.MyDome;
@@ -46,8 +42,15 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+
 using System.Windows.Input;
 using System.Windows.Threading;
+
+using nom.tam.fits;
+using NINA.Image.Interfaces;
+using NINA.PlateSolving;
+using static System.Windows.Forms.AxHost;
+using NINA.PlateSolving.Interfaces;
 
 namespace NINA.Photon.Plugin.ASA.ViewModels
 {
@@ -147,16 +150,18 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             this.profileService.ActiveProfile.DomeSettings.PropertyChanged += DomeSettings_PropertyChanged;
             this.LoadHorizon();
 
-            this.GeneratePointsCommand = new AsyncCommand<bool>(GeneratePoints);
-            this.ClearPointsCommand = new AsyncCommand<bool>(ClearPoints);
+            this.GeneratePointsCommand = new AsyncRelayCommand(GeneratePoints);
+            this.ClearPointsCommand = new AsyncRelayCommand(ClearPoints);
+            this.AddHighAltitudeCommand = new AsyncRelayCommand(AddHighAltitude);
 
-            this.BuildCommand = new AsyncCommand<bool>(BuildModel);
-            this.CancelBuildCommand = new AsyncCommand<bool>(CancelBuildModel);
-            this.StopBuildCommand = new AsyncCommand<bool>(StopBuildModel);
-            this.CoordsFromFramingCommand = new AsyncCommand<bool>(CoordsFromFraming);
-            this.CoordsFromScopeCommand = new AsyncCommand<bool>(CoordsFromScope);
-            this.ImportCommand = new AsyncCommand<bool>(ImportPoints);
-            this.ExportCommand = new AsyncCommand<bool>(ExportPoints);
+            this.BuildCommand = new AsyncRelayCommand(BuildModel);
+            this.CancelBuildCommand = new AsyncRelayCommand(CancelBuildModel);
+            this.StopBuildCommand = new AsyncRelayCommand(StopBuildModel);
+            this.CoordsFromFramingCommand = new AsyncRelayCommand(CoordsFromFraming);
+            this.CoordsFromScopeCommand = new AsyncRelayCommand(CoordsFromScope);
+            this.ImportCommand = new AsyncRelayCommand(ImportPoints);
+            this.ExportCommand = new AsyncRelayCommand(ExportPoints);
+            this.SolveCommand = new AsyncRelayCommand(SolveFolder);
 
             // progress
 
@@ -426,7 +431,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             Connected = false;
         }
 
-        private Task<bool> GeneratePoints(object o)
+        private Task<bool> GeneratePoints()
         {
             try
             {
@@ -450,7 +455,60 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             }
         }
 
-        private Task<bool> ClearPoints(object o)
+        private Task<bool> AddHighAltitude()
+        {
+            // Define altitude range and number of stars
+            double Altmin = this.HighAltitudeMin;
+            double Altmax = this.HighAltitudeMax;
+            int stars = this.HighAltitudeStars;
+
+            var newPoints = new List<ModelPoint>();
+
+            // Golden angle in radians
+            double goldenAngle = Math.PI * (3 - Math.Sqrt(5));
+            double azimuthStep = 360.0 / stars;
+            double azimuthOffset = azimuthStep / 2.0; // Offset to ensure equal distance to 0 and 360
+
+            // Loop to create model points
+            for (int i = 0; i < stars; i++)
+            {
+                // Calculate latitude and longitude using the golden angle method
+                double latitude = Math.Asin(-1.0 + 2.0 * (i + 0.5) / stars);
+                double longitude = goldenAngle * i;
+
+                // Convert latitude to altitude within the specified range
+                double normalizedLatitude = (latitude + Math.PI / 2) / Math.PI; // Normalize to [0, 1]
+                double Alt = Altmin + normalizedLatitude * (Altmax - Altmin); // Map to [Altmin, Altmax]
+
+                // Convert longitude to azimuth and apply offset
+                double Az = ((longitude * 180 / Math.PI) + azimuthOffset) % 360; // Convert to degrees, apply offset, and wrap around
+
+                // Create and add model point
+                newPoints.Add(new ModelPoint(telescopeMediator)
+                {
+                    Altitude = Alt,
+                    Azimuth = Az,
+                    ModelPointState = ModelPointStateEnum.Generated
+                });
+            }
+
+            // Retrieve existing points
+            var existingModelPoints = this.ModelPoints.ToList();
+            var existingDisplayModelPoints = this.DisplayModelPoints.ToList();
+
+            // Add new points to existing points
+            existingModelPoints.AddRange(newPoints);
+            existingDisplayModelPoints.AddRange(newPoints);
+
+            // Update ModelPoints and DisplayModelPoints
+            this.ModelPoints = existingModelPoints.ToImmutableList();
+            this.DisplayModelPoints = new AsyncObservableCollection<ModelPoint>(existingDisplayModelPoints);
+
+            return Task.FromResult(true);
+        }
+
+
+        private Task<bool> ClearPoints()
         {
             this.ModelPoints.Clear();
             this.DisplayModelPoints.Clear();
@@ -597,6 +655,16 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             modelBuilderOptions.RemoveHighRMSPointsAfterBuild = options.RemoveHighRMSPointsAfterBuild;
             modelBuilderOptions.PlateSolveSubframePercentage = options.PlateSolveSubframePercentage;
             modelBuilderOptions.DisableRefractionCorrection = options.DisableRefractionCorrection;
+            modelBuilderOptions.UseSync = options.UseSync;
+            modelBuilderOptions.SyncEastAltitude = options.SyncEastAltitude;
+            modelBuilderOptions.SyncWestAltitude = options.SyncWestAltitude;
+            modelBuilderOptions.SyncEastAzimuth = options.SyncEastAzimuth;
+            modelBuilderOptions.SyncWestAzimuth = options.SyncWestAzimuth;
+            modelBuilderOptions.RefEastAltitude = options.RefEastAltitude;
+            modelBuilderOptions.RefWestAltitude = options.RefWestAltitude;
+            modelBuilderOptions.RefEastAzimuth = options.RefEastAzimuth;
+            modelBuilderOptions.RefWestAzimuth = options.RefWestAzimuth;
+            modelBuilderOptions.SyncEveryHA = options.SyncEveryHA;
             return DoBuildModel(modelPoints, options, ct);
         }
 
@@ -643,7 +711,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             }
         }
 
-        private Task<bool> BuildModel(object o)
+        private Task<bool> BuildModel()
         {
             if (modelBuildCts != null)
             {
@@ -662,13 +730,23 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 DomeShutterWidth_mm = modelBuilderOptions.DomeShutterWidth_mm,
                 MaxFailedPoints = MaxFailedPoints,
                 RemoveHighRMSPointsAfterBuild = modelBuilderOptions.RemoveHighRMSPointsAfterBuild,
-                PlateSolveSubframePercentage = modelBuilderOptions.PlateSolveSubframePercentage
+                PlateSolveSubframePercentage = modelBuilderOptions.PlateSolveSubframePercentage,
+                UseSync = modelBuilderOptions.UseSync,
+                SyncEastAltitude = modelBuilderOptions.SyncEastAltitude,
+                SyncWestAltitude = modelBuilderOptions.SyncWestAltitude,
+                SyncEastAzimuth = modelBuilderOptions.SyncEastAzimuth,
+                SyncWestAzimuth = modelBuilderOptions.SyncWestAzimuth,
+                SyncEveryHA = modelBuilderOptions.SyncEveryHA,
+                RefEastAltitude = modelBuilderOptions.RefEastAltitude,
+                RefWestAltitude = modelBuilderOptions.RefWestAltitude,
+                RefEastAzimuth = modelBuilderOptions.RefEastAzimuth,
+                RefWestAzimuth = modelBuilderOptions.RefWestAzimuth
             };
             var modelPoints = ModelPoints.ToList();
             return DoBuildModel(modelPoints, options, CancellationToken.None);
         }
 
-        private async Task<bool> CancelBuildModel(object o)
+        private async Task<bool> CancelBuildModel()
         {
             try
             {
@@ -686,7 +764,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             }
         }
 
-        private async Task<bool> StopBuildModel(object o)
+        private async Task<bool> StopBuildModel()
         {
             try
             {
@@ -704,7 +782,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             }
         }
 
-        private Task<bool> CoordsFromFraming(object o)
+        private Task<bool> CoordsFromFraming()
         {
             try
             {
@@ -717,7 +795,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             }
         }
 
-        private Task<bool> CoordsFromScope(object o)
+        private Task<bool> CoordsFromScope()
         {
             try
             {
@@ -1024,7 +1102,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
         }
         */
 
-        private Task<bool> ImportPoints(object o)
+        private Task<bool> ImportPoints()
         {
             OpenFileDialog openFileDialog = new OpenFileDialog
             {
@@ -1100,7 +1178,56 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             return Task.FromResult(true);
         }
 
-        private Task<bool> ExportPoints(object o)
+        private Task<bool> SolveFolder(CancellationToken ct)
+        {
+            System.Windows.Forms.FolderBrowserDialog folderBrowserDialog = new System.Windows.Forms.FolderBrowserDialog();
+            System.Windows.Forms.DialogResult result = folderBrowserDialog.ShowDialog();
+            if (result == System.Windows.Forms.DialogResult.OK)
+            {
+
+                modelBuildCts = new CancellationTokenSource();
+                modelBuildStopCts = new CancellationTokenSource();
+                var cancelTokenSource = CancellationTokenSource.CreateLinkedTokenSource(ct, modelBuildCts.Token);
+
+                var options = new ModelBuilderOptions()
+                {
+                    WestToEastSorting = modelBuilderOptions.WestToEastSorting,
+                    NumRetries = BuilderNumRetries,
+                    MaxPointRMS = MaxPointRMS,
+                    MinimizeDomeMovement = modelBuilderOptions.MinimizeDomeMovementEnabled,
+                    MinimizeMeridianFlips = modelBuilderOptions.MinimizeMeridianFlipsEnabled,
+                    AllowBlindSolves = modelBuilderOptions.AllowBlindSolves,
+                    MaxConcurrency = modelBuilderOptions.MaxConcurrency,
+                    DomeShutterWidth_mm = modelBuilderOptions.DomeShutterWidth_mm,
+                    MaxFailedPoints = MaxFailedPoints,
+                    RemoveHighRMSPointsAfterBuild = modelBuilderOptions.RemoveHighRMSPointsAfterBuild,
+                    PlateSolveSubframePercentage = modelBuilderOptions.PlateSolveSubframePercentage,
+                    UseSync = modelBuilderOptions.UseSync,
+                    SyncEastAltitude = modelBuilderOptions.SyncEastAltitude,
+                    SyncWestAltitude = modelBuilderOptions.SyncWestAltitude,
+                    SyncEastAzimuth = modelBuilderOptions.SyncEastAzimuth,
+                    SyncWestAzimuth = modelBuilderOptions.SyncWestAzimuth,
+                    SyncEveryHA = modelBuilderOptions.SyncEveryHA,
+                    RefEastAltitude = modelBuilderOptions.RefEastAltitude,
+                    RefWestAltitude = modelBuilderOptions.RefWestAltitude,
+                    RefEastAzimuth = modelBuilderOptions.RefEastAzimuth,
+                    RefWestAzimuth = modelBuilderOptions.RefWestAzimuth
+                };
+
+                Notification.ShowInformation($"ASA model solver started");
+
+                var sol = modelBuilder.SolveFolder(folderBrowserDialog.SelectedPath, options, ct, modelBuildStopCts.Token, progress, stepProgress);
+                          
+
+
+
+            }
+         
+            return Task.FromResult(true);
+        }
+
+
+        private Task<bool> ExportPoints()
         {
             SaveFileDialog openFileDialog = new SaveFileDialog
             {
@@ -1159,6 +1286,173 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 }
             }
         }
+
+        public int HighAltitudeStars
+        {
+            get => this.modelBuilderOptions.HighAltitudeStars;
+            set
+            {
+                if (this.modelBuilderOptions.HighAltitudeStars != value)
+                {
+                    this.modelBuilderOptions.HighAltitudeStars = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        public int HighAltitudeMin
+        {
+            get => this.modelBuilderOptions.HighAltitudeMin;
+            set
+            {
+                if (this.modelBuilderOptions.HighAltitudeMin != value)
+                {
+                    this.modelBuilderOptions.HighAltitudeMin = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        public int HighAltitudeMax
+            {
+            get => this.modelBuilderOptions.HighAltitudeMax;
+            set
+            {
+                if (this.modelBuilderOptions.HighAltitudeMax != value)
+                {
+                    this.modelBuilderOptions.HighAltitudeMax = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        public double SyncEveryHA 
+            {
+            get => this.modelBuilderOptions.SyncEveryHA;
+            set {
+                if (this.modelBuilderOptions.SyncEveryHA != value) 
+                {
+                    this.modelBuilderOptions.SyncEveryHA = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+        public double SyncEastAltitude
+        {
+            get => this.modelBuilderOptions.SyncEastAltitude;
+            set
+            {
+                if (this.modelBuilderOptions.SyncEastAltitude != value)
+                {
+                    this.modelBuilderOptions.SyncEastAltitude = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+        public double SyncWestAltitude
+        {
+            get => this.modelBuilderOptions.SyncWestAltitude;
+            set
+            {
+                if (this.modelBuilderOptions.SyncWestAltitude != value)
+                {
+                    this.modelBuilderOptions.SyncWestAltitude = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        public double SyncEastAzimuth 
+            {
+            get => this.modelBuilderOptions.SyncEastAzimuth;
+            set
+            {
+                if (this.modelBuilderOptions.SyncEastAzimuth != value)
+                {
+                    this.modelBuilderOptions.SyncEastAzimuth = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        public double SyncWestAzimuth
+        {
+            get => this.modelBuilderOptions.SyncWestAzimuth;
+            set
+            {
+                if (this.modelBuilderOptions.SyncWestAzimuth != value)
+                {
+                    this.modelBuilderOptions.SyncWestAzimuth = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        public double RefEastAltitude
+        {
+            get => this.modelBuilderOptions.RefEastAltitude;
+            set
+            {
+                if (this.modelBuilderOptions.RefEastAltitude != value)
+                {
+                    this.modelBuilderOptions.RefEastAltitude = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        public double RefWestAltitude
+        {
+            get => this.modelBuilderOptions.RefWestAltitude;
+            set
+            {
+                if (this.modelBuilderOptions.RefWestAltitude != value)
+                {
+                    this.modelBuilderOptions.RefWestAltitude = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        public double RefEastAzimuth
+        {
+            get => this.modelBuilderOptions.RefEastAzimuth;
+            set
+            {
+                if (this.modelBuilderOptions.RefEastAzimuth != value)
+                {
+                    this.modelBuilderOptions.RefEastAzimuth = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        public double RefWestAzimuth
+        {
+            get => this.modelBuilderOptions.RefWestAzimuth;
+            set
+            {
+                if (this.modelBuilderOptions.RefWestAzimuth != value)
+                {
+                    this.modelBuilderOptions.RefWestAzimuth = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        public bool UseSync 
+        {
+            get => this.modelBuilderOptions.UseSync;
+            set
+            {
+                if (this.modelBuilderOptions.UseSync != value)
+                {
+                    this.modelBuilderOptions.UseSync = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
 
         public int SiderealTrackStartOffsetMinutes
         {
@@ -1488,6 +1782,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
         }
 
         public ICommand ClearPointsCommand { get; private set; }
+        public ICommand AddHighAltitudeCommand { get; private set; }
         public ICommand GeneratePointsCommand { get; private set; }
         public ICommand BuildCommand { get; private set; }
         public ICommand CancelBuildCommand { get; private set; }
@@ -1496,5 +1791,6 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
         public ICommand CoordsFromScopeCommand { get; private set; }
         public ICommand ExportCommand { get; private set; }
         public ICommand ImportCommand { get; private set; }
+        public ICommand SolveCommand { get; private set; }
     }
 }

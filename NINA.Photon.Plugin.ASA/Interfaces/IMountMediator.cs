@@ -16,11 +16,12 @@ using NINA.Photon.Plugin.ASA.Model;
 using NINA.Equipment.Interfaces;
 using System.Threading;
 using System.Threading.Tasks;
+using NINA.Core.Interfaces;
 
-namespace NINA.Photon.Plugin.ASA.Interfaces {
-
-    public interface IMountMediator : IDeviceMediator<IMountVM, IMountConsumer, MountInfo> {
-
+namespace NINA.Photon.Plugin.ASA.Interfaces
+{
+    public interface IMountMediator : IMediator<IMountVM>
+    {
         CoordinateAngle GetMountReportedDeclination();
 
         AstrometricTime GetMountReportedRightAscension();
@@ -32,5 +33,13 @@ namespace NINA.Photon.Plugin.ASA.Interfaces {
         bool Shutdown();
 
         Task<bool> PowerOn(CancellationToken ct);
+
+        MountInfo GetInfo();
+
+        void RegisterConsumer(IMountConsumer consumer);
+
+        void RemoveConsumer(IMountConsumer consumer);
+
+        void Broadcast(MountInfo deviceInfo);
     }
 }
