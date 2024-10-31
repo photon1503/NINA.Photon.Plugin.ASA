@@ -19,8 +19,10 @@ using System.Runtime.InteropServices;
 
 // [MANDATORY] The assembly versioning
 //Should be incremented for each new release build of a plugin
+
 [assembly: AssemblyVersion("3.1.0.0")]
 [assembly: AssemblyFileVersion("3.1.0.0")]
+
 
 // [MANDATORY] The name of your plugin
 [assembly: AssemblyTitle("ASA Tools")]
@@ -33,7 +35,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyCompany("Gerald Hitz (photon)")]
 // The product name that this plugin is part of
 [assembly: AssemblyProduct("ASA Tools")]
-[assembly: AssemblyCopyright("Copyright © 2023")]
+[assembly: AssemblyCopyright("Copyright © 2024")]
 
 // The minimum Version of N.I.N.A. that this plugin is compatible with
 [assembly: AssemblyMetadata("MinimumApplicationVersion", "3.0.0.1085")]
