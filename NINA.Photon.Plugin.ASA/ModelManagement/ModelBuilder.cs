@@ -1313,23 +1313,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
         private bool AddModelPointToAlignmentSpec(ModelPoint point)
         {
             Logger.Info($"Adding alignment point to specification: {point}");
-            /*
-            int modelIndex = this.mountModelMediator.AddAlignmentStar(
-                point.MountReportedRightAscension,
-                point.MountReportedDeclination,
-                point.MountReportedSideOfPier,
-                point.PlateSolvedRightAscension,
-                point.PlateSolvedDeclination,
-                point.MountReportedLocalSiderealTime);
-            if (modelIndex <= 0)
-            {
-                point.ModelPointState = ModelPointStateEnum.Failed;
-                Logger.Error($"Failed to add {point} to alignment spec");
-                return false;
-            }
-            */
-
-            //TODO
+   
 
             point.ModelIndex = modelPoints1.Count + 1;
             modelPoints1.Add(point);
@@ -1342,8 +1326,15 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
         private async Task<IExposureData> CaptureImage(ModelBuilderState state, ModelPoint point, IProgress<ApplicationStatus> stepProgress, CancellationToken ct)
         {
             point.MountReportedSideOfPier = telescopeMediator.GetInfo().SideOfPier; // mount.GetSideOfPier();
-            point.MountReportedDeclination = telescopeMediator.GetInfo().Declination; // mount.GetDeclination();
-            point.MountReportedRightAscension = telescopeMediator.GetInfo().RightAscension; //mount.GetRightAscension();
+            //get epoch from mount
+            Coordinates mnt1 = telescopeMediator.GetInfo().Coordinates; 
+            
+            Coordinates mnt = new Coordinates(telescopeMediator.GetInfo().RightAscension, telescopeMediator.GetInfo().Declination, mnt1.Epoch, Coordinates.RAType.Hours);
+            mnt = mnt.Transform(Epoch.J2000);
+
+            point.MountReportedDeclination = mnt.Dec; // mount.GetDeclination();
+            point.MountReportedRightAscension = mnt.RA;             
+            
             point.CaptureTime = mount.GetUTCTime();
             point.MountReportedLocalSiderealTime = telescopeMediator.GetInfo().SiderealTime; // mount.GetLocalSiderealTime();
             var seq = new CaptureSequence(
@@ -1363,10 +1354,13 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             {
                 point.ModelPointState = ModelPointStateEnum.Exposing;
                 var exposureData = await this.imagingMediator.CaptureImage(seq, ct, stepProgress);
+                point.CaptureTime = exposureData.MetaData.Image.ExposureStart;
                 // Fire and forget to prepare image, which will put the latest captured image in the imaging tab view
                 _ = Task.Run(async () =>
                 {
                     var imageData = await exposureData.ToImageData();
+                    
+                    
                     _ = this.imagingMediator.PrepareImage(imageData, new PrepareImageParameters(autoStretch: true, detectStars: false), ct);
                 });
                 return exposureData;
@@ -1419,6 +1413,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 ct.ThrowIfCancellationRequested();
 
                 // Use the original mount-provided capture time to convert to JNow
+                /*
                 var captureTimeProvider = new ConstantDateTime(point.CaptureTime);
                 var plateSolvedCoordinatesTimeAdjusted2 = new Coordinates(Angle.ByHours(plateSolveResult.Coordinates.RA), Angle.ByDegree(plateSolveResult.Coordinates.Dec), plateSolveResult.Coordinates.Epoch, captureTimeProvider);
 
@@ -1432,10 +1427,10 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 var plateSolvedDeclination = CoordinateAngle.FromAngle(Angle.ByDegree(plateSolvedCoordinates.Dec));
                 point.PlateSolvedCoordinates = plateSolvedCoordinates;
 
-   
+   */
 
-                point.PlateSolvedRightAscension = plateSolvedCoordinates.RA;      
-                point.PlateSolvedDeclination = plateSolvedCoordinates.Dec;
+                point.PlateSolvedRightAscension = plateSolveResult.Coordinates.RA;      
+                point.PlateSolvedDeclination = plateSolveResult.Coordinates.Dec;
 
                 if (AddModelPointToAlignmentSpec(point))
                 {
