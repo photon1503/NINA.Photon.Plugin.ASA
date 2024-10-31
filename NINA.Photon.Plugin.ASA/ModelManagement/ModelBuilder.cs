@@ -263,15 +263,13 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
 
             
             POXlist poxList = new POXlist();
-            
+            //var tasks = new List<Task>();
 
             int cnt = 1;
             foreach (string file in files)
             {
                 if (File.Exists(file))
                 {
-
-
                     try
                     {
                         // Read FITS header
@@ -300,45 +298,47 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                                 Status = $"Solving",
                                 ProgressType = ApplicationStatus.StatusProgressType.ValueOfMaxValue,
                                 Progress = cnt,
-                                MaxProgress = files.Length,
-                                
+                                MaxProgress = files.Length,                                
                             });
 
                             stepProgress?.Report(new ApplicationStatus() { });
 
-                            IImageData image;
-                            try
-                            {
-                                string fullFileName = System.IO.Path.Combine(folder, file);
-                                image = await imageDataFactory.CreateFromFile(fullFileName, (int)profileService.ActiveProfile.CameraSettings.BitDepth, false, profileService.ActiveProfile.CameraSettings.RawConverter);
-                                Logger.Info($"{file} loaded with {image.Properties.Width}x{image.Properties.Height} pixels");
-                            }
-                            catch (Exception ex)
-                            {
-                                Logger.Error($"Failed to load image {file}: {ex.Message}");
-                                continue;
-                            }
 
-                            parameter.Coordinates = new Coordinates(Angle.ByHours(objctra), Angle.ByDegree(objctdec), Epoch.J2000);
-
-
-                            PlateSolveResult solved = null;
-                            try
-                            {
-                                solved = await solver.Solve(image, parameter, stepProgress, ct);
-                                if (solved?.Success != true)
+                                IImageData image;
+                                try
                                 {
-                                    Logger.Error($"Failed to plate solve (2) {file}");
-                                    continue;
+                                    string fullFileName = System.IO.Path.Combine(folder, file);
+                                    image = await imageDataFactory.CreateFromFile(fullFileName, (int)profileService.ActiveProfile.CameraSettings.BitDepth, false, profileService.ActiveProfile.CameraSettings.RawConverter);
+                                    Logger.Info($"{file} loaded with {image.Properties.Width}x{image.Properties.Height} pixels");
                                 }
-                                Logger.Info($"Plate solve successful for {file} at RA={solved.Coordinates.RA} DEC={solved.Coordinates.Dec}");
-                                poxList.Add(new POX(cnt++, dateobs, expTime, objctra, solved.Coordinates.RA, objctdec, solved.Coordinates.Dec, int.Parse(pierSide)));
-                            }
-                            catch (Exception ex)
-                            {
-                                Logger.Error($"Failed to plate solve (1) {file}: {ex.Message}");
+                                catch (Exception ex)
+                                {
+                                    Logger.Error($"Failed to load image {file}: {ex.Message}");
                                 continue;
-                            }
+                                }
+
+                                parameter.Coordinates = new Coordinates(Angle.ByHours(objctra), Angle.ByDegree(objctdec), Epoch.J2000);
+
+                                
+                                    PlateSolveResult solved = null;
+                                    try
+                                    {
+                                        solved = await solver.Solve(image, parameter, stepProgress, ct);
+                                        if (solved?.Success != true)
+                                        {
+                                            Logger.Error($"Failed to plate solve (2) {file}");
+                                            continue;
+                                        }
+                                        Logger.Info($"Plate solve successful for {file} at RA={solved.Coordinates.RA} DEC={solved.Coordinates.Dec}");
+                                        int currentCnt = Interlocked.Increment(ref cnt);
+                                        poxList.Add(new POX(cnt++, dateobs, expTime, objctra, solved.Coordinates.RA, objctdec, solved.Coordinates.Dec, int.Parse(pierSide)));
+                                    }
+                                    catch (Exception ex)
+                                    {
+                                        Logger.Error($"Failed to plate solve (1) {file}: {ex.Message}");
+                                continue;
+                                    }
+                                
                         }
                     }
                     catch (Exception ex)
@@ -353,8 +353,11 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
 
             poxList.WritePOX(poxFileName);
             poxList.Clear();
+
             Logger.Info("ASA Platesolve finished");
             Notification.ShowSuccess("ASA Folder solve finished");
+
+            overallProgress?.Report(new ApplicationStatus(){ });
             return true;
         }
 
