@@ -295,6 +295,16 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                             // Plate solve
                             Logger.Info($"Start Platesolve for {file}");
 
+                            overallProgress?.Report(new ApplicationStatus()
+                            {
+                                Status = $"Solving",
+                                ProgressType = ApplicationStatus.StatusProgressType.ValueOfMaxValue,
+                                Progress = cnt,
+                                MaxProgress = files.Length,
+                                
+                            });
+
+                            stepProgress?.Report(new ApplicationStatus() { });
 
                             IImageData image;
                             try
