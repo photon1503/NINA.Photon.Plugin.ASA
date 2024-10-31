@@ -44,7 +44,8 @@ namespace NINA.Photon.Plugin.ASA
                     poxWriter.WriteLine($"\"Number {cnt++}\"");
                     poxWriter.WriteLine($"\"'{pox.DateObs}'\"");
                     poxWriter.WriteLine($"\"{pox.TimeObs}\"");
-                    poxWriter.WriteLine($"\"{pox.ExpTime}\"");
+                  
+                    poxWriter.WriteLine($"\"{pox.ExpTime.ToString("0.0000000000000000")}\"");
                     poxWriter.WriteLine(pox.TelescopeRA);
                     poxWriter.WriteLine(pox.SolvedRA);
                     poxWriter.WriteLine(pox.TelescopeDec);
@@ -63,7 +64,7 @@ namespace NINA.Photon.Plugin.ASA
         public int Number { get; set; }
         public string DateObs { get; set; }
         public string TimeObs { get; set; }
-        public string ExpTime { get; set; }
+        public double ExpTime { get; set; }
         public double TelescopeRA { get; set; }
         public double SolvedRA { get; set; }
         public double TelescopeDec { get; set; }
@@ -72,7 +73,7 @@ namespace NINA.Photon.Plugin.ASA
 
                 
 
-        public POX(int number, string dateObs, string expTime, double objCTRA, double ra, double objCTDec, double dec, int pierSide)
+        public POX(int number, string dateObs, double expTime, double objCTRA, double ra, double objCTDec, double dec, int pierSide)
         {
             Number = number;
             DateObs = dateObs;

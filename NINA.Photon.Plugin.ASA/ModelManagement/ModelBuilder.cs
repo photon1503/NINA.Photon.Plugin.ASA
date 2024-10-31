@@ -286,7 +286,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                             double objctdec = header.GetDoubleValue("OBJCTDEC");
                             string dateobs = header.GetStringValue("DATE-OBS");
                             string pierSide = header.GetStringValue("NOTES");
-                            string expTime = header.GetStringValue("EXPTIME");
+                            double expTime = header.GetDoubleValue("EXPOSURE");
 
                             fits.Close();
 
@@ -329,14 +329,13 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                                             Logger.Error($"Failed to plate solve (2) {file}");
                                             continue;
                                         }
-                                        Logger.Info($"Plate solve successful for {file} at RA={solved.Coordinates.RA} DEC={solved.Coordinates.Dec}");
-                                        int currentCnt = Interlocked.Increment(ref cnt);
+                                        Logger.Info($"Plate solve successful for {file} at RA={solved.Coordinates.RA} DEC={solved.Coordinates.Dec}");                                        
                                         poxList.Add(new POX(cnt++, dateobs, expTime, objctra, solved.Coordinates.RA, objctdec, solved.Coordinates.Dec, int.Parse(pierSide)));
                                     }
                                     catch (Exception ex)
                                     {
                                         Logger.Error($"Failed to plate solve (1) {file}: {ex.Message}");
-                                continue;
+                                        continue;
                                     }
                                 
                         }
