@@ -264,6 +264,13 @@ namespace NINA.Photon.Plugin.ASA.Equipment
 
         public List<ModelPoint> modelPoints { get; set; }
 
+        public Response<bool> PowerOn()
+        {
+            this.mountCommander.Action("Telescope:MotorOn", "");
+            return new Response<bool>(true, "");
+            
+        }
+
         public Response<CoordinateAngle> GetDeclination()
         {
             const string command = ":GD#";

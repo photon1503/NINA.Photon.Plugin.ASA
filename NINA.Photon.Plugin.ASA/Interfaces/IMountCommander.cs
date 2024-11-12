@@ -19,5 +19,6 @@ namespace NINA.Photon.Plugin.ASA.Interfaces {
         bool SendCommandBool(string command, bool raw);
 
         void SendCommandBlind(string command, bool raw);
+        void Action(string action, string parameters);
     }
 }
