@@ -271,6 +271,13 @@ namespace NINA.Photon.Plugin.ASA.Equipment
             
         }
 
+        public Response<bool> PowerOff()
+        {
+            this.mountCommander.Action("Telescope:MotorOff", "");
+            return new Response<bool>(true, "");
+
+        }
+
         public Response<CoordinateAngle> GetDeclination()
         {
             const string command = ":GD#";

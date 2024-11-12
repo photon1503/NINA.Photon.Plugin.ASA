@@ -14,35 +14,35 @@ using System.Threading.Tasks;
 
 namespace NINA.Photon.Plugin.ASA.SequenceItems
 {
-    [ExportMetadata("Name", "Power On Motor")]
-    [ExportMetadata("Description", "Powers on the ASA motor")]
-    [ExportMetadata("Icon", "MotorOnSVG")]
+    [ExportMetadata("Name", "Power Off Motor")]
+    [ExportMetadata("Description", "Powers off the ASA motor")]
+    [ExportMetadata("Icon", "MotorOffSVG")]
     [ExportMetadata("Category", "ASA Tools")]
     [Export(typeof(ISequenceItem))]
     [JsonObject(MemberSerialization.OptIn)]
-    public class PowerOn : SequenceItem
+    public class PowerOff : SequenceItem
     {
 
         [ImportingConstructor]
-        public PowerOn() : this(ASAPlugin.MountMediator, ASAPlugin.ASAOptions, ASAPlugin.Mount)
+        public PowerOff() : this(ASAPlugin.MountMediator, ASAPlugin.ASAOptions, ASAPlugin.Mount)
         {
         }
 
-        public PowerOn(IMountMediator mountMediator, IASAOptions options, IMount mount)
+        public PowerOff(IMountMediator mountMediator, IASAOptions options, IMount mount)
         {
             this.mountMediator = mountMediator;
             this.mount = mount;
   
         }
 
-        private PowerOn(PowerOn cloneMe) : this(cloneMe.mountMediator, cloneMe.options, cloneMe.mount)
+        private PowerOff(PowerOff cloneMe) : this(cloneMe.mountMediator, cloneMe.options, cloneMe.mount)
         {
             CopyMetaData(cloneMe);
         }
 
         public override object Clone()
         {
-            return new PowerOn(this) { };
+            return new PowerOff(this) { };
         }
 
         private IMountMediator mountMediator;
@@ -64,7 +64,7 @@ namespace NINA.Photon.Plugin.ASA.SequenceItems
         {
            
             
-            if (!mount.PowerOn())
+            if (!mount.PowerOff())
             {
                 throw new Exception("Failed to power on the ASA mount");
             }
