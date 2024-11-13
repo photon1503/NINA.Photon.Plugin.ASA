@@ -28,6 +28,14 @@ namespace NINA.Photon.Plugin.ASA.Equipment {
             this.options = options;
         }
 
+        public void Action(string action, string parameters) {
+            var commandId = Interlocked.Increment(ref commandNumber);
+            if (options.LogCommands) {
+                Logger.Info($"{commandId} - Sending action: {action}, parameters: {parameters}");
+            }
+            telescopeMediator.Action(action, parameters);
+        }
+
         public void SendCommandBlind(string command, bool raw) {
             var commandId = Interlocked.Increment(ref commandNumber);
             if (options.LogCommands) {

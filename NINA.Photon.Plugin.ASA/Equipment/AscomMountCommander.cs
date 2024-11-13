@@ -25,6 +25,11 @@ namespace NINA.Photon.Plugin.ASA.Equipment
             this.ascomTelescope = ascomTelescope;
         }
 
+        public void Action(string action, string parameters)
+        {
+            ascomTelescope.Action(action, parameters);
+        }
+
         public void SendCommandBlind(string command, bool raw)
         {
             ascomTelescope.CommandBlind(command, raw);

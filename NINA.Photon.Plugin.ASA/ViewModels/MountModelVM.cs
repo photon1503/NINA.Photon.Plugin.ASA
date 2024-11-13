@@ -37,6 +37,8 @@ using System.Windows.Threading;
 using CommunityToolkit.Mvvm.Input;
 using NINA.Core.Utility;
 using RelayCommand = CommunityToolkit.Mvvm.Input.RelayCommand;
+using NINA.Photon.Plugin.ASA.Utility;
+using System.Net;
 
 namespace NINA.Photon.Plugin.ASA.ViewModels
 {
@@ -133,6 +135,52 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             this.mountMediator.RegisterConsumer(this);
         }
 
+        public async Task<bool> PowerOn(CancellationToken ct)
+        {
+            if (MountInfo.Connected)
+            {
+                return true;
+            }
+
+            Task progressDelay = null;
+            CancellationTokenSource timeoutCts = null;
+            try
+            {
+
+                //await MountUtility.WaitUntilResponding(ipAddress, this.Options.Port, linkedCt.Token);
+                //TODO MotorOn
+                telescopeMediator.Action("MotorOn", "");
+                
+
+                return await telescopeMediator.Connect();
+            }
+            catch (OperationCanceledException)
+            {
+                if (timeoutCts?.IsCancellationRequested == true)
+                {
+                    Notification.ShowError("Timed out waiting for mount to power on");
+                    Logger.Error("Timed out waiting for mount to power on");
+                }
+                else
+                {
+                    Logger.Info("ASA power on cancelled");
+                }
+            }
+            catch (Exception e)
+            {
+                Notification.ShowError($"Failed to power on ASA mount: {e.Message}");
+                Logger.Error("Failed to power on ASA mount", e);
+            }
+            finally
+            {
+                if (progressDelay != null)
+                {
+                    await progressDelay;
+                }
+                this.progress.Report(new ApplicationStatus() { });
+            }
+            return false;
+        }
         private Task<bool> DeleteWorstStar()
         {
             try

@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.1.2.0
+ - Added Sequence items to power the ASA DDM motors on and off
+
+## 3.1.1.0
+ - Fixed POX file generation
+	
 ## 3.1.0.0
  - Transform points for POX file to J2000
 	

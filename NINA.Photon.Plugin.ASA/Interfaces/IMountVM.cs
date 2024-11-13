@@ -22,7 +22,6 @@ namespace NINA.Photon.Plugin.ASA.Interfaces
     public interface IMountVM : IDockableVM
     {
         CoordinateAngle GetMountReportedDeclination();
-
         AstrometricTime GetMountReportedRightAscension();
 
         AstrometricTime GetMountReportedLocalSiderealTime();
@@ -34,7 +33,6 @@ namespace NINA.Photon.Plugin.ASA.Interfaces
         Task<bool> PowerOn(CancellationToken ct);
 
         void SetDualAxisTracking(bool enabled);
-
         MountInfo GetDeviceInfo();
     }
 }

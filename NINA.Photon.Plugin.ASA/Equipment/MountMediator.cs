@@ -74,6 +74,7 @@ namespace NINA.Photon.Plugin.ASA.Equipment
 
         public Task<bool> PowerOn(CancellationToken ct)
         {
+            
             return handler.PowerOn(ct);
         }
 
