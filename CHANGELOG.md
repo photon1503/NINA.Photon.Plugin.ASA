@@ -1,5 +1,8 @@
 # Changelog
 
+## 3.1.3.0
+ - Added instructions for ASA fans and cover
+  
 ## 3.1.2.0
  - Added Sequence items to power the ASA DDM motors on and off
 

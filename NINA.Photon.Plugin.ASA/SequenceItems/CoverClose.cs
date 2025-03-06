@@ -26,33 +26,33 @@ using System.Threading.Tasks;
 
 namespace NINA.Photon.Plugin.ASA.SequenceItems
 {
-    [ExportMetadata("Name", "Power On Motor")]
-    [ExportMetadata("Description", "Powers on the ASA motor")]
+    [ExportMetadata("Name", "Close Cover")]
+    [ExportMetadata("Description", "Close the ASA cover")]
     [ExportMetadata("Icon", "ASASVG")]
     [ExportMetadata("Category", "ASA Tools")]
     [Export(typeof(ISequenceItem))]
     [JsonObject(MemberSerialization.OptIn)]
-    public class PowerOn : SequenceItem
+    public class CoverClose : SequenceItem
     {
         [ImportingConstructor]
-        public PowerOn() : this(ASAPlugin.MountMediator, ASAPlugin.ASAOptions, ASAPlugin.Mount)
+        public CoverClose() : this(ASAPlugin.MountMediator, ASAPlugin.ASAOptions, ASAPlugin.Mount)
         {
         }
 
-        public PowerOn(IMountMediator mountMediator, IASAOptions options, IMount mount)
+        public CoverClose(IMountMediator mountMediator, IASAOptions options, IMount mount)
         {
             this.mountMediator = mountMediator;
             this.mount = mount;
         }
 
-        private PowerOn(PowerOn cloneMe) : this(cloneMe.mountMediator, cloneMe.options, cloneMe.mount)
+        private CoverClose(CoverClose cloneMe) : this(cloneMe.mountMediator, cloneMe.options, cloneMe.mount)
         {
             CopyMetaData(cloneMe);
         }
 
         public override object Clone()
         {
-            return new PowerOn(this) { };
+            return new CoverClose(this) { };
         }
 
         private IMountMediator mountMediator;
@@ -72,9 +72,9 @@ namespace NINA.Photon.Plugin.ASA.SequenceItems
 
         public override async Task Execute(IProgress<ApplicationStatus> progress, CancellationToken token)
         {
-            if (!mount.PowerOn())
+            if (!mount.CoverClose())
             {
-                throw new Exception("Failed to power on the ASA mount");
+                throw new Exception("Failed to close the ASA cover");
             }
         }
 

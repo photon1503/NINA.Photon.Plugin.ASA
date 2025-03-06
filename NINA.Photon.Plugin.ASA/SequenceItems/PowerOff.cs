@@ -1,4 +1,16 @@
-﻿using Newtonsoft.Json;
+﻿#region "copyright"
+
+/*
+    Copyright © 2021 - 2021 George Hilios <ghilios+NINA@googlemail.com>
+
+    This Source Code Form is subject to the terms of the Mozilla Public
+    License, v. 2.0. If a copy of the MPL was not distributed with this
+    file, You can obtain one at http://mozilla.org/MPL/2.0/.
+*/
+
+#endregion "copyright"
+
+using Newtonsoft.Json;
 using NINA.Core.Model;
 using NINA.Photon.Plugin.ASA.Equipment;
 using NINA.Photon.Plugin.ASA.Interfaces;
@@ -16,13 +28,12 @@ namespace NINA.Photon.Plugin.ASA.SequenceItems
 {
     [ExportMetadata("Name", "Power Off Motor")]
     [ExportMetadata("Description", "Powers off the ASA motor")]
-    [ExportMetadata("Icon", "MotorOffSVG")]
+    [ExportMetadata("Icon", "ASASVG")]
     [ExportMetadata("Category", "ASA Tools")]
     [Export(typeof(ISequenceItem))]
     [JsonObject(MemberSerialization.OptIn)]
     public class PowerOff : SequenceItem
     {
-
         [ImportingConstructor]
         public PowerOff() : this(ASAPlugin.MountMediator, ASAPlugin.ASAOptions, ASAPlugin.Mount)
         {
@@ -32,7 +43,6 @@ namespace NINA.Photon.Plugin.ASA.SequenceItems
         {
             this.mountMediator = mountMediator;
             this.mount = mount;
-  
         }
 
         private PowerOff(PowerOff cloneMe) : this(cloneMe.mountMediator, cloneMe.options, cloneMe.mount)
@@ -62,15 +72,11 @@ namespace NINA.Photon.Plugin.ASA.SequenceItems
 
         public override async Task Execute(IProgress<ApplicationStatus> progress, CancellationToken token)
         {
-           
-            
             if (!mount.PowerOff())
             {
                 throw new Exception("Failed to power on the ASA mount");
             }
         }
-
-
 
         public override string ToString()
         {

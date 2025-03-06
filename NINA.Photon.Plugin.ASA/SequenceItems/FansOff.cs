@@ -10,6 +10,8 @@
 
 #endregion "copyright"
 
+using ASCOM.Tools;
+using Grpc.Core;
 using Newtonsoft.Json;
 using NINA.Core.Model;
 using NINA.Photon.Plugin.ASA.Equipment;
@@ -18,45 +20,52 @@ using NINA.Sequencer.SequenceItem;
 using NINA.Sequencer.Validations;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel.Composition;
+using System.Data.Entity.Infrastructure;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace NINA.Photon.Plugin.ASA.SequenceItems
+namespace NINA.Photon.Plugin.ASA.FansOff
 {
-    [ExportMetadata("Name", "Power On Motor")]
-    [ExportMetadata("Description", "Powers on the ASA motor")]
+    [ExportMetadata("Name", "Fans Off")]
+    [ExportMetadata("Description", "Stop the ASA fans")]
     [ExportMetadata("Icon", "ASASVG")]
     [ExportMetadata("Category", "ASA Tools")]
     [Export(typeof(ISequenceItem))]
     [JsonObject(MemberSerialization.OptIn)]
-    public class PowerOn : SequenceItem
+    public class FansOff : SequenceItem
     {
         [ImportingConstructor]
-        public PowerOn() : this(ASAPlugin.MountMediator, ASAPlugin.ASAOptions, ASAPlugin.Mount)
+        public FansOff() : this(ASAPlugin.MountMediator, ASAPlugin.ASAOptions, ASAPlugin.Mount)
         {
         }
 
-        public PowerOn(IMountMediator mountMediator, IASAOptions options, IMount mount)
+        public FansOff(IMountMediator mountMediator, IASAOptions options, IMount mount)
         {
             this.mountMediator = mountMediator;
             this.mount = mount;
         }
 
-        private PowerOn(PowerOn cloneMe) : this(cloneMe.mountMediator, cloneMe.options, cloneMe.mount)
+        private FansOff(FansOff cloneMe) : this(cloneMe.mountMediator, cloneMe.options, cloneMe.mount)
         {
             CopyMetaData(cloneMe);
         }
 
         public override object Clone()
         {
-            return new PowerOn(this) { };
+            return new FansOff(this)
+            {
+            };
         }
 
         private IMountMediator mountMediator;
         private IMount mount;
+
+        public ObservableCollection<int> FanSpeedOptions { get; set; }
+
         private ASAOptions options;
         private IList<string> issues = new List<string>();
 
@@ -72,7 +81,9 @@ namespace NINA.Photon.Plugin.ASA.SequenceItems
 
         public override async Task Execute(IProgress<ApplicationStatus> progress, CancellationToken token)
         {
-            if (!mount.PowerOn())
+            //var fanSpeed = Utilities.Utilities.ResolveTokens(FanSpeed, this, metadata);
+
+            if (!mount.FansOff())
             {
                 throw new Exception("Failed to power on the ASA mount");
             }
@@ -80,7 +91,7 @@ namespace NINA.Photon.Plugin.ASA.SequenceItems
 
         public override string ToString()
         {
-            return $"Category: {Category}, Item: {nameof(PowerOn)}";
+            return $"Category: {Category}, Item: {nameof(FansOff)}";
         }
     }
 }

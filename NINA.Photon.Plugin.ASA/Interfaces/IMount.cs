@@ -92,7 +92,16 @@ namespace NINA.Photon.Plugin.ASA.Interfaces
         Response<bool> Shutdown();
 
         Response<bool> PowerOn();
+
         Response<bool> PowerOff();
+
+        Response<bool> FansOn(int strength);
+
+        Response<bool> FansOff();
+
+        Response<bool> CoverOpen();
+
+        Response<bool> CoverClose();
 
         Response<bool> GetDualAxisTrackingEnabled();
 

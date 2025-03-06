@@ -268,14 +268,36 @@ namespace NINA.Photon.Plugin.ASA.Equipment
         {
             this.mountCommander.Action("Telescope:MotorOn", "");
             return new Response<bool>(true, "");
-            
         }
 
         public Response<bool> PowerOff()
         {
             this.mountCommander.Action("Telescope:MotorOff", "");
             return new Response<bool>(true, "");
+        }
 
+        public Response<bool> CoverOpen()
+        {
+            this.mountCommander.Action("Telescope:OpenCover", "");
+            return new Response<bool>(true, "");
+        }
+
+        public Response<bool> CoverClose()
+        {
+            this.mountCommander.Action("Telescope:CloseCover", "");
+            return new Response<bool>(true, "");
+        }
+
+        public Response<bool> FansOn(int strength = 9)
+        {
+            this.mountCommander.Action("Telescope:StartFans", strength.ToString());
+            return new Response<bool>(true, "");
+        }
+
+        public Response<bool> FansOff()
+        {
+            this.mountCommander.Action("Telescope:StopFans", "");
+            return new Response<bool>(true, "");
         }
 
         public Response<CoordinateAngle> GetDeclination()
