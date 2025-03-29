@@ -34,7 +34,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace NINA.Photon.Plugin.ASA.SequenceItems
+namespace NINA.Photon.Plugin.ASA.MLTP
 {
     [ExportMetadata("Name", "MLPT Start")]
     [ExportMetadata("Description", "Build and start MLPT")]

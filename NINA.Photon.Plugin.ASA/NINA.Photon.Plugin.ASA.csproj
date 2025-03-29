@@ -43,6 +43,9 @@
     <Compile Update="Grammars\Time.g4.parser.cs">
       <DependentUpon>Time.g4</DependentUpon>
     </Compile>
+    <Compile Update="SequenceItems\MLPTTemplate.xaml.cs">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Antlr4 Include="Grammars\Angle.g4">
