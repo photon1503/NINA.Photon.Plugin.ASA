@@ -95,6 +95,8 @@ namespace NINA.Photon.Plugin.ASA.Interfaces
 
         Response<bool> PowerOff();
 
+        Response<bool> MLTPStop();
+
         Response<bool> FansOn(int strength);
 
         Response<bool> FansOff();

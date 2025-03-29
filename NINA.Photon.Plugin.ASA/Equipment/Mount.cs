@@ -276,6 +276,12 @@ namespace NINA.Photon.Plugin.ASA.Equipment
             return new Response<bool>(true, "");
         }
 
+        public Response<bool> MLTPStop()
+        {
+            this.mountCommander.SendCommandBool("DelOldLpt", true);
+            return new Response<bool>(true, "");
+        }
+
         public Response<bool> CoverOpen()
         {
             this.mountCommander.Action("Telescope:OpenCover", "");
