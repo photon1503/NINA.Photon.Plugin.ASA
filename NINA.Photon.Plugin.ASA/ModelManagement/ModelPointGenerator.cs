@@ -218,12 +218,37 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 var nextCoordinates = coordinates.Clone();
                 var pointCoordinates = ToTopocentric(nextCoordinates, currentTime);
                 var azimuthDegrees = pointCoordinates.Azimuth.Degree;
+                var altitudeDegrees = pointCoordinates.Altitude.Degree;
 
                 Logger.Debug($"Az={azimuthDegrees}, upperlimit={meridianUpperLimit}, lowerlimit={meridianLowerLimit}");
 
                 if (azimuthDegrees >= meridianUpperLimit && azimuthDegrees <= meridianLowerLimit)
                 {
                     Logger.Info($"Point Az={azimuthDegrees:0.##} hits meridian limits at {currentTime}. Adjusting endTime.");
+                    meridianFlipTime = currentTime;
+                    break;
+                }
+
+                var horizonAltitude = horizon.GetAltitude(azimuthDegrees);
+
+                if (altitudeDegrees < options.MinPointAltitude || altitudeDegrees > options.MaxPointAltitude)
+                {
+                    //creationState = ModelPointStateEnum.OutsideAltitudeBounds;
+                    Logger.Info($"Point Alt={altitudeDegrees:0.##} hits altitude limits at {currentTime}. Adjusting endTime.");
+                    meridianFlipTime = currentTime;
+                    break;
+                }
+                else if (azimuthDegrees < options.MinPointAzimuth || azimuthDegrees >= options.MaxPointAzimuth)
+                {
+                    //creationState = ModelPointStateEnum.OutsideAzimuthBounds;
+                    Logger.Info($"Point Az={azimuthDegrees:0.##} hits azimuth limits at {currentTime}. Adjusting endTime.");
+                    meridianFlipTime = currentTime;
+                    break;
+                }
+                else if (altitudeDegrees < horizonAltitude)
+                {
+                    //below horizon
+                    Logger.Info($"Point Alt={altitudeDegrees:0.##} hits horizon at {currentTime}. Adjusting endTime.");
                     meridianFlipTime = currentTime;
                     break;
                 }
