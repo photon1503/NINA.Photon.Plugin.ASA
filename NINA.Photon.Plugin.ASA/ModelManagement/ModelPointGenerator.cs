@@ -210,9 +210,26 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             var points = new List<ModelPoint>();
             var decJitterSigmaDegrees = 0;
 
+            // Adjust startTime if the object is still below the horizon
+            while (true)
+            {
+                var pointCoordinates = ToTopocentric(coordinates, startTime);
+                var altitudeDegrees = pointCoordinates.Altitude.Degree;
+                var horizonAltitude = horizon.GetAltitude(pointCoordinates.Azimuth.Degree);
+
+                if (altitudeDegrees >= horizonAltitude)
+                {
+                    break;
+                }
+
+                //Logger.Info($"Object below horizon at {startTime}. Adjusting startTime.");
+                startTime += TimeSpan.FromMinutes(1);
+            }
+
             // Determine the time when the meridian flip is hit
             DateTime meridianFlipTime = endTime;
             var currentTime = startTime;
+
             while (currentTime < endTime)
             {
                 var nextCoordinates = coordinates.Clone();
