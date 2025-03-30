@@ -205,8 +205,8 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
 
             //  var meridianLimitDegrees = 0.0d;
             Logger.Info($"Using meridian limit {meridianLimitDegrees:0.##}°");
-            var meridianUpperLimit = meridianLimitDegrees + 0.1d;
-            var meridianLowerLimit = 360.0d - meridianLimitDegrees - 0.1d;
+            var meridianUpperLimit = meridianLimitDegrees + 1.0d;
+            var meridianLowerLimit = 360.0d - meridianLimitDegrees - 1.0d;
             var points = new List<ModelPoint>();
             var decJitterSigmaDegrees = 0;
 
@@ -219,14 +219,18 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 var pointCoordinates = ToTopocentric(nextCoordinates, currentTime);
                 var azimuthDegrees = pointCoordinates.Azimuth.Degree;
 
-                if (azimuthDegrees < meridianUpperLimit || azimuthDegrees > meridianLowerLimit)
+                Logger.Debug($"Az={azimuthDegrees}, upperlimit={meridianUpperLimit}, lowerlimit={meridianLowerLimit}");
+
+                if (azimuthDegrees >= meridianUpperLimit && azimuthDegrees <= meridianLowerLimit)
                 {
                     Logger.Info($"Point Az={azimuthDegrees:0.##} hits meridian limits at {currentTime}. Adjusting endTime.");
                     meridianFlipTime = currentTime;
                     break;
                 }
 
-                currentTime += TimeSpan.FromHours(raDelta.Hours);
+                //currentTime += TimeSpan.FromHours(raDelta.Hours);
+                //increase currentTime in 1 minute steps
+                currentTime += TimeSpan.FromMinutes(1);
             }
 
             // Adjust endTime to the meridian flip time
@@ -238,81 +242,65 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             var numIntervals = (int)(totalHours / raDelta.Hours);
 
             // Adjust raDelta to ensure equidistant points
-            raDelta = Angle.ByHours(totalHours / numIntervals);
-
-            while (true)
+            if (numIntervals > 0)
             {
-                points.Clear();
-                int validPoints = 0;
+                raDelta = Angle.ByHours(totalHours / numIntervals);
+                Logger.Debug($"Using RA delta of {raDelta}");
+            }
+            else
+            {
+                raDelta = Angle.ByHours(0);
+                Logger.Info("No points found");
+            }
 
-                currentTime = startTime;
-                var raDeltaTime = TimeSpan.FromHours(raDelta.Hours);
-                while (currentTime < endTime)
+            points.Clear();
+            int validPoints = 0;
+
+            for (int i = 0; i <= numIntervals; i++)
+            {
+                currentTime = startTime + TimeSpan.FromHours(raDelta.Hours * i);
+                var nextCoordinates = coordinates.Clone();
+
+                var decJitter = NormalDistribution.Random(mean: 0.0, stdDev: decJitterSigmaDegrees);
+                decJitter = Math.Min(3.0d * decJitterSigmaDegrees, Math.Max(-3.0d * decJitterSigmaDegrees, decJitter));
+
+                var nextDec = nextCoordinates.Dec + decJitter;
+                nextCoordinates.Dec = Math.Min(90.0d, Math.Max(-90.0d, nextDec));
+
+                var pointCoordinates = ToTopocentric(nextCoordinates, currentTime);
+                var azimuthDegrees = pointCoordinates.Azimuth.Degree;
+                var altitudeDegrees = pointCoordinates.Altitude.Degree;
+
+                var horizonAltitude = horizon.GetAltitude(azimuthDegrees);
+                ModelPointStateEnum creationState;
+                if (altitudeDegrees < options.MinPointAltitude || altitudeDegrees > options.MaxPointAltitude)
                 {
-                    var nextCoordinates = coordinates.Clone();
-
-                    var decJitter = NormalDistribution.Random(mean: 0.0, stdDev: decJitterSigmaDegrees);
-                    decJitter = Math.Min(3.0d * decJitterSigmaDegrees, Math.Max(-3.0d * decJitterSigmaDegrees, decJitter));
-
-                    var nextDec = nextCoordinates.Dec + decJitter;
-                    nextCoordinates.Dec = Math.Min(90.0d, Math.Max(-90.0d, nextDec));
-
-                    var pointCoordinates = ToTopocentric(nextCoordinates, currentTime);
-                    var azimuthDegrees = pointCoordinates.Azimuth.Degree;
-                    var altitudeDegrees = pointCoordinates.Altitude.Degree;
-
-                    // Stop generating points if the azimuth exceeds the meridian limits
-                    if (azimuthDegrees > meridianUpperLimit && azimuthDegrees < meridianLowerLimit)
-                    {
-                        Logger.Info($"Point Alt={altitudeDegrees:0.##}, Az={azimuthDegrees:0.##} hits meridian limits. Stopping generation.");
-                        endTime = currentTime;
-                        break;
-                    }
-
-                    var horizonAltitude = horizon.GetAltitude(azimuthDegrees);
-                    ModelPointStateEnum creationState;
-                    if (altitudeDegrees < options.MinPointAltitude || altitudeDegrees > options.MaxPointAltitude)
-                    {
-                        creationState = ModelPointStateEnum.OutsideAltitudeBounds;
-                    }
-                    else if (azimuthDegrees < options.MinPointAzimuth || azimuthDegrees >= options.MaxPointAzimuth)
-                    {
-                        creationState = ModelPointStateEnum.OutsideAzimuthBounds;
-                    }
-                    else if (altitudeDegrees >= horizonAltitude)
-                    {
-                        ++validPoints;
-                        creationState = ModelPointStateEnum.Generated;
-                    }
-                    else
-                    {
-                        creationState = ModelPointStateEnum.BelowHorizon;
-                    }
-
-                    points.Add(
-                        new ModelPoint(telescopeMediator)
-                        {
-                            Altitude = altitudeDegrees,
-                            Azimuth = azimuthDegrees,
-                            ModelPointState = creationState
-                        });
-                    currentTime += raDeltaTime;
+                    creationState = ModelPointStateEnum.OutsideAltitudeBounds;
                 }
-
-                if (validPoints <= MAX_POINTS)
+                else if (azimuthDegrees < options.MinPointAzimuth || azimuthDegrees >= options.MaxPointAzimuth)
                 {
-                    return points;
+                    creationState = ModelPointStateEnum.OutsideAzimuthBounds;
+                }
+                else if (altitudeDegrees >= horizonAltitude)
+                {
+                    ++validPoints;
+                    creationState = ModelPointStateEnum.Generated;
                 }
                 else
                 {
-                    // We have too many points, so increase until we're below the limit. This algorithm is guaranteed to converge as we always increase the ra delta
-                    var increaseRatio = (double)validPoints / MAX_POINTS;
-                    var nextRaDelta = Angle.ByDegree(raDelta.Degree * increaseRatio);
-                    Logger.Info($"Too many points ({validPoints}) generated with RA delta ({raDelta}). Increasing to {nextRaDelta}");
-
-                    raDelta = nextRaDelta;
+                    creationState = ModelPointStateEnum.BelowHorizon;
                 }
+
+                points.Add(
+                    new ModelPoint(telescopeMediator)
+                    {
+                        Altitude = altitudeDegrees,
+                        Azimuth = azimuthDegrees,
+                        ModelPointState = creationState
+                    });
             }
+
+            return points;
         }
     }
 }
