@@ -439,9 +439,10 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 {
                     return Task.FromResult(GenerateGoldenSpiral(this.GoldenSpiralStarCount, true));
                 }
-                /* else if (this.ModelPointGenerationType == ModelPointGenerationTypeEnum.SiderealPath) {
+                else if (this.ModelPointGenerationType == ModelPointGenerationTypeEnum.SiderealPath)
+                {
                     return Task.FromResult(GenerateSiderealPath(false));
-                }*/
+                }
                 else
                 {
                     throw new ArgumentException($"Unexpected Model Point Generation Type {this.ModelPointGenerationType}");
@@ -507,7 +508,6 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             return Task.FromResult(true);
         }
 
-
         private Task<bool> ClearPoints()
         {
             this.ModelPoints.Clear();
@@ -550,10 +550,10 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             SelectedSiderealPathEndDateTimeProvider = SiderealPathEndDateTimeProviders.FirstOrDefault(p => p.Name == endTimeProvider.Name);
             SiderealTrackStartOffsetMinutes = startOffsetMinutes;
             SiderealTrackEndOffsetMinutes = endOffsetMinutes;
-            //ModelPointGenerationType = ModelPointGenerationTypeEnum.SiderealPath;
+            ModelPointGenerationType = ModelPointGenerationTypeEnum.SiderealPath;
             if (!GenerateSiderealPath(false))
             {
-                throw new Exception("Failed to generate sidereal path");
+                throw new Exception("Failed to generate MLTP path");
             }
 
             return this.ModelPoints;
@@ -599,7 +599,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 endTime += TimeSpan.FromDays(1);
             }
 
-            Logger.Info($"Generating sidereal path. Coordinates={SiderealPathObjectCoordinates.Coordinates}, RADelta={SiderealTrackRADeltaDegrees}, StartTime={startTime}, EndTime={endTime}");
+            Logger.Info($"Generating MLTP path. Coordinates={SiderealPathObjectCoordinates.Coordinates}, RADelta={SiderealTrackRADeltaDegrees}, StartTime={startTime}, EndTime={endTime}");
             try
             {
                 var localModelPoints = this.modelPointGenerator.GenerateSiderealPath(SiderealPathObjectCoordinates.Coordinates, Angle.ByDegree(SiderealTrackRADeltaDegrees), startTime, endTime, CustomHorizon);
@@ -621,9 +621,9 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             {
                 if (showNotifications)
                 {
-                    Notification.ShowError($"Failed to generate sidereal path. {e.Message}");
+                    Notification.ShowError($"Failed to generate MLTP. {e.Message}");
                 }
-                Logger.Error($"Failed to generate sidereal path. Coordinates={SiderealPathObjectCoordinates?.Coordinates}, RADelta={SiderealTrackRADeltaDegrees}, StartTime={startTime}, EndTime={endTime}", e);
+                Logger.Error($"Failed to generate MLTP path. Coordinates={SiderealPathObjectCoordinates?.Coordinates}, RADelta={SiderealTrackRADeltaDegrees}, StartTime={startTime}, EndTime={endTime}", e);
                 return false;
             }
         }
@@ -1184,7 +1184,6 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             System.Windows.Forms.DialogResult result = folderBrowserDialog.ShowDialog();
             if (result == System.Windows.Forms.DialogResult.OK)
             {
-
                 modelBuildCts = new CancellationTokenSource();
                 modelBuildStopCts = new CancellationTokenSource();
                 var cancelTokenSource = CancellationTokenSource.CreateLinkedTokenSource(ct, modelBuildCts.Token);
@@ -1217,15 +1216,10 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 Notification.ShowInformation($"ASA model solver started");
 
                 var sol = modelBuilder.SolveFolder(folderBrowserDialog.SelectedPath, options, ct, modelBuildStopCts.Token, progress, stepProgress);
-                          
-
-
-
             }
-         
+
             return Task.FromResult(true);
         }
-
 
         private Task<bool> ExportPoints()
         {
@@ -1314,7 +1308,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
         }
 
         public int HighAltitudeMax
-            {
+        {
             get => this.modelBuilderOptions.HighAltitudeMax;
             set
             {
@@ -1326,17 +1320,19 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             }
         }
 
-        public double SyncEveryHA 
-            {
+        public double SyncEveryHA
+        {
             get => this.modelBuilderOptions.SyncEveryHA;
-            set {
-                if (this.modelBuilderOptions.SyncEveryHA != value) 
+            set
+            {
+                if (this.modelBuilderOptions.SyncEveryHA != value)
                 {
                     this.modelBuilderOptions.SyncEveryHA = value;
                     RaisePropertyChanged();
                 }
             }
         }
+
         public double SyncEastAltitude
         {
             get => this.modelBuilderOptions.SyncEastAltitude;
@@ -1349,6 +1345,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 }
             }
         }
+
         public double SyncWestAltitude
         {
             get => this.modelBuilderOptions.SyncWestAltitude;
@@ -1362,8 +1359,8 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             }
         }
 
-        public double SyncEastAzimuth 
-            {
+        public double SyncEastAzimuth
+        {
             get => this.modelBuilderOptions.SyncEastAzimuth;
             set
             {
@@ -1440,7 +1437,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             }
         }
 
-        public bool UseSync 
+        public bool UseSync
         {
             get => this.modelBuilderOptions.UseSync;
             set
@@ -1452,7 +1449,6 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 }
             }
         }
-
 
         public int SiderealTrackStartOffsetMinutes
         {

@@ -21,7 +21,7 @@ namespace NINA.Photon.Plugin.ASA.Model
         [Description("Golden Spiral")]
         GoldenSpiral = 0,
 
-        // [Description("Sidereal Path")]
-        // SiderealPath = 1
+        [Description("MLTP")]
+        SiderealPath = 1
     }
 }

@@ -452,7 +452,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
                 MaxFailedPoints = MaxFailedPoints,
                 RemoveHighRMSPointsAfterBuild = options.RemoveHighRMSPointsAfterBuild,
                 PlateSolveSubframePercentage = options.PlateSolveSubframePercentage,
-                DisableRefractionCorrection = options.DisableRefractionCorrection
+                DisableRefractionCorrection = options.DisableRefractionCorrection,
             };
 
             if (!await mountModelBuilderMediator.BuildModel(ModelPoints, modelBuilderOptions, token))
@@ -483,7 +483,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             }
             catch (Exception e)
             {
-                Notification.ShowError($"Failed to generate sidereal path model: {e.Message}");
+                Notification.ShowError($"Failed to generate MLTP model: {e.Message}");
             }
         }
 
