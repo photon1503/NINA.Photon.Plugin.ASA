@@ -490,10 +490,11 @@ namespace NINA.Photon.Plugin.ASA.MLTP
         public bool Validate()
         {
             var i = new List<string>();
-            if (!mountMediator.GetInfo().Connected)
+            /*if (!mountMediator.GetInfo().Connected)             // TODO CRASH
+
             {
                 i.Add("ASA mount not connected");
-            }
+            }*/
             if (!cameraMediator.GetInfo().Connected)
             {
                 i.Add("Camera not connected");

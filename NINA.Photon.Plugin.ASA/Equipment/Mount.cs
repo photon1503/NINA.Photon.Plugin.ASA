@@ -306,6 +306,27 @@ namespace NINA.Photon.Plugin.ASA.Equipment
             return new Response<bool>(true, "");
         }
 
+        public Response<double> MeridianFlipMaxAngle()
+        {
+            string rc = "0";
+            try
+            {
+                rc = this.mountCommander.SendCommandString("MeridianFlipMaxAngle", true);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"CommandString MeridianFlipMaxAngle: {ex.Message}");
+            }
+
+            double result = 0;
+            rc = rc.Replace(',', '.');
+            if (double.TryParse(rc, NumberStyles.Float, CultureInfo.InvariantCulture, out result))
+            {
+                return new Response<double>(result, rc);
+            }
+            return new Response<double>(0, rc);
+        }
+
         public Response<CoordinateAngle> GetDeclination()
         {
             const string command = ":GD#";

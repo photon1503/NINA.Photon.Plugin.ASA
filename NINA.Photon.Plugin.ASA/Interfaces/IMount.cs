@@ -101,6 +101,8 @@ namespace NINA.Photon.Plugin.ASA.Interfaces
 
         Response<bool> FansOff();
 
+        Response<double> MeridianFlipMaxAngle();
+
         Response<bool> CoverOpen();
 
         Response<bool> CoverClose();

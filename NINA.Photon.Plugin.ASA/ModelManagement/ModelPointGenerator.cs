@@ -39,14 +39,16 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
         private readonly IASAOptions options;
         private readonly IWeatherDataMediator weatherDataMediator;
         private readonly IMountMediator mountMediator;
+        private readonly IMount mount;
 
-        public ModelPointGenerator(IProfileService profileService, ITelescopeMediator telescopeMediator, IWeatherDataMediator weatherDataMediator, IASAOptions options, IMountMediator mountMediator)
+        public ModelPointGenerator(IProfileService profileService, ITelescopeMediator telescopeMediator, IWeatherDataMediator weatherDataMediator, IASAOptions options, IMountMediator mountMediator, IMount mount)
         {
             this.profileService = profileService;
             this.telescopeMediator = telescopeMediator;
             this.weatherDataMediator = weatherDataMediator;
             this.options = options;
             this.mountMediator = mountMediator;
+            this.mount = mount;
         }
 
         public List<ModelPoint> GenerateGoldenSpiral(int numPoints, CustomHorizon horizon)
@@ -198,12 +200,15 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 throw new Exception($"RA delta ({raDelta}) cannot be less than 1 arc second");
             }
 
-            var meridianLimitDegrees = mountMediator.GetInfo().MeridianLimitDegrees;
+            var meridianLimitDegrees = 180 - mount.MeridianFlipMaxAngle();
+            Logger.Debug($"MeridianFlipMaxangle={meridianLimitDegrees}");
+
+            //  var meridianLimitDegrees = 0.0d;
             Logger.Info($"Using meridian limit {meridianLimitDegrees:0.##}°");
             var meridianUpperLimit = meridianLimitDegrees + 0.1d;
             var meridianLowerLimit = 360.0d - meridianLimitDegrees - 0.1d;
             var points = new List<ModelPoint>();
-            var decJitterSigmaDegrees = this.options.DecJitterSigmaDegrees;
+            var decJitterSigmaDegrees = 0;
             while (true)
             {
                 points.Clear();
