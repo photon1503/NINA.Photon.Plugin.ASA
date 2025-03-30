@@ -209,12 +209,43 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             var meridianLowerLimit = 360.0d - meridianLimitDegrees - 0.1d;
             var points = new List<ModelPoint>();
             var decJitterSigmaDegrees = 0;
+
+            // Determine the time when the meridian flip is hit
+            DateTime meridianFlipTime = endTime;
+            var currentTime = startTime;
+            while (currentTime < endTime)
+            {
+                var nextCoordinates = coordinates.Clone();
+                var pointCoordinates = ToTopocentric(nextCoordinates, currentTime);
+                var azimuthDegrees = pointCoordinates.Azimuth.Degree;
+
+                if (azimuthDegrees < meridianUpperLimit || azimuthDegrees > meridianLowerLimit)
+                {
+                    Logger.Info($"Point Az={azimuthDegrees:0.##} hits meridian limits at {currentTime}. Adjusting endTime.");
+                    meridianFlipTime = currentTime;
+                    break;
+                }
+
+                currentTime += TimeSpan.FromHours(raDelta.Hours);
+            }
+
+            // Adjust endTime to the meridian flip time
+            endTime = meridianFlipTime;
+
+            // Calculate the total duration and the number of intervals
+            var totalDuration = endTime - startTime;
+            var totalHours = totalDuration.TotalHours;
+            var numIntervals = (int)(totalHours / raDelta.Hours);
+
+            // Adjust raDelta to ensure equidistant points
+            raDelta = Angle.ByHours(totalHours / numIntervals);
+
             while (true)
             {
                 points.Clear();
                 int validPoints = 0;
 
-                var currentTime = startTime;
+                currentTime = startTime;
                 var raDeltaTime = TimeSpan.FromHours(raDelta.Hours);
                 while (currentTime < endTime)
                 {
@@ -234,6 +265,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                     if (azimuthDegrees > meridianUpperLimit && azimuthDegrees < meridianLowerLimit)
                     {
                         Logger.Info($"Point Alt={altitudeDegrees:0.##}, Az={azimuthDegrees:0.##} hits meridian limits. Stopping generation.");
+                        endTime = currentTime;
                         break;
                     }
 
