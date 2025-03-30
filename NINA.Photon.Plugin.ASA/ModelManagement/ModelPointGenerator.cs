@@ -230,16 +230,11 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                     var azimuthDegrees = pointCoordinates.Azimuth.Degree;
                     var altitudeDegrees = pointCoordinates.Altitude.Degree;
 
-                    // Make sure no point is within the meridian limits
-                    if (azimuthDegrees < meridianUpperLimit)
+                    // Stop generating points if the azimuth exceeds the meridian limits
+                    if (azimuthDegrees > meridianUpperLimit && azimuthDegrees < meridianLowerLimit)
                     {
-                        Logger.Info($"Point Alt={altitudeDegrees:0.##}, Az={azimuthDegrees:0.##} within meridian limit. Adjusting azimuth to {meridianUpperLimit:0.##}");
-                        azimuthDegrees = meridianUpperLimit;
-                    }
-                    if (azimuthDegrees > meridianLowerLimit)
-                    {
-                        Logger.Info($"Point Alt={altitudeDegrees:0.##}, Az={azimuthDegrees:0.##} within meridian limit. Adjusting azimuth to {meridianLowerLimit:0.##}");
-                        azimuthDegrees = meridianLowerLimit;
+                        Logger.Info($"Point Alt={altitudeDegrees:0.##}, Az={azimuthDegrees:0.##} hits meridian limits. Stopping generation.");
+                        break;
                     }
 
                     var horizonAltitude = horizon.GetAltitude(azimuthDegrees);
