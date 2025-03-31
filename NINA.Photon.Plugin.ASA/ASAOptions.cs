@@ -84,8 +84,6 @@ namespace NINA.Photon.Plugin.ASA
             syncWestAzimuth = optionsAccessor.GetValueDouble("SyncWestAzimuth", 270.0d);
             refEastAzimuth = optionsAccessor.GetValueDouble("RefEastAzimuth", 90.0d);
             refWestAzimuth = optionsAccessor.GetValueDouble("RefWestAzimuth", 270.0d);
-
-
         }
 
         public void ResetDefaults()
@@ -137,7 +135,6 @@ namespace NINA.Photon.Plugin.ASA
             RefEastAzimuth = 90.0d;
             RefWestAzimuth = 270.0d;
         }
-    
 
         private int minPointAltitude;
 
@@ -337,6 +334,7 @@ namespace NINA.Photon.Plugin.ASA
         }
 
         private int highAltitudeStars;
+
         public int HighAltitudeStars
         {
             get => highAltitudeStars;
@@ -351,8 +349,8 @@ namespace NINA.Photon.Plugin.ASA
             }
         }
 
-
         private int highAltitudeMin;
+
         public int HighAltitudeMin
         {
             get => highAltitudeMin;
@@ -368,6 +366,7 @@ namespace NINA.Photon.Plugin.ASA
         }
 
         private int highAltitudeMax;
+
         public int HighAltitudeMax
         {
             get => highAltitudeMax;
@@ -383,6 +382,7 @@ namespace NINA.Photon.Plugin.ASA
         }
 
         private double syncEveryHA;
+
         public double SyncEveryHA
         {
             get => syncEveryHA;
@@ -398,6 +398,7 @@ namespace NINA.Photon.Plugin.ASA
         }
 
         private bool useSync;
+
         public bool UseSync
         {
             get => useSync;
@@ -413,8 +414,9 @@ namespace NINA.Photon.Plugin.ASA
         }
 
         private double syncEastAltitude;
+
         public double SyncEastAltitude
-            {
+        {
             get => syncEastAltitude;
             set
             {
@@ -428,6 +430,7 @@ namespace NINA.Photon.Plugin.ASA
         }
 
         private double syncWestAltitude;
+
         public double SyncWestAltitude
         {
             get => syncWestAltitude;
@@ -441,8 +444,9 @@ namespace NINA.Photon.Plugin.ASA
                 }
             }
         }
-     
+
         private double syncEastAzimuth;
+
         public double SyncEastAzimuth
         {
             get => syncEastAzimuth;
@@ -456,9 +460,11 @@ namespace NINA.Photon.Plugin.ASA
                 }
             }
         }
+
         private double syncWestAzimuth;
+
         public double SyncWestAzimuth
-            {
+        {
             get => syncWestAzimuth;
             set
             {
@@ -471,10 +477,11 @@ namespace NINA.Photon.Plugin.ASA
             }
         }
 
-    private double refEastAltitude;
-    public double RefEastAltitude
+        private double refEastAltitude;
+
+        public double RefEastAltitude
         {
-        get => refEastAltitude;
+            get => refEastAltitude;
             set
             {
                 if (refEastAltitude != value)
@@ -486,8 +493,9 @@ namespace NINA.Photon.Plugin.ASA
             }
         }
 
-    private double refWestAltitude;
-    public double RefWestAltitude
+        private double refWestAltitude;
+
+        public double RefWestAltitude
         {
             get => refWestAltitude;
             set
@@ -501,10 +509,11 @@ namespace NINA.Photon.Plugin.ASA
             }
         }
 
-    private double refEastAzimuth;
-    public double RefEastAzimuth
+        private double refEastAzimuth;
+
+        public double RefEastAzimuth
         {
-        get => refEastAzimuth;
+            get => refEastAzimuth;
             set
             {
                 if (refEastAzimuth != value)
@@ -516,10 +525,11 @@ namespace NINA.Photon.Plugin.ASA
             }
         }
 
-    private double refWestAzimuth;
-    public double RefWestAzimuth
+        private double refWestAzimuth;
+
+        public double RefWestAzimuth
         {
-        get => refWestAzimuth;
+            get => refWestAzimuth;
             set
             {
                 if (refWestAzimuth != value)
@@ -530,7 +540,6 @@ namespace NINA.Photon.Plugin.ASA
                 }
             }
         }
-
 
         private int builderNumRetries;
 

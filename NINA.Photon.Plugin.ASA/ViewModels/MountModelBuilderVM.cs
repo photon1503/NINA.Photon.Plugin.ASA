@@ -740,7 +740,8 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 RefEastAltitude = modelBuilderOptions.RefEastAltitude,
                 RefWestAltitude = modelBuilderOptions.RefWestAltitude,
                 RefEastAzimuth = modelBuilderOptions.RefEastAzimuth,
-                RefWestAzimuth = modelBuilderOptions.RefWestAzimuth
+                RefWestAzimuth = modelBuilderOptions.RefWestAzimuth,
+                ModelPointGenerationType = modelBuilderOptions.ModelPointGenerationType,
             };
             var modelPoints = ModelPoints.ToList();
             return DoBuildModel(modelPoints, options, CancellationToken.None);
