@@ -282,6 +282,12 @@ namespace NINA.Photon.Plugin.ASA.Equipment
             return new Response<bool>(true, "");
         }
 
+        public Response<bool> MLTPSend(string json)
+        {
+            this.mountCommander.Action("telescope:sendmlptpointings", json);
+            return new Response<bool>(true, "");
+        }
+
         public Response<bool> CoverOpen()
         {
             this.mountCommander.Action("Telescope:OpenCover", "");

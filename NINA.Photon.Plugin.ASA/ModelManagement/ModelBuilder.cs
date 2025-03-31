@@ -715,6 +715,18 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                     Logger.Debug($"Sidereal path model generation: {json}");
                     //TODO MLTP
 
+                    bool success = mount.MLTPSend(json);
+                    if (!success)
+                    {
+                        Logger.Error("Failed to send MLTP pointings");
+                        Notification.ShowError("Failed to MLTP pointings");
+                    }
+                    else
+                    {
+                        Logger.Info("MLTP pointings sent");
+                        Notification.ShowSuccess("MLTP pointings sent");
+                    }
+
                     return;
                     //this.mountModelMediator.FinishAlignmentSpec();
                 }
