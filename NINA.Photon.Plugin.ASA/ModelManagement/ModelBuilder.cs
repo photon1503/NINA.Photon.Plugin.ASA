@@ -68,6 +68,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
         private readonly IFilterWheelMediator filterWheelMediator;
         private readonly ICustomDateTime nowProvider = new SystemDateTime();
         private volatile int processingInProgressCount;
+        private bool IsTelescopePositionRestored = false;
 
         private List<ModelPoint> modelPoints1 = new List<ModelPoint>();
 
@@ -428,6 +429,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 {
                     Notification.ShowInformation("Restoring telescope position after ASA model build");
                     await telescopeMediator.SlewToCoordinatesAsync(startCoordinates, innerCts.Token);
+                    IsTelescopePositionRestored = true; //TODO wait here
                 }
                 if (oldFilter != null)
                 {
@@ -509,6 +511,8 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             ct.ThrowIfCancellationRequested();
             var validPoints = state.ValidPoints;
             var options = state.Options;
+
+            IsTelescopePositionRestored = false;
 
             var stopOrCancelCts = CancellationTokenSource.CreateLinkedTokenSource(ct, stopToken);
             var stopOrCancelCt = stopOrCancelCts.Token;
@@ -713,8 +717,13 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                     // convert pointsList to string
                     string json = Newtonsoft.Json.JsonConvert.SerializeObject(pointsList);
                     Logger.Debug($"Sidereal path model generation: {json}");
-                    //TODO MLTP
 
+                    // TODO wait for the mount to return to the starting position
+
+                    /* while (!IsTelescopePositionRestored)
+                     {
+                         await Task.Delay(1000);
+                     } */
                     bool success = mount.MLTPSend(json);
                     if (!success)
                     {

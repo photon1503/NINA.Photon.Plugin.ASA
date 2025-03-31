@@ -22,6 +22,7 @@ using NINA.Photon.Plugin.ASA.Utility;
 using NINA.Profile.Interfaces;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace NINA.Photon.Plugin.ASA.ModelManagement
 {
@@ -200,13 +201,15 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 throw new Exception($"RA delta ({raDelta}) cannot be less than 1 arc second");
             }
 
-            var meridianLimitDegrees = 180 - mount.MeridianFlipMaxAngle();
+            var meridianLimitDegrees = 180 + mount.MeridianFlipMaxAngle();
             Logger.Debug($"MeridianFlipMaxangle={meridianLimitDegrees}");
 
             //  var meridianLimitDegrees = 0.0d;
             Logger.Info($"Using meridian limit {meridianLimitDegrees:0.##}°");
-            var meridianUpperLimit = meridianLimitDegrees + 1.0d;
-            var meridianLowerLimit = 360.0d - meridianLimitDegrees - 1.0d;
+            var toleranceDegrees = 3.0d; // Small buffer to avoid flip at exact limit
+            var meridianUpperLimit = meridianLimitDegrees + toleranceDegrees;
+            var meridianLowerLimit = 360.0d - meridianLimitDegrees - toleranceDegrees;
+
             var points = new List<ModelPoint>();
             var decJitterSigmaDegrees = 0;
 
@@ -230,6 +233,10 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             DateTime meridianFlipTime = endTime;
             var currentTime = startTime;
 
+            var initialCoords = ToTopocentric(coordinates, startTime);
+            double initialAzimuth = initialCoords.Azimuth.Degree;
+            bool isWestOfMeridian = initialAzimuth < 180;
+
             while (currentTime < endTime)
             {
                 var nextCoordinates = coordinates.Clone();
@@ -239,19 +246,18 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
 
                 Logger.Debug($"Az={azimuthDegrees}, upperlimit={meridianUpperLimit}, lowerlimit={meridianLowerLimit}");
 
-                if (azimuthDegrees >= meridianUpperLimit && azimuthDegrees <= meridianLowerLimit)
+                var horizonAltitude = horizon.GetAltitude(azimuthDegrees);
+                // For WEST targets: Only check upper limit (195°)
+                if (isWestOfMeridian && azimuthDegrees >= meridianUpperLimit)
                 {
-                    Logger.Info($"Point Az={azimuthDegrees:0.##} hits meridian limits at {currentTime}. Adjusting endTime.");
+                    Logger.Debug($"Meridian flip triggered at {currentTime} (Az={azimuthDegrees:0.##}°)");
                     meridianFlipTime = currentTime;
                     break;
                 }
-
-                var horizonAltitude = horizon.GetAltitude(azimuthDegrees);
-
-                if (altitudeDegrees < options.MinPointAltitude || altitudeDegrees > options.MaxPointAltitude)
+                // For EAST targets: Only check lower limit (345°)
+                else if (!isWestOfMeridian && azimuthDegrees <= meridianLowerLimit)
                 {
-                    //creationState = ModelPointStateEnum.OutsideAltitudeBounds;
-                    Logger.Info($"Point Alt={altitudeDegrees:0.##} hits altitude limits at {currentTime}. Adjusting endTime.");
+                    Logger.Debug($"Meridian flip triggered at {currentTime} (Az={azimuthDegrees:0.##}°)");
                     meridianFlipTime = currentTime;
                     break;
                 }
