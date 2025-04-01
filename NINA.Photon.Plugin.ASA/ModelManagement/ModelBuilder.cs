@@ -940,6 +940,12 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             var eligiblePoints = state.ValidPoints.Where(IsPointEligibleForBuild).ToList();
             var eligiblePointsOrdered = eligiblePoints.OrderBy(p => p, state.PointAzimuthComparer).ToList();
 
+            // For MLTP, order by east to west (for northern hemisphere) or west to east (for southern hemisphere)
+            if (state.Options.ModelPointGenerationType == ModelPointGenerationTypeEnum.SiderealPath)
+            {
+                eligiblePointsOrdered = eligiblePoints;
+            }
+
             Logger.Info($"Sync is {(state.Options.UseSync ? "enabled" : "disabled")}");
 
             if (state.Options.UseSync == true)
@@ -1030,6 +1036,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 ModelPointState = ModelPointStateEnum.Generated
             };
 
+            // For MLTP, go to last point then back to first point
             if (state.Options.ModelPointGenerationType == ModelPointGenerationTypeEnum.SiderealPath)
             {
                 // slew to last point and then back
