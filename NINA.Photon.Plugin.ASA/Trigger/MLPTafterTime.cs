@@ -99,9 +99,20 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             SiderealTrackRADeltaDegrees = 5;
             Amount = 89;
 
-            AddItem(TriggerRunner, new MLPTStart(options, mountMediator, mount,
-             mountModelBuilderMediator, modelPointGenerator,
-             nighttimeCalculator, cameraMediator));
+            var mlptStart = new MLPTStart(options, mountMediator, mount, mountModelBuilderMediator, modelPointGenerator, nighttimeCalculator, cameraMediator)
+            {
+                Coordinates = this.Coordinates,
+                SiderealTrackStartOffsetMinutes = this.SiderealTrackStartOffsetMinutes,
+                SiderealTrackEndOffsetMinutes = this.SiderealTrackEndOffsetMinutes,
+                SiderealTrackRADeltaDegrees = this.SiderealTrackRADeltaDegrees,
+                MaxFailedPoints = this.MaxFailedPoints,
+                BuilderNumRetries = this.BuilderNumRetries,
+                MaxPointRMS = this.MaxPointRMS,
+                SelectedSiderealPathStartDateTimeProviderName = this.SelectedSiderealPathStartDateTimeProviderName,
+                SelectedSiderealPathEndDateTimeProviderName = this.SelectedSiderealPathEndDateTimeProviderName
+            };
+
+            AddItem(TriggerRunner, mlptStart);
         }
 
         private void AddItem(SequentialContainer runner, ISequenceItem item)
@@ -132,6 +143,12 @@ namespace NINA.Photon.Plugin.ASA.MLTP
                 inherited = value;
                 RaisePropertyChanged();
             }
+        }
+
+        public override async Task Execute(ISequenceContainer context, IProgress<ApplicationStatus> progress, CancellationToken token)
+        {
+            TriggerRunner.AttachNewParent(context);
+            await TriggerRunner.Run(progress, token);
         }
 
         [JsonProperty]
@@ -470,12 +487,6 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             }
 
             UpdateModelPoints();
-        }
-
-        public override async Task Execute(ISequenceContainer context, IProgress<ApplicationStatus> progress, CancellationToken token)
-        {
-            TriggerRunner.AttachNewParent(context);
-            await TriggerRunner.Run(progress, token);
         }
 
         /*

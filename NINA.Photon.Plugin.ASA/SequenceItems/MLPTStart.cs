@@ -526,6 +526,8 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             if (contextCoordinates != null)
             {
                 Coordinates.Coordinates = contextCoordinates.Coordinates;
+                // get values from parent - how
+
                 UpdateModelPoints();
                 Inherited = true;
             }
