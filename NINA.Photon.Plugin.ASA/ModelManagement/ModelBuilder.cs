@@ -695,11 +695,10 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                     Logger.Info("Sidereal path model generation");
 
                     var pointsList = new List<object>();
-                    int numPoints = state.ValidPoints.Count(p => p.ModelPointState == ModelPointStateEnum.AddedToModel);
 
                     foreach (var point in state.ValidPoints)
                     {
-                        if (point.ModelPointState == ModelPointStateEnum.AddedToModel)
+                        if (point.ModelPointState == ModelPointStateEnum.AddedToModel || point.ModelPointState == ModelPointStateEnum.Failed)
                         {
                             var pointData = new
                             {
@@ -709,7 +708,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                                 TelescopeDe = point.MountReportedDeclination,
                                 PlateRa = point.PlateSolvedRightAscension,
                                 PlateDe = point.PlateSolvedDeclination,
-                                Solved = true
+                                Solved = point.ModelPointState == ModelPointStateEnum.AddedToModel
                             };
                             pointsList.Add(pointData);
                         }
