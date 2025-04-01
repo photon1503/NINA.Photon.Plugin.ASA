@@ -1030,6 +1030,14 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 ModelPointState = ModelPointStateEnum.Generated
             };
 
+            if (state.Options.ModelPointGenerationType == ModelPointGenerationTypeEnum.SiderealPath)
+            {
+                // slew to last point and then back
+                var lastPoint = eligiblePointsOrdered.Last();
+                await SlewTelescopeToPoint(state, lastPoint, ct);
+                await SlewTelescopeToPoint(state, nextPoint, ct);
+            }
+
             while (nextPoint != null)
             {
                 ct.ThrowIfCancellationRequested();

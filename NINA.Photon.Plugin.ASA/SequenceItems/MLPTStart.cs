@@ -501,11 +501,11 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             if (!cameraMediator.GetInfo().Connected)
             {
                 i.Add("Camera not connected");
-            }
+            } /*
             if (!Inherited)
             {
                 i.Add("Not within a container that has a target");
-            }
+            } */
             if (ModelPoints.Count < 3)
             {
                 i.Add($"Model builds require at least 3 points. Only {ModelPoints.Count} points were generated");
@@ -517,16 +517,20 @@ namespace NINA.Photon.Plugin.ASA.MLTP
 
         public override void AfterParentChanged()
         {
-            // Navigate up 2 levels to bypass the immediate container
-            var contextCoordinates = ItemUtility.RetrieveContextCoordinates(
-                this.Parent?.Parent?.Parent ?? // Trigger container's parent
-                this.Parent?.Parent            // Immediate container
-            );
+            var contextCoordinates = ItemUtility.RetrieveContextCoordinates(this.Parent);
+
+            if (contextCoordinates == null)
+            {
+                // Navigate up 2 levels to bypass the immediate container
+                contextCoordinates = ItemUtility.RetrieveContextCoordinates(
+                   this.Parent?.Parent?.Parent ?? // Trigger container's parent
+                   this.Parent?.Parent            // Immediate container
+               );
+            }
 
             if (contextCoordinates != null)
             {
                 Coordinates.Coordinates = contextCoordinates.Coordinates;
-                // get values from parent - how
 
                 UpdateModelPoints();
                 Inherited = true;

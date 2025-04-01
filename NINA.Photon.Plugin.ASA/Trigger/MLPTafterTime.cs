@@ -97,7 +97,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
                 new DawnProvider(nighttimeCalculator));
             this.SelectedSiderealPathEndDateTimeProviderName = this.SiderealPathEndDateTimeProviders.First().Name;
             SiderealTrackRADeltaDegrees = 5;
-            Amount = 89;
+            Amount = 90;
 
             var mlptStart = new MLPTStart(options, mountMediator, mount, mountModelBuilderMediator, modelPointGenerator, nighttimeCalculator, cameraMediator)
             {
@@ -148,7 +148,10 @@ namespace NINA.Photon.Plugin.ASA.MLTP
         public override async Task Execute(ISequenceContainer context, IProgress<ApplicationStatus> progress, CancellationToken token)
         {
             TriggerRunner.AttachNewParent(context);
+            //TriggerRunner.AttachNewParent(this.Parent);
+
             await TriggerRunner.Run(progress, token);
+            initialTime = DateTime.Now;
         }
 
         [JsonProperty]
