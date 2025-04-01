@@ -33,6 +33,8 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using NINA.Sequencer.Container;
+using NINA.Sequencer;
 
 namespace NINA.Photon.Plugin.ASA.MLTP
 {
@@ -100,7 +102,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
                 BuilderNumRetries = BuilderNumRetries,
                 MaxPointRMS = MaxPointRMS,
                 SelectedSiderealPathStartDateTimeProviderName = SelectedSiderealPathStartDateTimeProviderName,
-                SelectedSiderealPathEndDateTimeProviderName = SelectedSiderealPathEndDateTimeProviderName
+                SelectedSiderealPathEndDateTimeProviderName = SelectedSiderealPathEndDateTimeProviderName,
             };
             return cloned;
         }
@@ -515,7 +517,12 @@ namespace NINA.Photon.Plugin.ASA.MLTP
 
         public override void AfterParentChanged()
         {
-            var contextCoordinates = ItemUtility.RetrieveContextCoordinates(this.Parent);
+            // Navigate up 2 levels to bypass the immediate container
+            var contextCoordinates = ItemUtility.RetrieveContextCoordinates(
+                this.Parent?.Parent?.Parent ?? // Trigger container's parent
+                this.Parent?.Parent            // Immediate container
+            );
+
             if (contextCoordinates != null)
             {
                 Coordinates.Coordinates = contextCoordinates.Coordinates;

@@ -51,6 +51,14 @@ namespace NINA.Photon.Plugin.ASA.MLTP
     [JsonObject(MemberSerialization.OptIn)]
     public class MLPTafterTime : SequenceTrigger, IValidatable
     {
+        private IASAOptions options;
+        private readonly IMountMediator mountMediator;
+        private IMount mount;
+        private readonly IMountModelBuilderMediator mountModelBuilderMediator;
+        private readonly IModelPointGenerator modelPointGenerator;
+        private readonly INighttimeCalculator nighttimeCalculator;
+        private readonly ICameraMediator cameraMediator;
+
         private DateTime initialTime;
         private bool initialized = false;
 
@@ -89,33 +97,28 @@ namespace NINA.Photon.Plugin.ASA.MLTP
                 new DawnProvider(nighttimeCalculator));
             this.SelectedSiderealPathEndDateTimeProviderName = this.SiderealPathEndDateTimeProviders.First().Name;
             SiderealTrackRADeltaDegrees = 5;
-            Amount = 90;
-            TriggerRunner.Add(new MLPTStart(options, mountMediator, mount, mountModelBuilderMediator, modelPointGenerator, nighttimeCalculator, cameraMediator));
+            Amount = 89;
+
+            AddItem(TriggerRunner, new MLPTStart(options, mountMediator, mount,
+             mountModelBuilderMediator, modelPointGenerator,
+             nighttimeCalculator, cameraMediator));
         }
 
-        private MLPTafterTime(MLPTafterTime cloneMe) : this(cloneMe.options, cloneMe.mountMediator, cloneMe.mount, cloneMe.mountModelBuilderMediator, cloneMe.modelPointGenerator, cloneMe.nighttimeCalculator, cloneMe.cameraMediator)
+        private void AddItem(SequentialContainer runner, ISequenceItem item)
+        {
+            runner.Items.Add(item);
+            item.AttachNewParent(runner);
+        }
+
+        private MLPTafterTime(MLPTafterTime cloneMe) : this(cloneMe.nighttimeCalculator, cloneMe.cameraMediator)
         {
             CopyMetaData(cloneMe);
+            TriggerRunner = (SequentialContainer)cloneMe.TriggerRunner.Clone();
         }
 
         public override object Clone()
         {
-            var cloned = new MLPTafterTime(this)
-            {
-                Coordinates = Coordinates?.Clone(),
-                Inherited = Inherited,
-                SiderealTrackStartOffsetMinutes = SiderealTrackStartOffsetMinutes,
-                SiderealTrackEndOffsetMinutes = SiderealTrackEndOffsetMinutes,
-                SiderealTrackRADeltaDegrees = SiderealTrackRADeltaDegrees,
-                MaxFailedPoints = MaxFailedPoints,
-                BuilderNumRetries = BuilderNumRetries,
-                MaxPointRMS = MaxPointRMS,
-                SelectedSiderealPathStartDateTimeProviderName = SelectedSiderealPathStartDateTimeProviderName,
-                SelectedSiderealPathEndDateTimeProviderName = SelectedSiderealPathEndDateTimeProviderName,
-                Amount = Amount,
-                TriggerRunner = (SequentialContainer)TriggerRunner.Clone()
-            };
-            return cloned;
+            return new MLPTafterTime(this);
         }
 
         private bool inherited;
@@ -134,13 +137,6 @@ namespace NINA.Photon.Plugin.ASA.MLTP
         [JsonProperty]
         public InputCoordinates Coordinates { get; set; }
 
-        private IASAOptions options;
-        private readonly IMountMediator mountMediator;
-        private IMount mount;
-        private readonly IMountModelBuilderMediator mountModelBuilderMediator;
-        private readonly IModelPointGenerator modelPointGenerator;
-        private readonly INighttimeCalculator nighttimeCalculator;
-        private readonly ICameraMediator cameraMediator;
         private IList<string> issues = new List<string>();
 
         public IList<string> Issues
@@ -478,6 +474,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
 
         public override async Task Execute(ISequenceContainer context, IProgress<ApplicationStatus> progress, CancellationToken token)
         {
+            TriggerRunner.AttachNewParent(context);
             await TriggerRunner.Run(progress, token);
         }
 
