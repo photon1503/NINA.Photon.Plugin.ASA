@@ -166,6 +166,9 @@ namespace NINA.Photon.Plugin.ASA.MLTP
                 ModelPointGenerationType = ModelPointGenerationTypeEnum.SiderealPath
             };
 
+            // delete old model
+            mount.MLTPStop();
+
             if (!await mountModelBuilderMediator.BuildModel(ModelPoints, modelBuilderOptions, token))
             {
                 throw new Exception("ASA MLPT model build failed");
