@@ -70,30 +70,7 @@
                                 </DataTemplate>
                             </ComboBox.ItemTemplate>
                         </ComboBox>
-                        <TextBlock
-     Grid.Row="1" Grid.Column="0"
-     HorizontalAlignment="Left"
-     VerticalAlignment="Center"
-     Text="Stars"
-     ToolTip="{StaticResource Stars_Tooltip}" />
-                        <ninactrl:UnitTextBox
-     Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"
-     MinWidth="80"
-     Margin="10,5,0,0"
-     HorizontalAlignment="Left"
-     VerticalAlignment="Center"
-     Unit="stars"
-     ToolTip="{StaticResource Stars_Tooltip}">
-                            <Binding Path="GoldenSpiralStarCount" UpdateSourceTrigger="LostFocus">
-                                <Binding.ValidationRules>
-                                    <rules:IntRangeRule>
-                                        <rules:IntRangeRule.ValidRange>
-                                            <rules:IntRangeChecker Maximum="1000" Minimum="3" />
-                                        </rules:IntRangeRule.ValidRange>
-                                    </rules:IntRangeRule>
-                                </Binding.ValidationRules>
-                            </Binding>
-                        </ninactrl:UnitTextBox>
+
                         <UniformGrid Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3" Rows="1" Columns="2">
                             <Button
                                 Height="30"
@@ -128,6 +105,65 @@
                     </Grid>
                 </GroupBox>
 
+                <GroupBox>
+                    <GroupBox.Style>
+                        <Style TargetType="{x:Type GroupBox}" BasedOn="{StaticResource StandardGroupBox}">
+                            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
+                            <Setter Property="BorderThickness" Value="0,0,0,1" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding ElementName=PART_ModelPointGenerationTypeList, Path=SelectedItem}" Value="1">
+                                    <Setter Property="FrameworkElement.Visibility" Value="Collapsed" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </GroupBox.Style>
+                    <GroupBox.Header>
+                        <Grid Height="36" Margin="5">
+                            <TextBlock
+   VerticalAlignment="Center"
+   FontSize="18"
+   Text="Golden Spiral Options" />
+                        </Grid>
+                    </GroupBox.Header>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" SharedSizeGroup="SettingsCol0" />
+                            <ColumnDefinition Width="Auto" SharedSizeGroup="SettingsCol1" />
+                            <ColumnDefinition Width="Auto" SharedSizeGroup="SettingsCol2" />
+                        </Grid.ColumnDefinitions>
+
+                        <Grid.RowDefinitions>
+                            <RowDefinition />
+                            <RowDefinition />
+                            <RowDefinition />
+                            <RowDefinition />
+                        </Grid.RowDefinitions>
+                        <TextBlock
+                              Grid.Row="1" Grid.Column="0"
+                              HorizontalAlignment="Left"
+                              VerticalAlignment="Center"
+                              Text="Stars"
+                              ToolTip="{StaticResource Stars_Tooltip}" />
+                        <ninactrl:UnitTextBox
+                              Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"
+                              MinWidth="80"
+                              Margin="10,5,0,0"
+                              HorizontalAlignment="Left"
+                              VerticalAlignment="Center"
+                              Unit="stars"
+                              ToolTip="{StaticResource Stars_Tooltip}">
+                            <Binding Path="GoldenSpiralStarCount" UpdateSourceTrigger="LostFocus">
+                                <Binding.ValidationRules>
+                                    <rules:IntRangeRule>
+                                        <rules:IntRangeRule.ValidRange>
+                                            <rules:IntRangeChecker Maximum="1000" Minimum="3" />
+                                        </rules:IntRangeRule.ValidRange>
+                                    </rules:IntRangeRule>
+                                </Binding.ValidationRules>
+                            </Binding>
+                        </ninactrl:UnitTextBox>
+                    </Grid>
+                </GroupBox>
                 <!-- high altitude /-->
 
                 <GroupBox>
@@ -834,83 +870,87 @@
                     </Grid>
                 </GroupBox>
                 <!-- new -->
-                <GroupBox>
-                    <GroupBox.Header>
-                        <Grid Height="36" Margin="5">
-                            <TextBlock
+                <Expander Header="Advanced ...">
+                    <StackPanel Orientation="Vertical">
+                        <GroupBox>
+                            <GroupBox.Header>
+                                <Grid Height="36" Margin="5">
+                                    <TextBlock
     VerticalAlignment="Center"
     FontSize="18"
     Text="Solve" />
-                        </Grid>
-                    </GroupBox.Header>
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" SharedSizeGroup="SettingsCol0" />
-                            <ColumnDefinition Width="Auto" SharedSizeGroup="SettingsCol1" />
-                            <ColumnDefinition Width="Auto" SharedSizeGroup="SettingsCol2" />
-                        </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition />
-                            <RowDefinition />
-                            <RowDefinition />
-                        </Grid.RowDefinitions>
+                                </Grid>
+                            </GroupBox.Header>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" SharedSizeGroup="SettingsCol0" />
+                                    <ColumnDefinition Width="Auto" SharedSizeGroup="SettingsCol1" />
+                                    <ColumnDefinition Width="Auto" SharedSizeGroup="SettingsCol2" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition />
+                                    <RowDefinition />
+                                    <RowDefinition />
+                                </Grid.RowDefinitions>
 
-                        <UniformGrid Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="3" Grid.RowSpan="2" Rows="1" Columns="2">
-                            <Button
+                                <UniformGrid Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="3" Grid.RowSpan="2" Rows="1" Columns="2">
+                                    <Button
                                 Height="30"
                                  Margin="5,10,10,10"
                                  Command="{Binding SolveCommand}">
-                                <TextBlock Foreground="{StaticResource ButtonForegroundBrush}" Text="Solve Folder" ToolTip="Solve folder and create POX-file" />
-                            </Button>
-                        </UniformGrid>
-                    </Grid>
-                </GroupBox>
+                                        <TextBlock Foreground="{StaticResource ButtonForegroundBrush}" Text="Solve Folder" ToolTip="Solve folder and create POX-file" />
+                                    </Button>
+                                </UniformGrid>
+                            </Grid>
+                        </GroupBox>
 
-                <GroupBox>
-                    <GroupBox.Header>
-                        <Grid Height="36" Margin="5">
-                            <TextBlock
+                        <GroupBox>
+                            <GroupBox.Header>
+                                <Grid Height="36" Margin="5">
+                                    <TextBlock
                     VerticalAlignment="Center"
                     FontSize="18"
                     Text="Export/Import" />
-                        </Grid>
-                    </GroupBox.Header>
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" SharedSizeGroup="SettingsCol0" />
-                            <ColumnDefinition Width="Auto" SharedSizeGroup="SettingsCol1" />
-                            <ColumnDefinition Width="Auto" SharedSizeGroup="SettingsCol2" />
-                        </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition />
-                            <RowDefinition />
-                            <RowDefinition />
-                        </Grid.RowDefinitions>
+                                </Grid>
+                            </GroupBox.Header>
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" SharedSizeGroup="SettingsCol0" />
+                                    <ColumnDefinition Width="Auto" SharedSizeGroup="SettingsCol1" />
+                                    <ColumnDefinition Width="Auto" SharedSizeGroup="SettingsCol2" />
+                                </Grid.ColumnDefinitions>
+                                <Grid.RowDefinitions>
+                                    <RowDefinition />
+                                    <RowDefinition />
+                                    <RowDefinition />
+                                </Grid.RowDefinitions>
 
-                        <UniformGrid Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="3" Rows="1" Columns="2">
-                            <Button
+                                <UniformGrid Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="3" Rows="1" Columns="2">
+                                    <Button
                                 Height="30"
                                  Margin="5,10,10,10"
                                  Command="{Binding ImportCommand}"
                                  IsEnabled="{Binding !BuildInProgress}">
-                                <TextBlock Foreground="{StaticResource ButtonForegroundBrush}" Text="Import" ToolTip="Import points" />
-                            </Button>
+                                        <TextBlock Foreground="{StaticResource ButtonForegroundBrush}" Text="Import" ToolTip="Import points" />
+                                    </Button>
 
-                            <Button
+                                    <Button
                                Height="30"
                                 Margin="5,10,10,10"
                                 Command="{Binding ExportCommand}">
-                                <Button.IsEnabled>
-                                    <MultiBinding Converter="{StaticResource BooleanAndConverter}">
-                                        <Binding Path="ModelPoints" Converter="{StaticResource TM_CollectionContainsItemsToBooleanConverterNoCheck}" />
-                                        <Binding Path="BuildInProgress" Converter="{StaticResource InverseBooleanConverter}" />
-                                    </MultiBinding>
-                                </Button.IsEnabled>
-                                <TextBlock Foreground="{StaticResource ButtonForegroundBrush}" Text="Export" ToolTip="Export points" />
-                            </Button>
-                        </UniformGrid>
-                    </Grid>
-                </GroupBox>
+                                        <Button.IsEnabled>
+                                            <MultiBinding Converter="{StaticResource BooleanAndConverter}">
+                                                <Binding Path="ModelPoints" Converter="{StaticResource TM_CollectionContainsItemsToBooleanConverterNoCheck}" />
+                                                <Binding Path="BuildInProgress" Converter="{StaticResource InverseBooleanConverter}" />
+                                            </MultiBinding>
+                                        </Button.IsEnabled>
+                                        <TextBlock Foreground="{StaticResource ButtonForegroundBrush}" Text="Export" ToolTip="Export points" />
+                                    </Button>
+                                </UniformGrid>
+                            </Grid>
+                        </GroupBox>
+                    </StackPanel>
+                </Expander>
 
                 <!-- new end -->
                 <GroupBox>
