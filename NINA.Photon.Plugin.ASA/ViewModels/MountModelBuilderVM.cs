@@ -106,7 +106,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             IModelBuilder modelBuilder,
             INighttimeCalculator nighttimeCalculator) : base(profileService)
         {
-            this.Title = "ASA Model Builder";
+            this.Title = "ASA Tools";
 
             var dict = new ResourceDictionary();
             dict.Source = new Uri("NINA.Photon.Plugin.ASA;component/Resources/SVGDataTemplates.xaml", UriKind.RelativeOrAbsolute);

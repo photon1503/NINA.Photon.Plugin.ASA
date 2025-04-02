@@ -120,9 +120,9 @@
                     <GroupBox.Header>
                         <Grid Height="36" Margin="5">
                             <TextBlock
-   VerticalAlignment="Center"
-   FontSize="18"
-   Text="Golden Spiral Options" />
+                                   VerticalAlignment="Center"
+                                   FontSize="18"
+                                   Text="Golden Spiral Options" />
                         </Grid>
                     </GroupBox.Header>
                     <Grid>
