@@ -103,6 +103,8 @@ namespace NINA.Photon.Plugin.ASA.MLTP
                 MaxPointRMS = MaxPointRMS,
                 SelectedSiderealPathStartDateTimeProviderName = SelectedSiderealPathStartDateTimeProviderName,
                 SelectedSiderealPathEndDateTimeProviderName = SelectedSiderealPathEndDateTimeProviderName,
+                SiderealPathStartDateTimeProviders = SiderealPathStartDateTimeProviders,
+                SiderealPathEndDateTimeProviders = SiderealPathEndDateTimeProviders,
             };
             return cloned;
         }
@@ -147,9 +149,12 @@ namespace NINA.Photon.Plugin.ASA.MLTP
         public IList<IDateTimeProvider> SiderealPathStartDateTimeProviders
         {
             get => siderealPathStartDateTimeProviders;
-            private set
+            set
             {
                 siderealPathStartDateTimeProviders = value;
+                // Resolve the selected provider by name after assignment
+                SelectedSiderealPathStartDateTimeProvider =
+                    value?.FirstOrDefault(p => p.Name == SelectedSiderealPathStartDateTimeProviderName);
                 RaisePropertyChanged();
             }
         }
@@ -204,9 +209,12 @@ namespace NINA.Photon.Plugin.ASA.MLTP
         public IList<IDateTimeProvider> SiderealPathEndDateTimeProviders
         {
             get => siderealPathEndDateTimeProviders;
-            private set
+            set
             {
                 siderealPathEndDateTimeProviders = value;
+                // Resolve the selected provider by name after assignment
+                SelectedSiderealPathEndDateTimeProvider =
+                    value?.FirstOrDefault(p => p.Name == SelectedSiderealPathEndDateTimeProviderName);
                 RaisePropertyChanged();
             }
         }

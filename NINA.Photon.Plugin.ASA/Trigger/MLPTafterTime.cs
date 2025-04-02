@@ -98,38 +98,34 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             this.SelectedSiderealPathEndDateTimeProviderName = this.SiderealPathEndDateTimeProviders.First().Name;
             SiderealTrackRADeltaDegrees = 5;
             Amount = 90;
-
-            var mlptStart = new MLPTStart(options, mountMediator, mount, mountModelBuilderMediator, modelPointGenerator, nighttimeCalculator, cameraMediator)
-            {
-                Coordinates = this.Coordinates,
-                SiderealTrackStartOffsetMinutes = this.SiderealTrackStartOffsetMinutes,
-                SiderealTrackEndOffsetMinutes = this.SiderealTrackEndOffsetMinutes,
-                SiderealTrackRADeltaDegrees = this.SiderealTrackRADeltaDegrees,
-                MaxFailedPoints = this.MaxFailedPoints,
-                BuilderNumRetries = this.BuilderNumRetries,
-                MaxPointRMS = this.MaxPointRMS,
-                SelectedSiderealPathStartDateTimeProviderName = this.SelectedSiderealPathStartDateTimeProviderName,
-                SelectedSiderealPathEndDateTimeProviderName = this.SelectedSiderealPathEndDateTimeProviderName
-            };
-
-            AddItem(TriggerRunner, mlptStart);
-        }
-
-        private void AddItem(SequentialContainer runner, ISequenceItem item)
-        {
-            runner.Items.Add(item);
-            item.AttachNewParent(runner);
         }
 
         private MLPTafterTime(MLPTafterTime cloneMe) : this(cloneMe.nighttimeCalculator, cloneMe.cameraMediator)
         {
             CopyMetaData(cloneMe);
-            TriggerRunner = (SequentialContainer)cloneMe.TriggerRunner.Clone();
         }
 
         public override object Clone()
         {
-            return new MLPTafterTime(this);
+            var cloned = new MLPTafterTime(this)
+            {
+                // Copy all scalar properties
+                Coordinates = Coordinates?.Clone(),
+                Inherited = Inherited,
+                SiderealTrackStartOffsetMinutes = SiderealTrackStartOffsetMinutes,
+                SiderealTrackEndOffsetMinutes = SiderealTrackEndOffsetMinutes,
+                SiderealTrackRADeltaDegrees = SiderealTrackRADeltaDegrees,
+                MaxFailedPoints = MaxFailedPoints,
+                BuilderNumRetries = BuilderNumRetries,
+                MaxPointRMS = MaxPointRMS,
+                SelectedSiderealPathStartDateTimeProviderName = SelectedSiderealPathStartDateTimeProviderName,
+                SelectedSiderealPathEndDateTimeProviderName = SelectedSiderealPathEndDateTimeProviderName,
+                SiderealPathStartDateTimeProviders = this.SiderealPathStartDateTimeProviders,
+                SiderealPathEndDateTimeProviders = this.SiderealPathEndDateTimeProviders,
+                Amount = Amount
+            };
+
+            return cloned;
         }
 
         private bool inherited;
@@ -145,12 +141,35 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             }
         }
 
+        public override void SequenceBlockTeardown()
+        {
+            initialized = false;
+            initialTime = DateTime.MinValue;
+            base.SequenceBlockTeardown();
+        }
+
         public override async Task Execute(ISequenceContainer context, IProgress<ApplicationStatus> progress, CancellationToken token)
         {
-            TriggerRunner.AttachNewParent(context);
-            //TriggerRunner.AttachNewParent(this.Parent);
+            var modelBuilderOptions = new ModelBuilderOptions()
+            {
+                WestToEastSorting = options.WestToEastSorting,
+                NumRetries = BuilderNumRetries,
+                MaxPointRMS = MaxPointRMS > 0 ? MaxPointRMS : double.PositiveInfinity,
+                MinimizeDomeMovement = options.MinimizeDomeMovementEnabled,
+                AllowBlindSolves = options.AllowBlindSolves,
+                MaxConcurrency = options.MaxConcurrency,
+                DomeShutterWidth_mm = options.DomeShutterWidth_mm,
+                MaxFailedPoints = MaxFailedPoints,
+                RemoveHighRMSPointsAfterBuild = options.RemoveHighRMSPointsAfterBuild,
+                PlateSolveSubframePercentage = options.PlateSolveSubframePercentage,
+                DisableRefractionCorrection = options.DisableRefractionCorrection,
+                ModelPointGenerationType = ModelPointGenerationTypeEnum.SiderealPath
+            };
 
-            await TriggerRunner.Run(progress, token);
+            if (!await mountModelBuilderMediator.BuildModel(ModelPoints, modelBuilderOptions, token))
+            {
+                throw new Exception("ASA MLPT model build failed");
+            }
             initialTime = DateTime.Now;
         }
 
@@ -177,6 +196,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             private set
             {
                 siderealPathStartDateTimeProviders = value;
+
                 RaisePropertyChanged();
             }
         }
@@ -191,6 +211,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
                 if (!object.ReferenceEquals(selectedSiderealPathStartDateTimeProvider, value) && value != null)
                 {
                     selectedSiderealPathStartDateTimeProvider = value;
+
                     RaisePropertyChanged();
                     SelectedSiderealPathStartDateTimeProviderName = value.Name;
                     UpdateStartTime();
@@ -207,6 +228,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             set
             {
                 selectedSiderealPathStartDateTimeProviderName = value;
+
                 SelectedSiderealPathStartDateTimeProvider = SiderealPathStartDateTimeProviders.FirstOrDefault(p => p.Name == selectedSiderealPathStartDateTimeProviderName);
                 RaisePropertyChanged();
             }
@@ -221,6 +243,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             set
             {
                 selectedSiderealPathEndDateTimeProviderName = value;
+
                 SelectedSiderealPathEndDateTimeProvider = SiderealPathEndDateTimeProviders.FirstOrDefault(p => p.Name == selectedSiderealPathEndDateTimeProviderName);
                 RaisePropertyChanged();
             }
@@ -248,6 +271,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
                 if (!object.ReferenceEquals(selectedSiderealPathEndDateTimeProvider, value) && value != null)
                 {
                     selectedSiderealPathEndDateTimeProvider = value;
+
                     RaisePropertyChanged();
                     SelectedSiderealPathEndDateTimeProviderName = value.Name;
                     UpdateEndTime();
@@ -266,6 +290,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
                 if (siderealTrackStartOffsetMinutes != value)
                 {
                     siderealTrackStartOffsetMinutes = value;
+
                     RaisePropertyChanged();
                     UpdateStartTime();
                 }
@@ -283,6 +308,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
                 if (siderealTrackEndOffsetMinutes != value)
                 {
                     siderealTrackEndOffsetMinutes = value;
+
                     RaisePropertyChanged();
                     UpdateEndTime();
                 }
@@ -300,6 +326,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
                 if (siderealTrackRADeltaDegrees != value)
                 {
                     siderealTrackRADeltaDegrees = value;
+
                     RaisePropertyChanged();
                     UpdateModelPoints();
                 }
@@ -535,13 +562,16 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             bool shouldTrigger = false;
 
             Elapsed = Math.Round((DateTime.Now - initialTime).TotalMinutes, 2);
-            shouldTrigger = (DateTime.Now - initialTime) >= TimeSpan.FromMinutes(Amount);
+            bool timeConditionMet = (DateTime.Now - initialTime) >= TimeSpan.FromMinutes(Amount);
+            Logger.Debug($"MLPTafterTime: Elapsed={Elapsed}min, Required={Amount}min, TimeConditionMet={timeConditionMet}");
 
+            shouldTrigger = timeConditionMet;
             if (shouldTrigger)
             {
-                if (ItemUtility.IsTooCloseToMeridianFlip(Parent, TriggerRunner.GetItemsSnapshot().First().GetEstimatedDuration() + nextItem?.GetEstimatedDuration() ?? TimeSpan.Zero))
+                TimeSpan estimatedDuration = TriggerRunner.GetItemsSnapshot().First().GetEstimatedDuration() + (nextItem?.GetEstimatedDuration() ?? TimeSpan.Zero);
+                if (ItemUtility.IsTooCloseToMeridianFlip(Parent, estimatedDuration))
                 {
-                    Logger.Warning("MLPT should be triggered, however the meridian flip is too close to be executed");
+                    Logger.Warning("MLPT should be triggered, but meridian flip is too close");
                     shouldTrigger = false;
                 }
             }
