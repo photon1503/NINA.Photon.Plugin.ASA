@@ -702,6 +702,8 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                         {
                             var pointData = new
                             {
+                                // UTCDate is midtime between start end end TODO
+
                                 UTCDate = point.CaptureTime.ToString("yyyy-MM-ddTHH:mm:ss.ffZ"),
                                 PierSide = point.MountReportedSideOfPier == PierSide.pierEast ? 1 : -1,
                                 TelescopeRa = point.MountReportedRightAscension,
@@ -1403,7 +1405,10 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             {
                 point.ModelPointState = ModelPointStateEnum.Exposing;
                 var exposureData = await this.imagingMediator.CaptureImage(seq, ct, stepProgress);
+
                 point.CaptureTime = exposureData.MetaData.Image.ExposureStart;
+                var midpoint = point.CaptureTime.AddSeconds(profileService.ActiveProfile.PlateSolveSettings.ExposureTime / 2);
+                point.CaptureTime = midpoint;
                 // Fire and forget to prepare image, which will put the latest captured image in the imaging tab view
                 _ = Task.Run(async () =>
                 {
