@@ -311,9 +311,10 @@
         Orientation="Horizontal">
         <StackPanel Orientation="Vertical">
 
-            <StackPanel Orientation="Horizontal">
-                <TextBlock VerticalAlignment="Center" Text="{ns:Loc LblAmount}" />
-                <ninactrl:UnitTextBox
+            <StackPanel Orientation="Vertical">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock VerticalAlignment="Center" Text="{ns:Loc LblAmount}" />
+                    <ninactrl:UnitTextBox
                         MinWidth="50"
                         Margin="5,0,0,0"
                         VerticalAlignment="Center"
@@ -321,17 +322,18 @@
                         Text="{Binding Amount}"
                         TextAlignment="Right"
                         Unit="min" />
-            </StackPanel>
+                </StackPanel>
 
-            <StackPanel Orientation="Horizontal">
-                <TextBlock VerticalAlignment="Center" Text="{ns:Loc LblElapsed}" />
-                <TextBlock
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock VerticalAlignment="Center" Text="{ns:Loc LblElapsed}" />
+                    <TextBlock
                         Margin="5,0,0,0"
                         VerticalAlignment="Center"
                         Text="{Binding Elapsed}" />
-                <TextBlock VerticalAlignment="Center" Text=" min / " />
-                <TextBlock VerticalAlignment="Center" Text="{Binding Amount}" />
-                <TextBlock VerticalAlignment="Center" Text=" min" />
+                    <TextBlock VerticalAlignment="Center" Text=" min / " />
+                    <TextBlock VerticalAlignment="Center" Text="{Binding Amount}" />
+                    <TextBlock VerticalAlignment="Center" Text=" min" />
+                </StackPanel>
             </StackPanel>
 
             <StackPanel Margin="0,5,0,0" Orientation="Horizontal">
@@ -353,10 +355,54 @@
         </StackPanel>
     </WrapPanel>
 
+    <WrapPanel
+     x:Key="BuildSiderealPathModelDetailsFlip"
+     x:Shared="false"
+     Orientation="Horizontal">
+        <StackPanel Orientation="Vertical">
+
+            <StackPanel Orientation="Vertical">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock VerticalAlignment="Center" Text="Pierside" />
+                    <TextBlock
+     Margin="5,0,0,0"
+     VerticalAlignment="Center"
+     Text="{Binding OldPierside}" />
+                </StackPanel>
+            </StackPanel>
+
+            <StackPanel Margin="0,5,0,0" Orientation="Horizontal">
+                <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource StartTimeDetails}" />
+            </StackPanel>
+            <StackPanel Margin="0,5,0,0" Orientation="Horizontal">
+                <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource EndTimeDetails}" />
+            </StackPanel>
+            <StackPanel Margin="0,5,0,0" Orientation="Horizontal">
+                <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource RADeltaDetails}" />
+                <ContentPresenter
+                 Margin="10,0,0,0"
+                 Content="{Binding}"
+                 ContentTemplate="{StaticResource ModelPointCountDetails}" />
+            </StackPanel>
+            <StackPanel Margin="0,5,0,0" Orientation="Horizontal">
+                <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource BuildRetryDetails}" />
+            </StackPanel>
+        </StackPanel>
+    </WrapPanel>
+
     <DataTemplate DataType="{x:Type local:MLPTafterTime}">
         <view:SequenceBlockView DataContext="{Binding}">
+
             <view:SequenceBlockView.SequenceItemContent>
                 <ContentPresenter Content="{StaticResource BuildSiderealPathModelDetails}" />
+            </view:SequenceBlockView.SequenceItemContent>
+        </view:SequenceBlockView>
+    </DataTemplate>
+
+    <DataTemplate DataType="{x:Type local:MLPTafterFlip}">
+        <view:SequenceBlockView DataContext="{Binding}">
+            <view:SequenceBlockView.SequenceItemContent>
+                <ContentPresenter Content="{StaticResource BuildSiderealPathModelDetailsFlip}" />
             </view:SequenceBlockView.SequenceItemContent>
         </view:SequenceBlockView>
     </DataTemplate>
