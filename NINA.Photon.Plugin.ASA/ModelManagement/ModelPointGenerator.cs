@@ -206,9 +206,9 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
 
             //  var meridianLimitDegrees = 0.0d;
             Logger.Info($"Using meridian limit {meridianLimitDegrees:0.##}°");
-            var toleranceDegrees = 3.0d; // Small buffer to avoid flip at exact limit
-            var meridianUpperLimit = meridianLimitDegrees + toleranceDegrees;
-            var meridianLowerLimit = 360.0d - meridianLimitDegrees - toleranceDegrees;
+            var toleranceDegrees = 0.1d; // Small buffer to avoid flip at exact limit
+            var meridianUpperLimit = meridianLimitDegrees - toleranceDegrees;
+            var meridianLowerLimit = 360.0d - meridianLimitDegrees + toleranceDegrees;
 
             var points = new List<ModelPoint>();
             var decJitterSigmaDegrees = 0;

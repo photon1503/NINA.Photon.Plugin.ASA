@@ -172,6 +172,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
 
             // delete old model
             mount.MLTPStop();
+            UpdateStartTime();
 
             if (!await mountModelBuilderMediator.BuildModel(ModelPoints, modelBuilderOptions, token))
             {
