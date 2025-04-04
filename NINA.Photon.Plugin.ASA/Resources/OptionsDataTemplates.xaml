@@ -385,7 +385,7 @@
                 IsChecked="{Binding MinimizeMeridianFlipsEnabled}"
                 ToolTip="{StaticResource MinimizeMeridianFlips_Tooltip}" />
 
-            <TextBlock
+            <!--TextBlock
                 Grid.Row="16"
                 Grid.Column="0"
                 HorizontalAlignment="Left"
@@ -410,7 +410,7 @@
                         </rules:DoubleRangeRule>
                     </Binding.ValidationRules>
                 </Binding>
-            </ninactrl:UnitTextBox>
+            </ninactrl:UnitTextBox-->
             <TextBlock
                  Grid.Row="17"
                  Grid.Column="0"

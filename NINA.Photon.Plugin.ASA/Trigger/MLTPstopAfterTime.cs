@@ -33,28 +33,44 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using NINA.Sequencer.Trigger;
+using NINA.Profile;
+using NINA.Sequencer.SequenceItem.Autofocus;
+using NINA.WPF.Base.Interfaces;
+using NINA.WPF.Base.Mediator;
 using NINA.Sequencer.Container;
-using NINA.Sequencer;
+using NINA.Sequencer.Interfaces;
 
 namespace NINA.Photon.Plugin.ASA.MLTP
 {
-    [ExportMetadata("Name", "MLPT Start")]
-    [ExportMetadata("Description", "Build and start MLPT")]
+    [ExportMetadata("Name", "MLPT Disable After Time")]
+    [ExportMetadata("Description", "Disable MLPT after x Minutes")]
     [ExportMetadata("Icon", "ASASVG")]
     [ExportMetadata("Category", "ASA Tools")]
-    [Export(typeof(ISequenceItem))]
+    [Export(typeof(ISequenceTrigger))]
     [JsonObject(MemberSerialization.OptIn)]
-    public class MLPTStart : SequenceItem, IValidatable
+    public class MLPTstopAfterTime : SequenceTrigger, IValidatable
     {
+        private IASAOptions options;
+        private readonly IMountMediator mountMediator;
+        private IMount mount;
+        private readonly IMountModelBuilderMediator mountModelBuilderMediator;
+        private readonly IModelPointGenerator modelPointGenerator;
+        private readonly INighttimeCalculator nighttimeCalculator;
+        private readonly ICameraMediator cameraMediator;
+
+        private DateTime initialTime;
+        private bool initialized = false;
+
         [ImportingConstructor]
-        public MLPTStart(INighttimeCalculator nighttimeCalculator, ICameraMediator cameraMediator) :
+        public MLPTstopAfterTime(INighttimeCalculator nighttimeCalculator, ICameraMediator cameraMediator) :
             this(ASAPlugin.ASAOptions, ASAPlugin.MountMediator, ASAPlugin.Mount,
                 ASAPlugin.MountModelBuilderMediator, ASAPlugin.ModelPointGenerator,
                 nighttimeCalculator, cameraMediator)
         {
         }
 
-        public MLPTStart(IASAOptions options, IMountMediator mountMediator, IMount mount,
+        public MLPTstopAfterTime(IASAOptions options, IMountMediator mountMediator, IMount mount,
             IMountModelBuilderMediator mountModelBuilderMediator, IModelPointGenerator modelPointGenerator,
             INighttimeCalculator nighttimeCalculator, ICameraMediator cameraMediator)
         {
@@ -80,19 +96,20 @@ namespace NINA.Photon.Plugin.ASA.MLTP
                 new SunriseProvider(nighttimeCalculator),
                 new DawnProvider(nighttimeCalculator));
             this.SelectedSiderealPathEndDateTimeProviderName = this.SiderealPathEndDateTimeProviders.First().Name;
-
-            SiderealTrackRADeltaDegrees = 3;
+            SiderealTrackRADeltaDegrees = 5;
+            Amount = 90;
         }
 
-        private MLPTStart(MLPTStart cloneMe) : this(cloneMe.options, cloneMe.mountMediator, cloneMe.mount, cloneMe.mountModelBuilderMediator, cloneMe.modelPointGenerator, cloneMe.nighttimeCalculator, cloneMe.cameraMediator)
+        private MLPTstopAfterTime(MLPTstopAfterTime cloneMe) : this(cloneMe.nighttimeCalculator, cloneMe.cameraMediator)
         {
             CopyMetaData(cloneMe);
         }
 
         public override object Clone()
         {
-            var cloned = new MLPTStart(this)
+            var cloned = new MLPTstopAfterTime(this)
             {
+                // Copy all scalar properties
                 Coordinates = Coordinates?.Clone(),
                 Inherited = Inherited,
                 SiderealTrackStartOffsetMinutes = SiderealTrackStartOffsetMinutes,
@@ -103,9 +120,11 @@ namespace NINA.Photon.Plugin.ASA.MLTP
                 MaxPointRMS = MaxPointRMS,
                 SelectedSiderealPathStartDateTimeProviderName = SelectedSiderealPathStartDateTimeProviderName,
                 SelectedSiderealPathEndDateTimeProviderName = SelectedSiderealPathEndDateTimeProviderName,
-                SiderealPathStartDateTimeProviders = SiderealPathStartDateTimeProviders,
-                SiderealPathEndDateTimeProviders = SiderealPathEndDateTimeProviders,
+                SiderealPathStartDateTimeProviders = this.SiderealPathStartDateTimeProviders,
+                SiderealPathEndDateTimeProviders = this.SiderealPathEndDateTimeProviders,
+                Amount = Amount
             };
+
             return cloned;
         }
 
@@ -122,16 +141,31 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             }
         }
 
+        /*
+        public override void SequenceBlockTeardown()
+        {
+            initialized = false;
+            initialTime = DateTime.MinValue;
+            base.SequenceBlockTeardown();
+        }
+        */
+
+        public override void Initialize()
+        {
+            initialTime = DateTime.Now;
+        }
+
+        public override async Task Execute(ISequenceContainer context, IProgress<ApplicationStatus> progress, CancellationToken token)
+        {
+            // delete old model
+            mount.MLTPStop();
+
+            initialTime = DateTime.Now;
+        }
+
         [JsonProperty]
         public InputCoordinates Coordinates { get; set; }
 
-        private IASAOptions options;
-        private readonly IMountMediator mountMediator;
-        private IMount mount;
-        private readonly IMountModelBuilderMediator mountModelBuilderMediator;
-        private readonly IModelPointGenerator modelPointGenerator;
-        private readonly INighttimeCalculator nighttimeCalculator;
-        private readonly ICameraMediator cameraMediator;
         private IList<string> issues = new List<string>();
 
         public IList<string> Issues
@@ -149,12 +183,10 @@ namespace NINA.Photon.Plugin.ASA.MLTP
         public IList<IDateTimeProvider> SiderealPathStartDateTimeProviders
         {
             get => siderealPathStartDateTimeProviders;
-            set
+            private set
             {
                 siderealPathStartDateTimeProviders = value;
-                // Resolve the selected provider by name after assignment
-                SelectedSiderealPathStartDateTimeProvider =
-                    value?.FirstOrDefault(p => p.Name == SelectedSiderealPathStartDateTimeProviderName);
+
                 RaisePropertyChanged();
             }
         }
@@ -169,6 +201,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
                 if (!object.ReferenceEquals(selectedSiderealPathStartDateTimeProvider, value) && value != null)
                 {
                     selectedSiderealPathStartDateTimeProvider = value;
+
                     RaisePropertyChanged();
                     SelectedSiderealPathStartDateTimeProviderName = value.Name;
                     UpdateStartTime();
@@ -185,6 +218,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             set
             {
                 selectedSiderealPathStartDateTimeProviderName = value;
+
                 SelectedSiderealPathStartDateTimeProvider = SiderealPathStartDateTimeProviders.FirstOrDefault(p => p.Name == selectedSiderealPathStartDateTimeProviderName);
                 RaisePropertyChanged();
             }
@@ -199,6 +233,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             set
             {
                 selectedSiderealPathEndDateTimeProviderName = value;
+
                 SelectedSiderealPathEndDateTimeProvider = SiderealPathEndDateTimeProviders.FirstOrDefault(p => p.Name == selectedSiderealPathEndDateTimeProviderName);
                 RaisePropertyChanged();
             }
@@ -209,12 +244,9 @@ namespace NINA.Photon.Plugin.ASA.MLTP
         public IList<IDateTimeProvider> SiderealPathEndDateTimeProviders
         {
             get => siderealPathEndDateTimeProviders;
-            set
+            private set
             {
                 siderealPathEndDateTimeProviders = value;
-                // Resolve the selected provider by name after assignment
-                SelectedSiderealPathEndDateTimeProvider =
-                    value?.FirstOrDefault(p => p.Name == SelectedSiderealPathEndDateTimeProviderName);
                 RaisePropertyChanged();
             }
         }
@@ -229,6 +261,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
                 if (!object.ReferenceEquals(selectedSiderealPathEndDateTimeProvider, value) && value != null)
                 {
                     selectedSiderealPathEndDateTimeProvider = value;
+
                     RaisePropertyChanged();
                     SelectedSiderealPathEndDateTimeProviderName = value.Name;
                     UpdateEndTime();
@@ -247,6 +280,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
                 if (siderealTrackStartOffsetMinutes != value)
                 {
                     siderealTrackStartOffsetMinutes = value;
+
                     RaisePropertyChanged();
                     UpdateStartTime();
                 }
@@ -264,6 +298,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
                 if (siderealTrackEndOffsetMinutes != value)
                 {
                     siderealTrackEndOffsetMinutes = value;
+
                     RaisePropertyChanged();
                     UpdateEndTime();
                 }
@@ -281,8 +316,8 @@ namespace NINA.Photon.Plugin.ASA.MLTP
                 if (siderealTrackRADeltaDegrees != value)
                 {
                     siderealTrackRADeltaDegrees = value;
+
                     RaisePropertyChanged();
-                    UpdateModelPoints();
                 }
             }
         }
@@ -332,6 +367,31 @@ namespace NINA.Photon.Plugin.ASA.MLTP
                     maxFailedPoints = value;
                     RaisePropertyChanged();
                 }
+            }
+        }
+
+        private double elapsed;
+
+        public double Elapsed
+        {
+            get => elapsed;
+            private set
+            {
+                elapsed = value;
+                RaisePropertyChanged();
+            }
+        }
+
+        private double amount;
+
+        [JsonProperty]
+        public double Amount
+        {
+            get => amount;
+            set
+            {
+                amount = value;
+                RaisePropertyChanged();
             }
         }
 
@@ -431,8 +491,6 @@ namespace NINA.Photon.Plugin.ASA.MLTP
                 StartMinutes = t.Minute;
                 StartSeconds = t.Second;
             }
-
-            UpdateModelPoints();
         }
 
         private void UpdateEndTime()
@@ -444,61 +502,35 @@ namespace NINA.Photon.Plugin.ASA.MLTP
                 EndMinutes = t.Minute;
                 EndSeconds = t.Second;
             }
-
-            UpdateModelPoints();
         }
 
-        public override async Task Execute(IProgress<ApplicationStatus> progress, CancellationToken token)
+        public override void SequenceBlockInitialize()
         {
-            var modelBuilderOptions = new ModelBuilderOptions()
+            if (!initialized)
             {
-                WestToEastSorting = options.WestToEastSorting,
-                NumRetries = BuilderNumRetries,
-                MaxPointRMS = MaxPointRMS > 0 ? MaxPointRMS : double.PositiveInfinity,
-                MinimizeDomeMovement = options.MinimizeDomeMovementEnabled,
-                AllowBlindSolves = options.AllowBlindSolves,
-                MaxConcurrency = options.MaxConcurrency,
-                DomeShutterWidth_mm = options.DomeShutterWidth_mm,
-                MaxFailedPoints = MaxFailedPoints,
-                RemoveHighRMSPointsAfterBuild = options.RemoveHighRMSPointsAfterBuild,
-                PlateSolveSubframePercentage = options.PlateSolveSubframePercentage,
-                DisableRefractionCorrection = options.DisableRefractionCorrection,
-                ModelPointGenerationType = ModelPointGenerationTypeEnum.SiderealPath
-            };
-
-            // delete old model
-            mount.MLTPStop();
-            if (!await mountModelBuilderMediator.BuildModel(ModelPoints, modelBuilderOptions, token))
-            {
-                throw new Exception("ASA MLPT model build failed");
+                initialTime = DateTime.Now;
+                initialized = true;
             }
+        }
+
+        public override bool ShouldTrigger(ISequenceItem previousItem, ISequenceItem nextItem)
+        {
+            if (nextItem == null) { return false; }
+            if (!(nextItem is IExposureItem exposureItem)) { return false; }
+            if (exposureItem.ImageType != "LIGHT") { return false; }
+
+            bool shouldTrigger = false;
+
+            Elapsed = Math.Round((DateTime.Now - initialTime).TotalMinutes, 2);
+            bool timeConditionMet = (DateTime.Now - initialTime) >= TimeSpan.FromMinutes(Amount);
+            Logger.Debug($"MLPTstopAfterTime: Elapsed={Elapsed}min, Required={Amount}min, TimeConditionMet={timeConditionMet}");
+
+            shouldTrigger = timeConditionMet;
+
+            return shouldTrigger;
         }
 
         private ImmutableList<ModelPoint> ModelPoints = ImmutableList.Create<ModelPoint>();
-
-        private void UpdateModelPoints()
-        {
-            if (SelectedSiderealPathStartDateTimeProvider == null || SelectedSiderealPathEndDateTimeProvider == null || Coordinates?.Coordinates == null || SiderealTrackRADeltaDegrees <= 0)
-            {
-                return;
-            }
-
-            try
-            {
-                ModelPoints = mountModelBuilderMediator.GenerateSiderealPath(
-                    Coordinates,
-                    Angle.ByDegree(SiderealTrackRADeltaDegrees),
-                    SelectedSiderealPathStartDateTimeProvider,
-                    SelectedSiderealPathEndDateTimeProvider,
-                    SiderealTrackStartOffsetMinutes,
-                    SiderealTrackEndOffsetMinutes);
-                ModelPointCount = ModelPoints.Count(p => p.ModelPointState == ModelPointStateEnum.Generated);
-            }
-            catch (Exception e)
-            {
-                Notification.ShowError($"Failed to generate MLPT model: {e.Message}");
-            }
-        }
 
         public bool Validate()
         {
@@ -511,14 +543,10 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             if (!cameraMediator.GetInfo().Connected)
             {
                 i.Add("Camera not connected");
-            } /*
+            }
             if (!Inherited)
             {
                 i.Add("Not within a container that has a target");
-            } */
-            if (ModelPoints.Count < 3)
-            {
-                i.Add($"Model builds require at least 3 points. Only {ModelPoints.Count} points were generated");
             }
 
             Issues = i;
@@ -528,21 +556,8 @@ namespace NINA.Photon.Plugin.ASA.MLTP
         public override void AfterParentChanged()
         {
             var contextCoordinates = ItemUtility.RetrieveContextCoordinates(this.Parent);
-
-            if (contextCoordinates == null)
-            {
-                // Navigate up 2 levels to bypass the immediate container
-                contextCoordinates = ItemUtility.RetrieveContextCoordinates(
-                   this.Parent?.Parent?.Parent ?? // Trigger container's parent
-                   this.Parent?.Parent            // Immediate container
-               );
-            }
-
             if (contextCoordinates != null)
             {
-                Coordinates.Coordinates = contextCoordinates.Coordinates;
-
-                UpdateModelPoints();
                 Inherited = true;
             }
             else
@@ -554,7 +569,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
 
         public override string ToString()
         {
-            return $"Category: {Category}, Item: {nameof(MLPTStart)}, Coordinates: {Coordinates?.Coordinates}, Inherited: {Inherited}, RADelta: {SiderealTrackRADeltaDegrees}, Start: {SelectedSiderealPathStartDateTimeProvider?.Name} ({SiderealTrackStartOffsetMinutes} minutes), Start: {SelectedSiderealPathEndDateTimeProvider?.Name} ({SiderealTrackEndOffsetMinutes} minutes), NumRetries: {BuilderNumRetries}, MaxFailedPoints: {MaxFailedPoints}, MaxPointRMS: {MaxPointRMS}";
+            return $"Category: {Category}, Item: {nameof(MLPTafterTime)}, Coordinates: {Coordinates?.Coordinates}, Inherited: {Inherited}, RADelta: {SiderealTrackRADeltaDegrees}, Start: {SelectedSiderealPathStartDateTimeProvider?.Name} ({SiderealTrackStartOffsetMinutes} minutes), Start: {SelectedSiderealPathEndDateTimeProvider?.Name} ({SiderealTrackEndOffsetMinutes} minutes), NumRetries: {BuilderNumRetries}, MaxFailedPoints: {MaxFailedPoints}, MaxPointRMS: {MaxPointRMS}";
         }
     }
 }

@@ -602,7 +602,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             }
             catch (Exception e)
             {
-                Notification.ShowError($"Failed to generate MLTP model: {e.Message}");
+                Notification.ShowError($"Failed to generate MLPT model: {e.Message}");
             }
         }
 

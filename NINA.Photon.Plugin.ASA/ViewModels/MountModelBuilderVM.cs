@@ -553,7 +553,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             ModelPointGenerationType = ModelPointGenerationTypeEnum.SiderealPath;
             if (!GenerateSiderealPath(false))
             {
-                throw new Exception("Failed to generate MLTP path");
+                throw new Exception("Failed to generate MLPT path");
             }
 
             return this.ModelPoints;
@@ -621,9 +621,9 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             {
                 if (showNotifications)
                 {
-                    Notification.ShowError($"Failed to generate MLTP. {e.Message}");
+                    Notification.ShowError($"Failed to generate MLPT. {e.Message}");
                 }
-                Logger.Error($"Failed to generate MLTP path. Coordinates={SiderealPathObjectCoordinates?.Coordinates}, RADelta={SiderealTrackRADeltaDegrees}, StartTime={startTime}, EndTime={endTime}", e);
+                Logger.Error($"Failed to generate MLPT path. Coordinates={SiderealPathObjectCoordinates?.Coordinates}, RADelta={SiderealTrackRADeltaDegrees}, StartTime={startTime}, EndTime={endTime}", e);
                 return false;
             }
         }

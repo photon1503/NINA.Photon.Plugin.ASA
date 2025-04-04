@@ -356,6 +356,39 @@
     </WrapPanel>
 
     <WrapPanel
+     x:Key="DisableMLTP"
+     x:Shared="false"
+     Orientation="Horizontal">
+        <StackPanel Orientation="Vertical">
+
+            <StackPanel Orientation="Vertical">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock VerticalAlignment="Center" Text="{ns:Loc LblAmount}" />
+                    <ninactrl:UnitTextBox
+                     MinWidth="50"
+                     Margin="5,0,0,0"
+                     VerticalAlignment="Center"
+                     VerticalContentAlignment="Center"
+                     Text="{Binding Amount}"
+                     TextAlignment="Right"
+                     Unit="min" />
+                </StackPanel>
+
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock VerticalAlignment="Center" Text="{ns:Loc LblElapsed}" />
+                    <TextBlock
+                     Margin="5,0,0,0"
+                     VerticalAlignment="Center"
+                     Text="{Binding Elapsed}" />
+                    <TextBlock VerticalAlignment="Center" Text=" min / " />
+                    <TextBlock VerticalAlignment="Center" Text="{Binding Amount}" />
+                    <TextBlock VerticalAlignment="Center" Text=" min" />
+                </StackPanel>
+            </StackPanel>
+        </StackPanel>
+    </WrapPanel>
+
+    <WrapPanel
      x:Key="BuildSiderealPathModelDetailsFlip"
      x:Shared="false"
      Orientation="Horizontal">
@@ -403,6 +436,14 @@
         <view:SequenceBlockView DataContext="{Binding}">
             <view:SequenceBlockView.SequenceItemContent>
                 <ContentPresenter Content="{StaticResource BuildSiderealPathModelDetailsFlip}" />
+            </view:SequenceBlockView.SequenceItemContent>
+        </view:SequenceBlockView>
+    </DataTemplate>
+
+    <DataTemplate DataType="{x:Type local:MLPTstopAfterTime}">
+        <view:SequenceBlockView DataContext="{Binding}">
+            <view:SequenceBlockView.SequenceItemContent>
+                <ContentPresenter Content="{StaticResource DisableMLTP}" />
             </view:SequenceBlockView.SequenceItemContent>
         </view:SequenceBlockView>
     </DataTemplate>
