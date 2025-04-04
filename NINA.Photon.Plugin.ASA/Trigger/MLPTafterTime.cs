@@ -58,21 +58,22 @@ namespace NINA.Photon.Plugin.ASA.MLTP
         private readonly IModelPointGenerator modelPointGenerator;
         private readonly INighttimeCalculator nighttimeCalculator;
         private readonly ICameraMediator cameraMediator;
+        private readonly ITelescopeMediator telescopeMediator;
 
         private DateTime initialTime;
         private bool initialized = false;
 
         [ImportingConstructor]
-        public MLPTafterTime(INighttimeCalculator nighttimeCalculator, ICameraMediator cameraMediator) :
+        public MLPTafterTime(INighttimeCalculator nighttimeCalculator, ICameraMediator cameraMediator, ITelescopeMediator telescopeMediator) :
             this(ASAPlugin.ASAOptions, ASAPlugin.MountMediator, ASAPlugin.Mount,
                 ASAPlugin.MountModelBuilderMediator, ASAPlugin.ModelPointGenerator,
-                nighttimeCalculator, cameraMediator)
+                nighttimeCalculator, cameraMediator, telescopeMediator)
         {
         }
 
         public MLPTafterTime(IASAOptions options, IMountMediator mountMediator, IMount mount,
             IMountModelBuilderMediator mountModelBuilderMediator, IModelPointGenerator modelPointGenerator,
-            INighttimeCalculator nighttimeCalculator, ICameraMediator cameraMediator)
+            INighttimeCalculator nighttimeCalculator, ICameraMediator cameraMediator, ITelescopeMediator telescopeMediator)
         {
             this.options = options;
             this.mount = mount;
@@ -81,6 +82,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             this.modelPointGenerator = modelPointGenerator;
             this.nighttimeCalculator = nighttimeCalculator;
             this.cameraMediator = cameraMediator;
+            this.telescopeMediator = telescopeMediator;
             this.Coordinates = new InputCoordinates();
 
             var nowProvider = new NowDateTimeProvider(new SystemDateTime());
@@ -104,7 +106,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             Amount = 90;
         }
 
-        private MLPTafterTime(MLPTafterTime cloneMe) : this(cloneMe.nighttimeCalculator, cloneMe.cameraMediator)
+        private MLPTafterTime(MLPTafterTime cloneMe) : this(cloneMe.nighttimeCalculator, cloneMe.cameraMediator, cloneMe.telescopeMediator)
         {
             CopyMetaData(cloneMe);
         }
@@ -176,6 +178,18 @@ namespace NINA.Photon.Plugin.ASA.MLTP
                 DisableRefractionCorrection = options.DisableRefractionCorrection,
                 ModelPointGenerationType = ModelPointGenerationTypeEnum.SiderealPath
             };
+
+            if (Coordinates == null || Coordinates.Coordinates == null ||
+                Coordinates.Coordinates.RA == 0 || Coordinates.Coordinates.Dec == 0)
+            {
+                Coordinates.Coordinates = telescopeMediator.GetCurrentPosition();
+                Logger.Debug($"MLPTafterTime: Coordinates not set, using telescope coordinates: {Coordinates.Coordinates}");
+            }
+            else
+            {
+                Logger.Debug($"MLPTafterTime: Coordinates set: {Coordinates.Coordinates}");
+            }
+            UpdateModelPoints();
 
             // delete old model
             mount.MLTPStop();
@@ -566,9 +580,9 @@ namespace NINA.Photon.Plugin.ASA.MLTP
 
         public override void SequenceBlockInitialize()
         {
+            initialTime = DateTime.Now;
             if (!initialized)
             {
-                initialTime = DateTime.Now;
                 initialized = true;
             }
         }
@@ -628,10 +642,10 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             {
                 i.Add("Camera not connected");
             }
-            if (!Inherited)
-            {
-                i.Add("Not within a container that has a target");
-            }
+            /* if (!Inherited)
+             {
+                 i.Add("Not within a container that has a target");
+             } */
             /*if (ModelPoints.Count < 3)
             {
                 i.Add($"Model builds require at least 3 points. Only {ModelPoints.Count} points were generated");
@@ -654,6 +668,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             {
                 Inherited = false;
             }
+
             Validate();
         }
 
