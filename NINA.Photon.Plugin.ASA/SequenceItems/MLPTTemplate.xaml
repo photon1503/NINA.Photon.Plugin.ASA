@@ -316,14 +316,14 @@
             <StackPanel Margin="0,5,0,0" Orientation="Horizontal">
                 <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource EndTimeDetails}" />
             </StackPanel>
-            <!--StackPanel Margin="0,5,0,0" Orientation="Horizontal">
+            <StackPanel Margin="0,5,0,0" Orientation="Horizontal">
                 <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource RADeltaDetails}" />
                 <ContentPresenter
                     Margin="10,0,0,0"
                     Content="{Binding}"
                     ContentTemplate="{StaticResource ModelPointCountDetails}" />
             </StackPanel>
-            <StackPanel Margin="0,5,0,0" Orientation="Horizontal">
+            <!--StackPanel Margin="0,5,0,0" Orientation="Horizontal">
                 <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource BuildRetryDetails}" />
             </StackPanel-->
         </StackPanel>
