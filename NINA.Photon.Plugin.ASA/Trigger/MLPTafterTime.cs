@@ -141,11 +141,18 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             }
         }
 
+        /*
         public override void SequenceBlockTeardown()
         {
             initialized = false;
             initialTime = DateTime.MinValue;
             base.SequenceBlockTeardown();
+        }
+        */
+
+        public override void Initialize()
+        {
+            initialTime = DateTime.Now;
         }
 
         public override async Task Execute(ISequenceContainer context, IProgress<ApplicationStatus> progress, CancellationToken token)
@@ -569,15 +576,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             Logger.Debug($"MLPTafterTime: Elapsed={Elapsed}min, Required={Amount}min, TimeConditionMet={timeConditionMet}");
 
             shouldTrigger = timeConditionMet;
-            if (shouldTrigger)
-            {
-                TimeSpan estimatedDuration = TriggerRunner.GetItemsSnapshot().First().GetEstimatedDuration() + (nextItem?.GetEstimatedDuration() ?? TimeSpan.Zero);
-                if (ItemUtility.IsTooCloseToMeridianFlip(Parent, estimatedDuration))
-                {
-                    Logger.Warning("MLPT should be triggered, but meridian flip is too close");
-                    shouldTrigger = false;
-                }
-            }
+
             return shouldTrigger;
         }
 
