@@ -632,10 +632,10 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             {
                 i.Add("Not within a container that has a target");
             }
-            if (ModelPoints.Count < 3)
+            /*if (ModelPoints.Count < 3)
             {
                 i.Add($"Model builds require at least 3 points. Only {ModelPoints.Count} points were generated");
-            }
+            }*/
 
             Issues = i;
             return i.Count == 0;

@@ -129,16 +129,16 @@
             <TextBlock
                 HorizontalAlignment="Left"
                 VerticalAlignment="Center"
-                Text="End Time"
+                Text="Duration"
                 ToolTip="{StaticResource SiderealTrackEndTime_Tooltip}" />
-            <ComboBox
+            <!--ComboBox
                 Margin="5,0,0,0"
                 VerticalAlignment="Center"
                 VerticalContentAlignment="Center"
                 DisplayMemberPath="Name"
                 ItemsSource="{Binding SiderealPathEndDateTimeProviders}"
                 SelectedItem="{Binding SelectedSiderealPathEndDateTimeProvider}"
-                ToolTip="{StaticResource SiderealTrackEndTimeOffset_Tooltip}" />
+                ToolTip="{StaticResource SiderealTrackEndTimeOffset_Tooltip}" /-->
             <ninactrl:UnitTextBox
                 MinWidth="60"
                 Margin="10,0,0,0"
@@ -148,7 +148,7 @@
                 Unit="minutes">
                 <Binding Path="SiderealTrackEndOffsetMinutes" UpdateSourceTrigger="LostFocus" />
             </ninactrl:UnitTextBox>
-            <StackPanel Orientation="Horizontal">
+            <!--StackPanel Orientation="Horizontal">
                 <TextBox
                     MinWidth="40"
                     Margin="5,0,0,0"
@@ -208,7 +208,7 @@
                         </Binding>
                     </TextBox.Text>
                 </TextBox>
-            </StackPanel>
+            </StackPanel-->
         </StackPanel>
     </DataTemplate>
 
@@ -310,13 +310,13 @@
         x:Shared="false"
         Orientation="Horizontal">
         <StackPanel Orientation="Vertical">
-            <StackPanel Margin="0,5,0,0" Orientation="Horizontal">
+            <!--StackPanel Margin="0,5,0,0" Orientation="Horizontal">
                 <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource StartTimeDetails}" />
-            </StackPanel>
+            </StackPanel-->
             <StackPanel Margin="0,5,0,0" Orientation="Horizontal">
                 <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource EndTimeDetails}" />
             </StackPanel>
-            <StackPanel Margin="0,5,0,0" Orientation="Horizontal">
+            <!--StackPanel Margin="0,5,0,0" Orientation="Horizontal">
                 <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource RADeltaDetails}" />
                 <ContentPresenter
                     Margin="10,0,0,0"
@@ -325,7 +325,7 @@
             </StackPanel>
             <StackPanel Margin="0,5,0,0" Orientation="Horizontal">
                 <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource BuildRetryDetails}" />
-            </StackPanel>
+            </StackPanel-->
         </StackPanel>
     </WrapPanel>
 

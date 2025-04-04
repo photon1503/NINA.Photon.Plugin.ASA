@@ -63,6 +63,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
 
         private DateTime initialTime;
         private bool initialized = false;
+        private bool afterFlip = false;
 
         [ImportingConstructor]
         public MLPTafterFlip(INighttimeCalculator nighttimeCalculator, ICameraMediator cameraMediator, ITelescopeMediator telescope) :
@@ -107,6 +108,12 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             Amount = 90;
             SiderealTrackEndOffsetMinutes = 90;
             OldPierside = PierSide.pierUnknown;
+
+            telescope.AfterMeridianFlip += (sender, args) =>
+            {
+                afterFlip = true;
+                return Task.CompletedTask;
+            };
         }
 
         private MLPTafterFlip(MLPTafterFlip cloneMe) : this(cloneMe.nighttimeCalculator, cloneMe.cameraMediator, cloneMe.telescope)
@@ -591,15 +598,13 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             if (!(nextItem is IExposureItem exposureItem)) { return false; }
             if (exposureItem.ImageType != "LIGHT") { return false; }
 
-            bool shouldTrigger = false;
-
-            if (OldPierside != PierSide.pierUnknown && OldPierside != telescope.GetInfo().SideOfPier)
+            if (afterFlip)
             {
-                shouldTrigger = true;
+                afterFlip = false;
+                return true;
             }
-            OldPierside = telescope.GetInfo().SideOfPier;
 
-            return shouldTrigger;
+            return false;
         }
 
         private ImmutableList<ModelPoint> ModelPoints = ImmutableList.Create<ModelPoint>();
