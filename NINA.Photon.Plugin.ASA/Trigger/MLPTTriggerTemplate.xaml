@@ -323,17 +323,6 @@
                         TextAlignment="Right"
                         Unit="min" />
                 </StackPanel>
-
-                <StackPanel Orientation="Horizontal">
-                    <TextBlock VerticalAlignment="Center" Text="{ns:Loc LblElapsed}" />
-                    <TextBlock
-                        Margin="5,0,0,0"
-                        VerticalAlignment="Center"
-                        Text="{Binding Elapsed}" />
-                    <TextBlock VerticalAlignment="Center" Text=" min / " />
-                    <TextBlock VerticalAlignment="Center" Text="{Binding Amount}" />
-                    <TextBlock VerticalAlignment="Center" Text=" min" />
-                </StackPanel>
             </StackPanel>
 
             <StackPanel Margin="0,5,0,0" Orientation="Horizontal">
@@ -373,17 +362,6 @@
                      TextAlignment="Right"
                      Unit="min" />
                 </StackPanel>
-
-                <StackPanel Orientation="Horizontal">
-                    <TextBlock VerticalAlignment="Center" Text="{ns:Loc LblElapsed}" />
-                    <TextBlock
-                     Margin="5,0,0,0"
-                     VerticalAlignment="Center"
-                     Text="{Binding Elapsed}" />
-                    <TextBlock VerticalAlignment="Center" Text=" min / " />
-                    <TextBlock VerticalAlignment="Center" Text="{Binding Amount}" />
-                    <TextBlock VerticalAlignment="Center" Text=" min" />
-                </StackPanel>
             </StackPanel>
         </StackPanel>
     </WrapPanel>
@@ -393,16 +371,6 @@
      x:Shared="false"
      Orientation="Horizontal">
         <StackPanel Orientation="Vertical">
-
-            <StackPanel Orientation="Vertical">
-                <StackPanel Orientation="Horizontal">
-                    <TextBlock VerticalAlignment="Center" Text="Pierside" />
-                    <TextBlock
-     Margin="5,0,0,0"
-     VerticalAlignment="Center"
-     Text="{Binding OldPierside}" />
-                </StackPanel>
-            </StackPanel>
 
             <StackPanel Margin="0,5,0,0" Orientation="Horizontal">
                 <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource StartTimeDetails}" />
@@ -429,6 +397,18 @@
             <view:SequenceBlockView.SequenceItemContent>
                 <ContentPresenter Content="{StaticResource BuildSiderealPathModelDetails}" />
             </view:SequenceBlockView.SequenceItemContent>
+            <view:SequenceBlockView.SequenceItemProgressContent>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock VerticalAlignment="Center" Text="{ns:Loc LblElapsed}" />
+                    <TextBlock
+                        Margin="5,0,0,0"
+                        VerticalAlignment="Center"
+                        Text="{Binding Elapsed}" />
+                    <TextBlock VerticalAlignment="Center" Text=" min / " />
+                    <TextBlock VerticalAlignment="Center" Text="{Binding Amount}" />
+                    <TextBlock VerticalAlignment="Center" Text=" min" />
+                </StackPanel>
+            </view:SequenceBlockView.SequenceItemProgressContent>
         </view:SequenceBlockView>
     </DataTemplate>
 
@@ -437,6 +417,16 @@
             <view:SequenceBlockView.SequenceItemContent>
                 <ContentPresenter Content="{StaticResource BuildSiderealPathModelDetailsFlip}" />
             </view:SequenceBlockView.SequenceItemContent>
+            <view:SequenceBlockView.SequenceItemProgressContent>
+
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock VerticalAlignment="Center" Text="Pierside" />
+                    <TextBlock
+                            Margin="5,0,0,0"
+                            VerticalAlignment="Center"
+                            Text="{Binding OldPierside , Converter={StaticResource SideOfPierConverter}}" />
+                </StackPanel>
+            </view:SequenceBlockView.SequenceItemProgressContent>
         </view:SequenceBlockView>
     </DataTemplate>
 
@@ -445,6 +435,18 @@
             <view:SequenceBlockView.SequenceItemContent>
                 <ContentPresenter Content="{StaticResource DisableMLTP}" />
             </view:SequenceBlockView.SequenceItemContent>
+            <view:SequenceBlockView.SequenceItemProgressContent>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock VerticalAlignment="Center" Text="{ns:Loc LblElapsed}" />
+                    <TextBlock
+                              Margin="5,0,0,0"
+                              VerticalAlignment="Center"
+                              Text="{Binding Elapsed}" />
+                    <TextBlock VerticalAlignment="Center" Text=" min / " />
+                    <TextBlock VerticalAlignment="Center" Text="{Binding Amount}" />
+                    <TextBlock VerticalAlignment="Center" Text=" min" />
+                </StackPanel>
+            </view:SequenceBlockView.SequenceItemProgressContent>
         </view:SequenceBlockView>
     </DataTemplate>
 

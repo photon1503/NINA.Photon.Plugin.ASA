@@ -100,6 +100,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             this.SelectedSiderealPathEndDateTimeProviderName = this.SiderealPathEndDateTimeProviders.First().Name;
 
             SiderealTrackRADeltaDegrees = 5;
+            SiderealTrackEndOffsetMinutes = 90;
             Amount = 90;
         }
 
