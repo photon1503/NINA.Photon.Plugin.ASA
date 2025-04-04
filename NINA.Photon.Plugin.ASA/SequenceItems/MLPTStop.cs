@@ -26,8 +26,8 @@ using System.Threading.Tasks;
 
 namespace NINA.Photon.Plugin.ASA.SequenceItems
 {
-    [ExportMetadata("Name", "MLTP Stop")]
-    [ExportMetadata("Description", "Stop MLTP")]
+    [ExportMetadata("Name", "MLPT Stop")]
+    [ExportMetadata("Description", "Stop MLPT")]
     [ExportMetadata("Icon", "ASASVG")]
     [ExportMetadata("Category", "ASA Tools")]
     [Export(typeof(ISequenceItem))]
@@ -74,7 +74,7 @@ namespace NINA.Photon.Plugin.ASA.SequenceItems
         {
             if (!mount.MLTPStop())
             {
-                throw new Exception("Failed to stop MLTP");
+                throw new Exception("Failed to stop MLPT");
             }
         }
 

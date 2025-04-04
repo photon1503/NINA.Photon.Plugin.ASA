@@ -728,13 +728,13 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                     bool success = mount.MLTPSend(json);
                     if (!success)
                     {
-                        Logger.Error("Failed to send MLTP pointings");
-                        Notification.ShowError("Failed to MLTP pointings");
+                        Logger.Error("Failed to send MLPT pointings");
+                        Notification.ShowError("Failed to MLPT pointings");
                     }
                     else
                     {
-                        Logger.Info("MLTP pointings sent");
-                        Notification.ShowSuccess("MLTP pointings sent");
+                        Logger.Info("MLPT pointings sent");
+                        Notification.ShowSuccess("MLPT pointings sent");
                     }
 
                     return;

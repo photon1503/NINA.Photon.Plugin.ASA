@@ -88,19 +88,22 @@ namespace NINA.Photon.Plugin.ASA.MLTP
 
             var nowProvider = new NowDateTimeProvider(new SystemDateTime());
             this.SiderealPathStartDateTimeProviders = ImmutableList.Create<IDateTimeProvider>(
-                new NauticalDuskProvider(nighttimeCalculator),
                 nowProvider,
+                new NauticalDuskProvider(nighttimeCalculator),
+
                 new SunsetProvider(nighttimeCalculator),
                 new DuskProvider(nighttimeCalculator));
             this.SelectedSiderealPathStartDateTimeProviderName = this.SiderealPathStartDateTimeProviders.First().Name;
             this.SiderealPathEndDateTimeProviders = ImmutableList.Create<IDateTimeProvider>(
-                new NauticalDawnProvider(nighttimeCalculator),
                 nowProvider,
+                new NauticalDawnProvider(nighttimeCalculator),
+
                 new SunriseProvider(nighttimeCalculator),
                 new DawnProvider(nighttimeCalculator));
             this.SelectedSiderealPathEndDateTimeProviderName = this.SiderealPathEndDateTimeProviders.First().Name;
             SiderealTrackRADeltaDegrees = 5;
             Amount = 90;
+            SiderealTrackEndOffsetMinutes = 90;
             OldPierside = PierSide.pierUnknown;
         }
 
@@ -612,7 +615,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             }
             catch (Exception e)
             {
-                Notification.ShowError($"Failed to generate MLTP model: {e.Message}");
+                Notification.ShowError($"Failed to generate MLPT model: {e.Message}");
             }
         }
 

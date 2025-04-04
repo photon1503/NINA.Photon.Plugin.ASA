@@ -515,7 +515,7 @@
                             <TextBlock
                                 VerticalAlignment="Center"
                                 FontSize="18"
-                                Text="MLTP Options" />
+                                Text="MLPT Options" />
                         </Grid>
                     </GroupBox.Header>
                     <Grid>
