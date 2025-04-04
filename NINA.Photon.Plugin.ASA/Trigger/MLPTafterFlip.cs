@@ -93,14 +93,16 @@ namespace NINA.Photon.Plugin.ASA.MLTP
 
                 new SunsetProvider(nighttimeCalculator),
                 new DuskProvider(nighttimeCalculator));
-            this.SelectedSiderealPathStartDateTimeProviderName = this.SiderealPathStartDateTimeProviders.First().Name;
+            this.SelectedSiderealPathStartDateTimeProviderName = "Now";
+
             this.SiderealPathEndDateTimeProviders = ImmutableList.Create<IDateTimeProvider>(
                 nowProvider,
                 new NauticalDawnProvider(nighttimeCalculator),
 
                 new SunriseProvider(nighttimeCalculator),
                 new DawnProvider(nighttimeCalculator));
-            this.SelectedSiderealPathEndDateTimeProviderName = this.SiderealPathEndDateTimeProviders.First().Name;
+            this.SelectedSiderealPathEndDateTimeProviderName = "Now";
+
             SiderealTrackRADeltaDegrees = 5;
             Amount = 90;
             SiderealTrackEndOffsetMinutes = 90;
@@ -127,8 +129,8 @@ namespace NINA.Photon.Plugin.ASA.MLTP
                 MaxPointRMS = MaxPointRMS,
                 SelectedSiderealPathStartDateTimeProviderName = SelectedSiderealPathStartDateTimeProviderName,
                 SelectedSiderealPathEndDateTimeProviderName = SelectedSiderealPathEndDateTimeProviderName,
-                SiderealPathStartDateTimeProviders = this.SiderealPathStartDateTimeProviders,
-                SiderealPathEndDateTimeProviders = this.SiderealPathEndDateTimeProviders,
+                SiderealPathStartDateTimeProviders = SiderealPathStartDateTimeProviders,
+                SiderealPathEndDateTimeProviders = SiderealPathEndDateTimeProviders,
                 Amount = Amount
             };
 
@@ -207,6 +209,9 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             private set
             {
                 siderealPathStartDateTimeProviders = value;
+                // Resolve the selected provider by name after assignment
+                SelectedSiderealPathStartDateTimeProvider =
+                    value?.FirstOrDefault(p => p.Name == SelectedSiderealPathStartDateTimeProviderName);
 
                 RaisePropertyChanged();
             }
@@ -268,6 +273,10 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             private set
             {
                 siderealPathEndDateTimeProviders = value;
+                // Resolve the selected provider by name after assignment
+                SelectedSiderealPathEndDateTimeProvider =
+                    value?.FirstOrDefault(p => p.Name == SelectedSiderealPathEndDateTimeProviderName);
+
                 RaisePropertyChanged();
             }
         }
