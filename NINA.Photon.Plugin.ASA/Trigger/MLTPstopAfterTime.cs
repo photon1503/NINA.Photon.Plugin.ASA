@@ -521,8 +521,14 @@ namespace NINA.Photon.Plugin.ASA.MLTP
 
             bool shouldTrigger = false;
 
-            Elapsed = Math.Round((DateTime.Now - initialTime).TotalMinutes, 2);
-            bool timeConditionMet = (DateTime.Now - initialTime) >= TimeSpan.FromMinutes(Amount);
+            if (options.LastMLPT == DateTime.MinValue)
+            {
+                Logger.Debug("MLPTstopAfterTime: LastMLPT is not set, skipping trigger check.");
+                return false;
+            }
+
+            Elapsed = Math.Round((DateTime.Now - options.LastMLPT).TotalMinutes, 2);
+            bool timeConditionMet = (DateTime.Now - options.LastMLPT) >= TimeSpan.FromMinutes(Amount);
             Logger.Debug($"MLPTstopAfterTime: Elapsed={Elapsed}min, Required={Amount}min, TimeConditionMet={timeConditionMet}");
 
             shouldTrigger = timeConditionMet;

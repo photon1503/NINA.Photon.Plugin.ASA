@@ -186,11 +186,11 @@ namespace NINA.Photon.Plugin.ASA.MLTP
               Coordinates.Coordinates.RA == 0 || Coordinates.Coordinates.Dec == 0)
             {
                 Coordinates.Coordinates = telescope.GetCurrentPosition();
-                Logger.Debug($"MLPTafterTime: Coordinates not set, using telescope coordinates: {Coordinates.Coordinates}");
+                Logger.Debug($"MLPTafterFlip: Coordinates not set, using telescope coordinates: {Coordinates.Coordinates}");
             }
             else
             {
-                Logger.Debug($"MLPTafterTime: Coordinates set: {Coordinates.Coordinates}");
+                Logger.Debug($"MLPTafMLPTafterFlipterTime: Coordinates set: {Coordinates.Coordinates}");
             }
             //UpdateModelPoints();
             // delete old model
@@ -202,6 +202,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
                 throw new Exception("ASA MLPT model build failed");
             }
             initialTime = DateTime.Now;
+            options.LastMLPT = DateTime.Now;
         }
 
         [JsonProperty]
