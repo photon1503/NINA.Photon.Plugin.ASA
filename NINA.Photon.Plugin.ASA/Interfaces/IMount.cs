@@ -111,6 +111,8 @@ namespace NINA.Photon.Plugin.ASA.Interfaces
 
         Response<string> ErrorString();
 
+        Response<string> AutoslewVersion();
+
         Response<bool> GetDualAxisTrackingEnabled();
 
         Response<bool> SetDualAxisTracking(bool enabled);

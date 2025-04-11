@@ -40,6 +40,7 @@ using NINA.WPF.Base.Interfaces;
 using NINA.WPF.Base.Mediator;
 using NINA.Sequencer.Container;
 using NINA.Sequencer.Interfaces;
+using NINA.Photon.Plugin.ASA.SequenceItems;
 
 namespace NINA.Photon.Plugin.ASA.MLTP
 {
@@ -523,29 +524,29 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             {
                 if (json.ErrornumberAxis1 != 0 || json.ErrornumberAxis2 != 0)
                 {
-                    /*        ComportCouldNotOpen		1
-        NoResponseDuringInit		2
-        OneTimeOutDuringReading		3
-        OneTimeOutDuringWriting		4
-        FatalReadingError		5
-        FatalWriteError		6
-        MotorPositionError		7
-        MotorOverCurrentError		8
-        CanInit_ConverterNotFound		9
-        CanInit_NoCommunication		10
-        MotorHitLimit		11
-        MotorOtherError		12
-        ComportLost		13
-        EncoderError		14
-        VoltageLow		15
-        VoltageHigh		16
-        PosMin		17
-        PosMax		18
-        HallError		19
-        OverTemperature		20
-        VelocityExceeded		21
-        WatchDogError		22
-*/
+                    /*      ComportCouldNotOpen		1
+                            NoResponseDuringInit		2
+                            OneTimeOutDuringReading		3
+                            OneTimeOutDuringWriting		4
+                            FatalReadingError		5
+                            FatalWriteError		6
+                            MotorPositionError		7
+                            MotorOverCurrentError		8
+                            CanInit_ConverterNotFound		9
+                            CanInit_NoCommunication		10
+                            MotorHitLimit		11
+                            MotorOtherError		12
+                            ComportLost		13
+                            EncoderError		14
+                            VoltageLow		15
+                            VoltageHigh		16
+                            PosMin		17
+                            PosMax		18
+                            HallError		19
+                            OverTemperature		20
+                            VelocityExceeded		21
+                            WatchDogError		22
+                    */
 
                     Logger.Error($"Mount error: {json.ErrornumberAxis1}, {json.ErrornumberAxis2}");
                     shouldTrigger = true;
@@ -560,6 +561,21 @@ namespace NINA.Photon.Plugin.ASA.MLTP
         public bool Validate()
         {
             var i = new List<string>();
+
+            try
+            {
+                var version = mount.AutoslewVersion();
+
+                // check if version is older then 7.1.4.4
+                if (VersionHelper.IsOlderVersion(version, "7.1.4.4"))
+                {
+                    i.Add("Autoslew Version not supported");
+                }
+            }
+            catch (Exception ex)
+            {
+                i.Add($"Autoslew not connected");
+            }
 
             Issues = i;
             return i.Count == 0;

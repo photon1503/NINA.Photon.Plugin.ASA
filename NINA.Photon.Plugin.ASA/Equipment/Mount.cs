@@ -306,6 +306,12 @@ namespace NINA.Photon.Plugin.ASA.Equipment
             return new Response<string>(rc, rc);
         }
 
+        public Response<string> AutoslewVersion()
+        {
+            string rc = this.mountCommander.SendCommandString("GetVersion", true);
+            return new Response<string>(rc, rc);
+        }
+
         public Response<bool> FansOn(int strength = 9)
         {
             this.mountCommander.Action("Telescope:StartFans", strength.ToString());
