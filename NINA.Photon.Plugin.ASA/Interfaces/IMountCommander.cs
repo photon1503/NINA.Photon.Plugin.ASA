@@ -10,15 +10,18 @@
 
 #endregion "copyright"
 
-namespace NINA.Photon.Plugin.ASA.Interfaces {
-
-    public interface IMountCommander {
-
+namespace NINA.Photon.Plugin.ASA.Interfaces
+{
+    public interface IMountCommander
+    {
         string SendCommandString(string command, bool raw);
 
         bool SendCommandBool(string command, bool raw);
 
         void SendCommandBlind(string command, bool raw);
+
         void Action(string action, string parameters);
+
+        string ActionWithReturn(string action, string parameters);
     }
 }

@@ -16,60 +16,84 @@ using NINA.Equipment.Interfaces.Mediator;
 using NINA.Core.Utility;
 using System.Threading;
 
-namespace NINA.Photon.Plugin.ASA.Equipment {
-
-    public class TelescopeMediatorMountCommander : IMountCommander {
+namespace NINA.Photon.Plugin.ASA.Equipment
+{
+    public class TelescopeMediatorMountCommander : IMountCommander
+    {
         private readonly ITelescopeMediator telescopeMediator;
         private readonly IASAOptions options;
         private int commandNumber = 0;
 
-        public TelescopeMediatorMountCommander(ITelescopeMediator telescopeMediator, IASAOptions options) {
+        public TelescopeMediatorMountCommander(ITelescopeMediator telescopeMediator, IASAOptions options)
+        {
             this.telescopeMediator = telescopeMediator;
             this.options = options;
         }
 
-        public void Action(string action, string parameters) {
+        public void Action(string action, string parameters)
+        {
             var commandId = Interlocked.Increment(ref commandNumber);
-            if (options.LogCommands) {
+            if (options.LogCommands)
+            {
                 Logger.Info($"{commandId} - Sending action: {action}, parameters: {parameters}");
             }
             telescopeMediator.Action(action, parameters);
         }
 
-        public void SendCommandBlind(string command, bool raw) {
+        public string ActionWithReturn(string action, string parameters)
+        {
             var commandId = Interlocked.Increment(ref commandNumber);
-            if (options.LogCommands) {
+            if (options.LogCommands)
+            {
+                Logger.Info($"{commandId} - Sending action: {action}, parameters: {parameters}");
+            }
+            return telescopeMediator.Action(action, parameters);
+        }
+
+        public void SendCommandBlind(string command, bool raw)
+        {
+            var commandId = Interlocked.Increment(ref commandNumber);
+            if (options.LogCommands)
+            {
                 Logger.Info($"{commandId} - Sending command: {command}, raw: {raw}");
             }
             telescopeMediator.SendCommandBlind(command, raw);
         }
 
-        public bool SendCommandBool(string command, bool raw) {
+        public bool SendCommandBool(string command, bool raw)
+        {
             var commandId = Interlocked.Increment(ref commandNumber);
-            if (options.LogCommands) {
+            if (options.LogCommands)
+            {
                 Logger.Info($"{commandId} - Sending command: {command}, raw: {raw}");
             }
             var result = telescopeMediator.SendCommandBool(command, raw);
-            if (options.LogCommands) {
+            if (options.LogCommands)
+            {
                 Logger.Info($"{commandId} - BoolCommand result: {result}");
             }
             return result;
         }
 
-        public string SendCommandString(string command, bool raw) {
+        public string SendCommandString(string command, bool raw)
+        {
             var commandId = Interlocked.Increment(ref commandNumber);
-            if (options.LogCommands) {
+            if (options.LogCommands)
+            {
                 Logger.Info($"{commandId} - Sending command: {command}, raw: {raw}");
             }
 
             var result = telescopeMediator.SendCommandString(command, raw);
-            if (result == null) {
-                if (options.LogCommands) {
+            if (result == null)
+            {
+                if (options.LogCommands)
+                {
                     Logger.Info($"{commandId} - Command failed");
                 }
                 throw new CommandFailedException(command);
             }
-            if (options.LogCommands) {
+            if (options.LogCommands)
+            {
                 Logger.Info($"{commandId} - Command response: {result}");
             }
             return result;

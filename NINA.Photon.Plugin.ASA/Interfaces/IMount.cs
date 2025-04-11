@@ -109,6 +109,8 @@ namespace NINA.Photon.Plugin.ASA.Interfaces
 
         Response<bool> CoverClose();
 
+        Response<string> ErrorString();
+
         Response<bool> GetDualAxisTrackingEnabled();
 
         Response<bool> SetDualAxisTracking(bool enabled);
