@@ -41,6 +41,7 @@ using NINA.WPF.Base.Mediator;
 using NINA.Sequencer.Container;
 using NINA.Sequencer.Interfaces;
 using NINA.Core.Enum;
+using NINA.Photon.Plugin.ASA.SequenceItems;
 
 namespace NINA.Photon.Plugin.ASA.MLTP
 {
@@ -648,6 +649,21 @@ namespace NINA.Photon.Plugin.ASA.MLTP
         public bool Validate()
         {
             var i = new List<string>();
+
+            try
+            {
+                var version = mount.AutoslewVersion();
+
+                // check if version is older then 7.1.4.4
+                if (VersionHelper.IsOlderVersion(version, "7.1.4.4"))
+                {
+                    i.Add("Autoslew Version not supported");
+                }
+            }
+            catch (Exception ex)
+            {
+                i.Add($"Autoslew not connected");
+            }
             /*if (!mountMediator.GetInfo().Connected)             // TODO CRASH
 
             {

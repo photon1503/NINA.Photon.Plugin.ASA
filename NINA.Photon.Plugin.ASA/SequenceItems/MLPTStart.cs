@@ -35,6 +35,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using NINA.Sequencer.Container;
 using NINA.Sequencer;
+using NINA.Photon.Plugin.ASA.SequenceItems;
 
 namespace NINA.Photon.Plugin.ASA.MLTP
 {
@@ -512,6 +513,21 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             {
                 i.Add("ASA mount not connected");
             }*/
+
+            try
+            {
+                var version = mount.AutoslewVersion();
+
+                // check if version is older then 7.1.4.4
+                if (VersionHelper.IsOlderVersion(version, "7.1.4.4"))
+                {
+                    i.Add("Autoslew Version not supported");
+                }
+            }
+            catch (Exception ex)
+            {
+                i.Add($"Autoslew not connected");
+            }
             if (!cameraMediator.GetInfo().Connected)
             {
                 i.Add("Camera not connected");

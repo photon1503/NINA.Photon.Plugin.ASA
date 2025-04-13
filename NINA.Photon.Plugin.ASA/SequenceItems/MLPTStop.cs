@@ -14,8 +14,10 @@ using Newtonsoft.Json;
 using NINA.Core.Model;
 using NINA.Photon.Plugin.ASA.Equipment;
 using NINA.Photon.Plugin.ASA.Interfaces;
+using NINA.Photon.Plugin.ASA.Model;
 using NINA.Sequencer.SequenceItem;
 using NINA.Sequencer.Validations;
+using NINA.WPF.Base.Mediator;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.Composition;
@@ -32,7 +34,7 @@ namespace NINA.Photon.Plugin.ASA.SequenceItems
     [ExportMetadata("Category", "ASA Tools")]
     [Export(typeof(ISequenceItem))]
     [JsonObject(MemberSerialization.OptIn)]
-    public class MLTPStop : SequenceItem
+    public class MLTPStop : SequenceItem, IValidatable
     {
         [ImportingConstructor]
         public MLTPStop() : this(ASAPlugin.MountMediator, ASAPlugin.ASAOptions, ASAPlugin.Mount)
@@ -68,6 +70,34 @@ namespace NINA.Photon.Plugin.ASA.SequenceItems
                 issues = value;
                 RaisePropertyChanged();
             }
+        }
+
+        public bool Validate()
+        {
+            var i = new List<string>();
+            /*if (!mountMediator.GetInfo().Connected)             // TODO CRASH
+
+            {
+                i.Add("ASA mount not connected");
+            }*/
+
+            try
+            {
+                var version = mount.AutoslewVersion();
+
+                // check if version is older then 7.1.4.4
+                if (VersionHelper.IsOlderVersion(version, "7.1.4.4"))
+                {
+                    i.Add("Autoslew Version not supported");
+                }
+            }
+            catch (Exception ex)
+            {
+                i.Add($"Autoslew not connected");
+            }
+
+            Issues = i;
+            return i.Count == 0;
         }
 
         public override async Task Execute(IProgress<ApplicationStatus> progress, CancellationToken token)
