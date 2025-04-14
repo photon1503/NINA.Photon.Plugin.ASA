@@ -53,8 +53,15 @@ jobs:
         run: |
           curl https://api.bitbucket.org/2.0/repositories/isbeorn/nina.plugin.manifests/src/main/tools/CreateNET7Manifest.ps1 >> CreateNET7Manifest.ps1
           pwsh CreateNET7Manifest.ps1 -file packages/${{ env.PLUGIN_NAME }}/${{ env.PLUGIN_NAME }}.dll -installerUrl https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/${{ env.PLUGIN_NAME }}.${{ github.ref_name }}.zip -createArchive -includeAll -appendVersionToArchive
-          Rename-Item -Path "manifest.json" -NewName "manifest.json" 
-       
+          ls
+          ls packages/${{ env.PLUGIN_NAME }}
+          Move-Item -Path "${{ env.PLUGIN_NAME }}.${{ steps.get_version.outputs.version }}.zip" -Destination "packages/${{ env.PLUGIN_NAME }}/" -Force
+          Move-Item -Path "manifest.json" -Destination "packages/${{ env.PLUGIN_NAME }}/manifest.json" -Force
+      
+      - name: List files for debugging
+        run: |
+            ls -R packages
+
       - name: Create Release
         id: create_release
         uses: softprops/action-gh-release@v2
