@@ -24,7 +24,7 @@ jobs:
       - name: Get Assembly Version
         id: get_version
         run: |
-          $version = (Select-String -Path "Properties/AssemblyInfo.cs" -Pattern 'AssemblyVersion\("([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)"\)').Matches.Groups[1].Value
+          $version = (Select-String -Path "NINA.Photon.Plugin.ASA\Properties/AssemblyInfo.cs" -Pattern 'AssemblyVersion\("([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)"\)').Matches.Groups[1].Value
           echo "version=$version" >> $env:GITHUB_OUTPUT
 
       # This will build your solution. If the solution name differs from your plugin name, please adjust it here
