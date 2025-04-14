@@ -66,5 +66,5 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            ${{ env.PLUGIN_NAME }}.zip
-            manifest.json
+            packages/NINA.Photon.Plugin.ASA/${{ env.PLUGIN_NAME }}.zip
+            packages/NINA.Photon.Plugin.ASA/manifest.json
