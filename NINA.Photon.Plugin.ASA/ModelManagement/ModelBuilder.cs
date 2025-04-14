@@ -50,8 +50,6 @@ using static System.Windows.Forms.AxHost;
 
 namespace NINA.Photon.Plugin.ASA.ModelManagement
 {
-
-
     public class ModelBuilder : IModelBuilder
     {
         private static IComparer<double> DOUBLE_COMPARER = Comparer<double>.Default;
@@ -68,18 +66,19 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
         private readonly IProfileService profileService;
         private readonly IPlateSolverFactory plateSolverFactory;
         private readonly IFilterWheelMediator filterWheelMediator;
+        private readonly IASAOptions asaOptions;
         private readonly ICustomDateTime nowProvider = new SystemDateTime();
         private volatile int processingInProgressCount;
+        private bool IsTelescopePositionRestored = false;
 
         private List<ModelPoint> modelPoints1 = new List<ModelPoint>();
 
         public event EventHandler<PointNextUpEventArgs> PointNextUp;
 
-
         public ModelBuilder(
             IProfileService profileService, IMountModelMediator mountModelMediator, IMount mount, ITelescopeMediator telescopeMediator, IDomeMediator domeMediator, ICameraMediator cameraMediator,
             IDomeSynchronization domeSynchronization, IPlateSolverFactory plateSolverFactory, IImagingMediator imagingMediator, IFilterWheelMediator filterWheelMediator,
-            IWeatherDataMediator weatherDataMediator, IImageDataFactory imageDataFactory)
+            IWeatherDataMediator weatherDataMediator, IImageDataFactory imageDataFactory, IASAOptions asaOptions)
         {
             this.imageDataFactory = imageDataFactory;
             this.mountModelMediator = mountModelMediator;
@@ -92,14 +91,17 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             this.weatherDataMediator = weatherDataMediator;
             this.profileService = profileService;
             this.plateSolverFactory = plateSolverFactory;
-            this.filterWheelMediator = filterWheelMediator;             
+            this.filterWheelMediator = filterWheelMediator;
+            this.asaOptions = asaOptions;
         }
 
         private class ModelBuilderState
         {
-            public ModelBuilderState(ModelBuilderOptions options, IList<ModelPoint> modelPoints, IMount mount, IDomeMediator domeMediator, IWeatherDataMediator weatherDataMediator, ICameraMediator cameraMediator, IProfileService profileService)
+            public ModelBuilderState(ModelBuilderOptions options, IList<ModelPoint> modelPoints, IMount mount, IDomeMediator domeMediator, IWeatherDataMediator weatherDataMediator, ICameraMediator cameraMediator, IProfileService profileService, IASAOptions asaOptions)
             {
                 this.Options = options;
+                this.asaOptions = asaOptions;
+
                 var maxConcurrent = options.MaxConcurrency > 0 ? options.MaxConcurrency : int.MaxValue;
                 this.ProcessingSemaphore = new SemaphoreSlim(maxConcurrent, maxConcurrent);
                 this.ModelPoints = ImmutableList.ToImmutableList(modelPoints);
@@ -108,6 +110,10 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
 
                 var domeInfo = domeMediator.GetInfo();
                 this.UseDome = domeInfo?.Connected == true && domeInfo?.CanSetAzimuth == true;
+                if (asaOptions.DomeControlNINA == true)
+                {
+                    this.UseDome = false;
+                }
                 this.PointAzimuthComparer = GetPointComparer(this.UseDome, options, false);
 
                 var refractionCorrectionEnabled = mount.GetRefractionCorrectionEnabled();
@@ -163,6 +169,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             public Separation SyncSeparation { get; set; } = null;
             public DateTime IterationStartTime { get; set; }
             public ModelBuilderOptions Options { get; private set; }
+            public IASAOptions asaOptions { get; private set; }
             public ImmutableList<ModelPoint> ModelPoints { get; private set; }
             public ImmutableList<ModelPoint> ValidPoints { get; private set; }
 
@@ -170,6 +177,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             {
                 ValidPoints = validPoints;
             }
+
             public ImmutableList<ModelPoint> BestModelPoints { get; set; } = ImmutableList.Create<ModelPoint>();
             public double BestModelRMS { get; set; } = double.PositiveInfinity;
             public SemaphoreSlim ProcessingSemaphore { get; private set; }
@@ -220,29 +228,20 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             }
         }
 
-
-        
-
-
         public async Task<bool> SolveFolder(string folder,
-                                                    ModelBuilderOptions options, 
-                                                    CancellationToken ct = default, 
-                                                    CancellationToken stopToken = default, 
-                                                    IProgress<ApplicationStatus> overallProgress = null, 
+                                                    ModelBuilderOptions options,
+                                                    CancellationToken ct = default,
+                                                    CancellationToken stopToken = default,
+                                                    IProgress<ApplicationStatus> overallProgress = null,
                                                     IProgress<ApplicationStatus> stepProgress = null)
         {
-           
-
             // open and create new POX file
             string programDataPath = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
             string poxFileName = System.IO.Path.Combine(folder, @"PointingErrors-NINA.pox");
-            
 
-            
             /* Read all FITS files in the folder */
             string[] files = Directory.GetFiles(folder, "*.fits");
 
-            
             Logger.Info($"Start Platesolve for {files.Count()} files in folder {folder}");
 
             var plateSolver = plateSolverFactory.GetPlateSolver(profileService.ActiveProfile.PlateSolveSettings);
@@ -258,10 +257,9 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 PixelSize = profileService.ActiveProfile.CameraSettings.PixelSize,
                 Regions = profileService.ActiveProfile.PlateSolveSettings.Regions,
                 SearchRadius = profileService.ActiveProfile.PlateSolveSettings.SearchRadius,
-                DisableNotifications = true                
+                DisableNotifications = true
             };
 
-            
             POXlist poxList = new POXlist();
             //var tasks = new List<Task>();
 
@@ -298,46 +296,43 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                                 Status = $"Solving",
                                 ProgressType = ApplicationStatus.StatusProgressType.ValueOfMaxValue,
                                 Progress = cnt,
-                                MaxProgress = files.Length,                                
+                                MaxProgress = files.Length,
                             });
 
                             stepProgress?.Report(new ApplicationStatus() { });
 
-
-                                IImageData image;
-                                try
-                                {
-                                    string fullFileName = System.IO.Path.Combine(folder, file);
-                                    image = await imageDataFactory.CreateFromFile(fullFileName, (int)profileService.ActiveProfile.CameraSettings.BitDepth, false, profileService.ActiveProfile.CameraSettings.RawConverter);
-                                    Logger.Info($"{file} loaded with {image.Properties.Width}x{image.Properties.Height} pixels");
-                                }
-                                catch (Exception ex)
-                                {
-                                    Logger.Error($"Failed to load image {file}: {ex.Message}");
+                            IImageData image;
+                            try
+                            {
+                                string fullFileName = System.IO.Path.Combine(folder, file);
+                                image = await imageDataFactory.CreateFromFile(fullFileName, (int)profileService.ActiveProfile.CameraSettings.BitDepth, false, profileService.ActiveProfile.CameraSettings.RawConverter);
+                                Logger.Info($"{file} loaded with {image.Properties.Width}x{image.Properties.Height} pixels");
+                            }
+                            catch (Exception ex)
+                            {
+                                Logger.Error($"Failed to load image {file}: {ex.Message}");
                                 continue;
+                            }
+
+                            parameter.Coordinates = new Coordinates(Angle.ByHours(objctra), Angle.ByDegree(objctdec), Epoch.J2000);
+
+                            PlateSolveResult solved = null;
+                            try
+                            {
+                                solved = await solver.Solve(image, parameter, stepProgress, ct);
+                                if (solved?.Success != true)
+                                {
+                                    Logger.Error($"Failed to plate solve (2) {file}");
+                                    continue;
                                 }
-
-                                parameter.Coordinates = new Coordinates(Angle.ByHours(objctra), Angle.ByDegree(objctdec), Epoch.J2000);
-
-                                
-                                    PlateSolveResult solved = null;
-                                    try
-                                    {
-                                        solved = await solver.Solve(image, parameter, stepProgress, ct);
-                                        if (solved?.Success != true)
-                                        {
-                                            Logger.Error($"Failed to plate solve (2) {file}");
-                                            continue;
-                                        }
-                                        Logger.Info($"Plate solve successful for {file} at RA={solved.Coordinates.RA} DEC={solved.Coordinates.Dec}");                                        
-                                        poxList.Add(new POX(cnt++, dateobs, expTime, objctra, solved.Coordinates.RA, objctdec, solved.Coordinates.Dec, int.Parse(pierSide)));
-                                    }
-                                    catch (Exception ex)
-                                    {
-                                        Logger.Error($"Failed to plate solve (1) {file}: {ex.Message}");
-                                        continue;
-                                    }
-                                
+                                Logger.Info($"Plate solve successful for {file} at RA={solved.Coordinates.RA} DEC={solved.Coordinates.Dec}");
+                                poxList.Add(new POX(cnt++, dateobs, expTime, objctra, solved.Coordinates.RA, objctdec, solved.Coordinates.Dec, int.Parse(pierSide)));
+                            }
+                            catch (Exception ex)
+                            {
+                                Logger.Error($"Failed to plate solve (1) {file}: {ex.Message}");
+                                continue;
+                            }
                         }
                     }
                     catch (Exception ex)
@@ -346,7 +341,6 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                     }
                 }
             }
-               
 
             //await Task.WhenAll(tasks);
 
@@ -356,11 +350,9 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             Logger.Info("ASA Platesolve finished");
             Notification.ShowSuccess("ASA Folder solve finished");
 
-            overallProgress?.Report(new ApplicationStatus(){ });
+            overallProgress?.Report(new ApplicationStatus() { });
             return true;
         }
-
-  
 
         public async Task<LoadedAlignmentModel> Build(IList<ModelPoint> modelPoints, ModelBuilderOptions options, CancellationToken ct = default, CancellationToken stopToken = default, IProgress<ApplicationStatus> overallProgress = null, IProgress<ApplicationStatus> stepProgress = null)
         {
@@ -389,7 +381,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             }
 
             var reenableDomeFollower = false;
-            var state = new ModelBuilderState(options, modelPoints, mount, domeMediator, weatherDataMediator, cameraMediator, profileService);
+            var state = new ModelBuilderState(options, modelPoints, mount, domeMediator, weatherDataMediator, cameraMediator, profileService, asaOptions);
             if (state.UseDome && domeMediator.IsFollowingScope)
             {
                 if (!await domeMediator.DisableFollowing(ct))
@@ -445,6 +437,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 {
                     Notification.ShowInformation("Restoring telescope position after ASA model build");
                     await telescopeMediator.SlewToCoordinatesAsync(startCoordinates, innerCts.Token);
+                    IsTelescopePositionRestored = true; //TODO wait here
                 }
                 if (oldFilter != null)
                 {
@@ -527,6 +520,8 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             var validPoints = state.ValidPoints;
             var options = state.Options;
 
+            IsTelescopePositionRestored = false;
+
             var stopOrCancelCts = CancellationTokenSource.CreateLinkedTokenSource(ct, stopToken);
             var stopOrCancelCt = stopOrCancelCts.Token;
 
@@ -573,8 +568,8 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                         throw new
                     */
 
-                        // Step 3: Add all successful points and clear failed points, which are applicable for retries
-                        Logger.Info("PrepareRetryPoint");
+                    // Step 3: Add all successful points and clear failed points, which are applicable for retries
+                    Logger.Info("PrepareRetryPoint");
                     Step3_PrepareRetryPoints(state, ct);
 
                     // From here on we can abort with either stop or cancel
@@ -697,12 +692,62 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
         private async Task FinishAlignment(ModelBuilderState state, CancellationToken ct, double? overrideMaxPointRMS = null)
         {
             var completedPoints = state.ValidPoints.Count - state.FailedPoints;
-            if (completedPoints > 2)
+            if (completedPoints >= 2)
             {
-                //TODO
                 Logger.Info("Completing alignment spec");
 
                 ct.ThrowIfCancellationRequested();
+
+                if (state.Options.ModelPointGenerationType == ModelPointGenerationTypeEnum.SiderealPath)
+                {
+                    Logger.Info("Sidereal path model generation");
+
+                    var pointsList = new List<object>();
+
+                    foreach (var point in state.ValidPoints)
+                    {
+                        if (point.ModelPointState == ModelPointStateEnum.AddedToModel || point.ModelPointState == ModelPointStateEnum.Failed)
+                        {
+                            var pointData = new
+                            {
+                                // UTCDate is midtime between start end end TODO
+
+                                UTCDate = point.CaptureTime.ToString("yyyy-MM-ddTHH:mm:ss.ffZ"),
+                                PierSide = point.MountReportedSideOfPier == PierSide.pierEast ? 1 : -1,
+                                TelescopeRa = point.MountReportedRightAscension,
+                                TelescopeDe = point.MountReportedDeclination,
+                                PlateRa = point.PlateSolvedRightAscension,
+                                PlateDe = point.PlateSolvedDeclination,
+                                Solved = point.ModelPointState == ModelPointStateEnum.AddedToModel
+                            };
+                            pointsList.Add(pointData);
+                        }
+                    }
+                    // convert pointsList to string
+                    string json = Newtonsoft.Json.JsonConvert.SerializeObject(pointsList);
+                    Logger.Debug($"Sidereal path model generation: {json}");
+
+                    // TODO wait for the mount to return to the starting position
+
+                    /* while (!IsTelescopePositionRestored)
+                     {
+                         await Task.Delay(1000);
+                     } */
+                    bool success = mount.MLTPSend(json);
+                    if (!success)
+                    {
+                        Logger.Error("Failed to send MLPT pointings");
+                        Notification.ShowError("Failed to MLPT pointings");
+                    }
+                    else
+                    {
+                        Logger.Info("MLPT pointings sent");
+                        Notification.ShowSuccess("MLPT pointings sent");
+                    }
+
+                    return;
+                    //this.mountModelMediator.FinishAlignmentSpec();
+                }
 
                 // C:\ProgramData\ASA\Sequence
                 var programdata = System.Environment.GetFolderPath(System.Environment.SpecialFolder.CommonApplicationData);
@@ -710,10 +755,14 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 string fileName = DateTime.Now.ToString("NINA-ASA-yyyy-MM-dd-HH-mm") + ".pox";
 
                 var filePath = System.IO.Path.Combine(programdata, "ASA", "Sequence", "PointingPics", fileName);
+                //creata path if not exists
+                System.IO.Directory.CreateDirectory(System.IO.Path.Combine(programdata, "ASA", "Sequence", "PointingPics"));
+
                 using (StreamWriter writer = new StreamWriter(filePath))
                 {
                     int points = 1;
                     // get number of validpoints with modelpointsate == AddedToModel
+
                     int numPoints = state.ValidPoints.Count(p => p.ModelPointState == ModelPointStateEnum.AddedToModel);
                     writer.WriteLine(numPoints); // Total Number of images
                     foreach (var point in state.ValidPoints)
@@ -735,13 +784,12 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                             point.MountReportedRightAscension = mnt.RA;
                             point.MountReportedDeclination = mnt.Dec;
                             */
-                                                    
 
                             writer.WriteLine(text);
                             writer.WriteLine($"\"'{point.CaptureTime:yyyy-MM-ddTHH:mm:ss.ff}'\"");
                             writer.WriteLine($"\"{point.CaptureTime:mm:ss.ff}\"");
 
-                            writer.WriteLine($"\"{profileService.ActiveProfile.PlateSolveSettings.ExposureTime}\"");  
+                            writer.WriteLine($"\"{profileService.ActiveProfile.PlateSolveSettings.ExposureTime}\"");
 
                             string psRA = point.PlateSolvedRightAscension.ToString().Replace(",", ".");
                             string psDEC = point.PlateSolvedDeclination.ToString().Replace(",", ".");
@@ -752,12 +800,12 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                                 writer.WriteLine(point.MountReportedRightAscension.ToString().Replace(",", "."));
 
                             writer.WriteLine(psRA);
-                            
+
                             if (point.IsSyncPoint)
                                 writer.WriteLine(psDEC);
                             else
                                 writer.WriteLine(point.MountReportedDeclination.ToString().Replace(",", "."));
-                  
+
                             writer.WriteLine(psDEC);
 
                             writer.WriteLine(point.MountReportedSideOfPier == PierSide.pierEast ? "\"1\"" : "\"-1\"");
@@ -818,6 +866,15 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 }
 
                 var sideOfPier = MeridianFlip.ExpectedPierSide(celestialCoordinates, Angle.ByHours(lst));
+
+                //
+                if (state.Options.ModelPointGenerationType == ModelPointGenerationTypeEnum.SiderealPath)
+                {
+                    // For sidereal path, we need to use the real side of pier
+                    sideOfPier = telescopeMediator.DestinationSideOfPier(celestialCoordinates);
+                }
+                //
+
                 var targetDomeCoordinates = domeSynchronization.TargetDomeCoordinates(celestialCoordinates, lst, siteLatitude: latitude, siteLongitude: longitude, sideOfPier: sideOfPier);
                 var domeAzimuth = targetDomeCoordinates.Azimuth;
                 Angle minAzimuth, maxAzimuth;
@@ -901,8 +958,11 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             var eligiblePoints = state.ValidPoints.Where(IsPointEligibleForBuild).ToList();
             var eligiblePointsOrdered = eligiblePoints.OrderBy(p => p, state.PointAzimuthComparer).ToList();
 
-      
-         
+            // For MLTP, order by east to west (for northern hemisphere) or west to east (for southern hemisphere)
+            if (state.Options.ModelPointGenerationType == ModelPointGenerationTypeEnum.SiderealPath)
+            {
+                eligiblePointsOrdered = eligiblePoints;
+            }
 
             Logger.Info($"Sync is {(state.Options.UseSync ? "enabled" : "disabled")}");
 
@@ -934,9 +994,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 bool addSyncPoint = false;
                 foreach (var point in eligiblePointsOrdered)
                 {
-
-
-                    if (lastSyncPoint == null ||  
+                    if (lastSyncPoint == null ||
                         Math.Abs(lastSyncPoint.Azimuth - point.Azimuth) >= state.Options.SyncEveryHA ||
                         Math.Abs(lastSyncPoint.Azimuth - point.Azimuth) > 180)
                     {
@@ -944,9 +1002,8 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                         // is the point east or west of the meridian?
                         if (point.Azimuth < 180)
                         {
-                            syncPoint= new ModelPoint(telescopeMediator);
+                            syncPoint = new ModelPoint(telescopeMediator);
                             syncPoint.CopyFrom(syncPointEast);
-                      
                         }
                         else
                         {
@@ -965,10 +1022,10 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                         addSyncPoint = false;
                         lastSyncPoint = point;
                     }
-
                 }
                 eligiblePointsOrdered = PointsWithSync;
-            } else
+            }
+            else
                 Logger.Info("Not adding sync points.");
 
             var nextPoint = eligiblePointsOrdered.FirstOrDefault();
@@ -981,7 +1038,6 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 _ = SlewDomeIfNecessary(state, eligiblePointsOrdered, ct);
             }
 
-
             ModelPoint refPointEast = new ModelPoint(telescopeMediator)
             {
                 Altitude = state.Options.RefEastAltitude,
@@ -990,7 +1046,6 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 ModelPointState = ModelPointStateEnum.Generated
             };
 
-
             ModelPoint refPoinWest = new ModelPoint(telescopeMediator)
             {
                 Altitude = state.Options.RefWestAltitude,
@@ -998,6 +1053,32 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 IsSyncPoint = true,
                 ModelPointState = ModelPointStateEnum.Generated
             };
+
+            // For MLTP, go to last point then back to first point
+            if (state.Options.ModelPointGenerationType == ModelPointGenerationTypeEnum.SiderealPath)
+            {
+                // slew to last point and then back
+                var lastPoint = eligiblePointsOrdered.Last();
+                // disable dome sync
+                bool domeSyncEnabled = false;
+                if (domeMediator != null && domeMediator.IsFollowingScope)
+                {
+                    domeMediator.DisableFollowing(ct);
+                    domeSyncEnabled = true;
+                    Logger.Info("Disabling dome sync to slew to last point");
+                    Notification.ShowInformation("Disabling dome sync to slew to last point");
+                }
+
+                await SlewTelescopeToPoint(state, lastPoint, ct);
+                await SlewTelescopeToPoint(state, nextPoint, ct);
+
+                if (domeMediator != null && domeSyncEnabled)
+                {
+                    await domeMediator.EnableFollowing(ct);
+                    Logger.Info("Re-enabling dome sync after slew to last point");
+                    Notification.ShowInformation("Re-enabling dome sync after slew to last point");
+                }
+            }
 
             while (nextPoint != null)
             {
@@ -1010,8 +1091,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                     if (nextPoint.IsSyncPoint)
                     {
                         var refPoint = nextPoint.Azimuth < 180 ? refPointEast : refPoinWest;
-     
-                       
+
                         if (!await SlewTelescopeToPoint(state, refPoint, ct))
                         {
                             Logger.Error($"Failed to slew to reference point{refPoint}. Continuing to the next point");
@@ -1042,11 +1122,14 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                                     await localDomeSlewTask;
                                 }
 
-                                var mountReportedSideOfPier = telescopeMediator.GetInfo().SideOfPier; // mount.GetSideOfPier();
-                                if (mountReportedSideOfPier != nextPoint.ExpectedDomeSideOfPier)
+                                if (state.Options.ModelPointGenerationType != ModelPointGenerationTypeEnum.SiderealPath)
                                 {
-                                    Notification.ShowWarning($"Mount pier is on {mountReportedSideOfPier}, but the dome calculation expected {nextPoint.ExpectedDomeSideOfPier}. Point will likely fail. Please report this issue");
-                                    Logger.Warning($"Mount pier is on {mountReportedSideOfPier}, but the dome calculation expected {nextPoint.ExpectedDomeSideOfPier}");
+                                    var mountReportedSideOfPier = telescopeMediator.GetInfo().SideOfPier; // mount.GetSideOfPier();
+                                    if (mountReportedSideOfPier != nextPoint.ExpectedDomeSideOfPier)
+                                    {
+                                        Notification.ShowWarning($"Mount pier is on {mountReportedSideOfPier}, but the dome calculation expected {nextPoint.ExpectedDomeSideOfPier}. Point will likely fail. Please report this issue");
+                                        Logger.Warning($"Mount pier is on {mountReportedSideOfPier}, but the dome calculation expected {nextPoint.ExpectedDomeSideOfPier}");
+                                    }
                                 }
 
                                 var domeInfo = domeMediator.GetInfo();
@@ -1151,7 +1234,6 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                     nextPoint = eligibleForNextPoint.FirstOrDefault();
                 }
 
-                
                 PointNextUp?.Invoke(this, new PointNextUpEventArgs() { Point = nextPoint });
                 if (nextPoint == null)
                 {
@@ -1198,6 +1280,16 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                     Notification.ShowError("Dome Slew failed");
                     return false;
                 }
+
+                // Wait for the dome to finish slewing
+                var domeInfo = domeMediator.GetInfo();
+                while (domeInfo.Slewing)
+                {
+                    //Logger.Info("Waiting for dome to finish slewing");
+                    // pause
+                    await Task.Delay(1000, ct);
+                }
+
                 return true;
             }
             catch (OperationCanceledException)
@@ -1320,7 +1412,6 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
         private bool AddModelPointToAlignmentSpec(ModelPoint point)
         {
             Logger.Info($"Adding alignment point to specification: {point}");
-   
 
             point.ModelIndex = modelPoints1.Count + 1;
             modelPoints1.Add(point);
@@ -1334,14 +1425,14 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
         {
             point.MountReportedSideOfPier = telescopeMediator.GetInfo().SideOfPier; // mount.GetSideOfPier();
             //get epoch from mount
-            Coordinates mnt1 = telescopeMediator.GetInfo().Coordinates; 
-            
+            Coordinates mnt1 = telescopeMediator.GetInfo().Coordinates;
+
             Coordinates mnt = new Coordinates(telescopeMediator.GetInfo().RightAscension, telescopeMediator.GetInfo().Declination, mnt1.Epoch, Coordinates.RAType.Hours);
             mnt = mnt.Transform(Epoch.J2000);
 
             point.MountReportedDeclination = mnt.Dec; // mount.GetDeclination();
-            point.MountReportedRightAscension = mnt.RA;             
-            
+            point.MountReportedRightAscension = mnt.RA;
+
             point.CaptureTime = mount.GetUTCTime();
             point.MountReportedLocalSiderealTime = telescopeMediator.GetInfo().SiderealTime; // mount.GetLocalSiderealTime();
             var seq = new CaptureSequence(
@@ -1361,13 +1452,15 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             {
                 point.ModelPointState = ModelPointStateEnum.Exposing;
                 var exposureData = await this.imagingMediator.CaptureImage(seq, ct, stepProgress);
+
                 point.CaptureTime = exposureData.MetaData.Image.ExposureStart;
+                var midpoint = point.CaptureTime.AddSeconds(profileService.ActiveProfile.PlateSolveSettings.ExposureTime / 2);
+                point.CaptureTime = midpoint;
                 // Fire and forget to prepare image, which will put the latest captured image in the imaging tab view
                 _ = Task.Run(async () =>
                 {
                     var imageData = await exposureData.ToImageData();
-                    
-                    
+
                     _ = this.imagingMediator.PrepareImage(imageData, new PrepareImageParameters(autoStretch: true, detectStars: false), ct);
                 });
                 return exposureData;
@@ -1379,7 +1472,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 throw;
             }
         }
-        
+
         private async Task<PlateSolveResult> SolveImage(ModelBuilderOptions options, IExposureData exposureData, CancellationToken ct)
         {
             var plateSolver = plateSolverFactory.GetPlateSolver(profileService.ActiveProfile.PlateSolveSettings);
@@ -1436,7 +1529,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
 
    */
 
-                point.PlateSolvedRightAscension = plateSolveResult.Coordinates.RA;      
+                point.PlateSolvedRightAscension = plateSolveResult.Coordinates.RA;
                 point.PlateSolvedDeclination = plateSolveResult.Coordinates.Dec;
 
                 if (AddModelPointToAlignmentSpec(point))
@@ -1460,6 +1553,4 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             return success;
         }
     }
-
-    
 }

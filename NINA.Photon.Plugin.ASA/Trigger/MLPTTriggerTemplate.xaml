@@ -1,0 +1,483 @@
+﻿<!--
+    Copyright © 2016 - 2024 Stefan Berg <isbeorn86+NINA@googlemail.com> and the N.I.N.A. contributors
+
+    This file is part of N.I.N.A. - Nighttime Imaging 'N' Astronomy.
+
+    This Source Code Form is subject to the terms of the Mozilla Public
+    License, v. 2.0. If a copy of the MPL was not distributed with this
+    file, You can obtain one at http://mozilla.org/MPL/2.0/.-->
+<ResourceDictionary
+    x:Class="NINA.Photon.Plugin.ASA.MLTP.MLTPTriggerTemplate"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="clr-namespace:NINA.Photon.Plugin.ASA.MLTP"
+    xmlns:mini="clr-namespace:NINA.View.Sequencer.MiniSequencer;assembly=NINA.Sequencer"
+    xmlns:nina="clr-namespace:NINA.View.Sequencer;assembly=NINA.Sequencer"
+        xmlns:ninactrl="clr-namespace:NINA.CustomControlLibrary;assembly=NINA.CustomControlLibrary"
+    xmlns:ns="clr-namespace:NINA.Core.Locale;assembly=NINA.Core"
+    xmlns:rules="clr-namespace:NINA.Core.Utility.ValidationRules;assembly=NINA.Core"
+    xmlns:view="clr-namespace:NINA.View.Sequencer;assembly=NINA.Sequencer">
+
+    <ResourceDictionary.MergedDictionaries>
+        <ResourceDictionary Source="../Resources/OptionsDataTemplates.xaml" />
+    </ResourceDictionary.MergedDictionaries>
+
+    <DataTemplate x:Key="ModelPointCountDetails">
+        <StackPanel Orientation="Horizontal">
+            <TextBlock
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                Text="Points:" />
+            <TextBlock
+                Margin="5,0,0,0"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                Text="{Binding ModelPointCount}" />
+        </StackPanel>
+    </DataTemplate>
+
+    <DataTemplate x:Key="StartTimeDetails">
+        <StackPanel Orientation="Horizontal">
+            <TextBlock
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                Text="Start Time"
+                ToolTip="{StaticResource SiderealTrackStartTime_Tooltip}" />
+            <ComboBox
+                Margin="5,0,0,0"
+                VerticalAlignment="Center"
+                VerticalContentAlignment="Center"
+                DisplayMemberPath="Name"
+                ItemsSource="{Binding SiderealPathStartDateTimeProviders}"
+                SelectedItem="{Binding SelectedSiderealPathStartDateTimeProvider}"
+                ToolTip="{StaticResource SiderealTrackStartTimeOffset_Tooltip}" />
+            <ninactrl:UnitTextBox
+                MinWidth="60"
+                Margin="10,0,0,0"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                ToolTip="{StaticResource SiderealTrackStartTimeOffset_Tooltip}"
+                Unit="minutes">
+                <Binding Path="SiderealTrackStartOffsetMinutes" UpdateSourceTrigger="LostFocus" />
+            </ninactrl:UnitTextBox>
+            <StackPanel Orientation="Horizontal">
+                <TextBox
+                    MinWidth="40"
+                    Margin="5,0,0,0"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
+                    HorizontalContentAlignment="Right"
+                    IsEnabled="False">
+                    <TextBox.Text>
+                        <Binding Path="StartHours">
+                            <Binding.ValidationRules>
+                                <rules:IntRangeRule>
+                                    <rules:IntRangeRule.ValidRange>
+                                        <rules:IntRangeChecker Maximum="23" Minimum="0" />
+                                    </rules:IntRangeRule.ValidRange>
+                                </rules:IntRangeRule>
+                            </Binding.ValidationRules>
+                        </Binding>
+                    </TextBox.Text>
+                </TextBox>
+                <TextBlock VerticalAlignment="Center" Text=":" />
+                <TextBox
+                    MinWidth="40"
+                    Margin="5,0,0,0"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
+                    HorizontalContentAlignment="Right"
+                    IsEnabled="False">
+                    <TextBox.Text>
+                        <Binding Path="StartMinutes">
+                            <Binding.ValidationRules>
+                                <rules:IntRangeRule>
+                                    <rules:IntRangeRule.ValidRange>
+                                        <rules:IntRangeChecker Maximum="59" Minimum="0" />
+                                    </rules:IntRangeRule.ValidRange>
+                                </rules:IntRangeRule>
+                            </Binding.ValidationRules>
+                        </Binding>
+                    </TextBox.Text>
+                </TextBox>
+                <TextBlock VerticalAlignment="Center" Text=":" />
+                <TextBox
+                    MinWidth="40"
+                    Margin="5,0,0,0"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
+                    HorizontalContentAlignment="Right"
+                    IsEnabled="False">
+                    <TextBox.Text>
+                        <Binding Path="StartSeconds">
+                            <Binding.ValidationRules>
+                                <rules:IntRangeRule>
+                                    <rules:IntRangeRule.ValidRange>
+                                        <rules:IntRangeChecker Maximum="59" Minimum="0" />
+                                    </rules:IntRangeRule.ValidRange>
+                                </rules:IntRangeRule>
+                            </Binding.ValidationRules>
+                        </Binding>
+                    </TextBox.Text>
+                </TextBox>
+            </StackPanel>
+        </StackPanel>
+    </DataTemplate>
+
+    <DataTemplate x:Key="EndTimeDetails">
+        <StackPanel Orientation="Horizontal">
+            <TextBlock
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                Text="Duration"
+                ToolTip="{StaticResource SiderealTrackEndTime_Tooltip}" />
+            <!--ComboBox
+                Margin="5,0,0,0"
+                VerticalAlignment="Center"
+                VerticalContentAlignment="Center"
+                DisplayMemberPath="Name"
+                ItemsSource="{Binding SiderealPathEndDateTimeProviders}"
+                SelectedItem="{Binding SelectedSiderealPathEndDateTimeProvider}"
+                ToolTip="{StaticResource SiderealTrackEndTimeOffset_Tooltip}" /-->
+            <ninactrl:UnitTextBox
+                MinWidth="60"
+                Margin="10,0,0,0"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                ToolTip="{StaticResource SiderealTrackEndTimeOffset_Tooltip}"
+                Unit="minutes">
+                <Binding Path="SiderealTrackEndOffsetMinutes" UpdateSourceTrigger="LostFocus" />
+            </ninactrl:UnitTextBox>
+            <!--StackPanel Orientation="Horizontal">
+                <TextBox
+                    MinWidth="40"
+                    Margin="5,0,0,0"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
+                    HorizontalContentAlignment="Right"
+                    IsEnabled="False">
+                    <TextBox.Text>
+                        <Binding Path="EndHours">
+                            <Binding.ValidationRules>
+                                <rules:IntRangeRule>
+                                    <rules:IntRangeRule.ValidRange>
+                                        <rules:IntRangeChecker Maximum="23" Minimum="0" />
+                                    </rules:IntRangeRule.ValidRange>
+                                </rules:IntRangeRule>
+                            </Binding.ValidationRules>
+                        </Binding>
+                    </TextBox.Text>
+                </TextBox>
+                <TextBlock VerticalAlignment="Center" Text=":" />
+                <TextBox
+                    MinWidth="40"
+                    Margin="5,0,0,0"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
+                    HorizontalContentAlignment="Right"
+                    IsEnabled="False">
+                    <TextBox.Text>
+                        <Binding Path="EndMinutes">
+                            <Binding.ValidationRules>
+                                <rules:IntRangeRule>
+                                    <rules:IntRangeRule.ValidRange>
+                                        <rules:IntRangeChecker Maximum="59" Minimum="0" />
+                                    </rules:IntRangeRule.ValidRange>
+                                </rules:IntRangeRule>
+                            </Binding.ValidationRules>
+                        </Binding>
+                    </TextBox.Text>
+                </TextBox>
+                <TextBlock VerticalAlignment="Center" Text=":" />
+                <TextBox
+                    MinWidth="40"
+                    Margin="5,0,0,0"
+                    HorizontalAlignment="Right"
+                    VerticalAlignment="Center"
+                    HorizontalContentAlignment="Right"
+                    IsEnabled="False">
+                    <TextBox.Text>
+                        <Binding Path="EndSeconds">
+                            <Binding.ValidationRules>
+                                <rules:IntRangeRule>
+                                    <rules:IntRangeRule.ValidRange>
+                                        <rules:IntRangeChecker Maximum="59" Minimum="0" />
+                                    </rules:IntRangeRule.ValidRange>
+                                </rules:IntRangeRule>
+                            </Binding.ValidationRules>
+                        </Binding>
+                    </TextBox.Text>
+                </TextBox>
+            </StackPanel-->
+        </StackPanel>
+    </DataTemplate>
+
+    <DataTemplate x:Key="RADeltaDetails">
+        <StackPanel Orientation="Horizontal">
+            <TextBlock
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                Text="RA Interval"
+                ToolTip="{StaticResource SiderealTrackRADeltaDegrees_Tooltip}" />
+            <ninactrl:UnitTextBox
+                MinWidth="80"
+                Margin="5,0,0,0"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                ToolTip="{StaticResource SiderealTrackRADeltaDegrees_Tooltip}"
+                Unit="°">
+                <Binding Path="SiderealTrackRADeltaDegrees" UpdateSourceTrigger="LostFocus">
+                    <Binding.ValidationRules>
+                        <rules:GreaterThanZeroRule />
+                    </Binding.ValidationRules>
+                </Binding>
+            </ninactrl:UnitTextBox>
+        </StackPanel>
+    </DataTemplate>
+
+    <DataTemplate x:Key="BuildRetryDetails">
+        <StackPanel Orientation="Horizontal">
+            <TextBlock
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                Text="Retries"
+                ToolTip="{StaticResource BuilderRetries_Tooltip}" />
+            <ninactrl:UnitTextBox
+                MinWidth="80"
+                Margin="5,0,0,0"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                ToolTip="{StaticResource BuilderRetries_Tooltip}"
+                Unit="retries">
+                <Binding
+                    Converter="{StaticResource TM_ZeroToDisabledConverter}"
+                    Path="BuilderNumRetries"
+                    UpdateSourceTrigger="LostFocus">
+                    <Binding.ValidationRules>
+                        <rules:GreaterZeroRule />
+                    </Binding.ValidationRules>
+                </Binding>
+            </ninactrl:UnitTextBox>
+            <TextBlock
+                Margin="10,0,0,0"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                Text="Max Failed Points"
+                ToolTip="{StaticResource MaxFailedPoints_Tooltip}" />
+            <ninactrl:UnitTextBox
+                MinWidth="80"
+                Margin="5,0,0,0"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                ToolTip="{StaticResource MaxFailedPoints_Tooltip}"
+                Unit="points">
+                <Binding
+                    Converter="{StaticResource TM_ZeroToInfinityConverter}"
+                    Path="MaxFailedPoints"
+                    UpdateSourceTrigger="LostFocus">
+                    <Binding.ValidationRules>
+                        <rules:GreaterZeroRule />
+                    </Binding.ValidationRules>
+                </Binding>
+            </ninactrl:UnitTextBox>
+            <TextBlock
+                Margin="10,0,0,0"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                Text="Point Max RMS"
+                ToolTip="{StaticResource MaxPointRMS_Tooltip}" />
+            <ninactrl:UnitTextBox
+                MinWidth="80"
+                Margin="5,0,0,0"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                ToolTip="{StaticResource MaxPointRMS_Tooltip}"
+                Unit="arcsec">
+                <Binding
+                    Converter="{StaticResource TM_ZeroToInfinityConverter}"
+                    Path="MaxPointRMS"
+                    UpdateSourceTrigger="LostFocus">
+                    <Binding.ValidationRules>
+                        <rules:GreaterZeroRule />
+                    </Binding.ValidationRules>
+                </Binding>
+            </ninactrl:UnitTextBox>
+        </StackPanel>
+    </DataTemplate>
+
+    <WrapPanel
+        x:Key="BuildSiderealPathModelDetails"
+        x:Shared="false"
+        Orientation="Horizontal">
+        <StackPanel Orientation="Vertical">
+
+            <StackPanel Orientation="Vertical">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock VerticalAlignment="Center" Text="{ns:Loc LblAmount}" />
+                    <ninactrl:UnitTextBox
+                        MinWidth="50"
+                        Margin="5,0,0,0"
+                        VerticalAlignment="Center"
+                        VerticalContentAlignment="Center"
+                        Text="{Binding Amount}"
+                        TextAlignment="Right"
+                        Unit="min" />
+                </StackPanel>
+            </StackPanel>
+
+            <!--StackPanel Margin="0,5,0,0" Orientation="Horizontal">
+                <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource StartTimeDetails}" />
+            </StackPanel-->
+            <StackPanel Margin="0,5,0,0" Orientation="Horizontal">
+                <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource EndTimeDetails}" />
+            </StackPanel>
+            <StackPanel Margin="0,5,0,0" Orientation="Horizontal">
+                <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource RADeltaDetails}" />
+                <ContentPresenter
+                    Margin="10,0,0,0"
+                    Content="{Binding}"
+                    ContentTemplate="{StaticResource ModelPointCountDetails}" />
+            </StackPanel>
+            <!--StackPanel Margin="0,5,0,0" Orientation="Horizontal">
+                <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource BuildRetryDetails}" />
+            </StackPanel-->
+        </StackPanel>
+    </WrapPanel>
+
+    <WrapPanel
+     x:Key="DisableMLTP"
+     x:Shared="false"
+     Orientation="Horizontal">
+        <StackPanel Orientation="Vertical">
+
+            <StackPanel Orientation="Vertical">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock VerticalAlignment="Center" Text="{ns:Loc LblAmount}" />
+                    <ninactrl:UnitTextBox
+                     MinWidth="50"
+                     Margin="5,0,0,0"
+                     VerticalAlignment="Center"
+                     VerticalContentAlignment="Center"
+                     Text="{Binding Amount}"
+                     TextAlignment="Right"
+                     Unit="min" />
+                </StackPanel>
+            </StackPanel>
+        </StackPanel>
+    </WrapPanel>
+
+    <WrapPanel
+     x:Key="BuildSiderealPathModelDetailsFlip"
+     x:Shared="false"
+     Orientation="Horizontal">
+        <StackPanel Orientation="Vertical">
+
+            <!--StackPanel Margin="0,5,0,0" Orientation="Horizontal">
+                <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource StartTimeDetails}" />
+            </StackPanel-->
+            <StackPanel Margin="0,5,0,0" Orientation="Horizontal">
+                <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource EndTimeDetails}" />
+            </StackPanel>
+            <StackPanel Margin="0,5,0,0" Orientation="Horizontal">
+                <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource RADeltaDetails}" />
+                <ContentPresenter
+                 Margin="10,0,0,0"
+                 Content="{Binding}"
+                 ContentTemplate="{StaticResource ModelPointCountDetails}" />
+            </StackPanel>
+            <!--StackPanel Margin="0,5,0,0" Orientation="Horizontal">
+                <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource BuildRetryDetails}" />
+            </StackPanel-->
+        </StackPanel>
+    </WrapPanel>
+
+    <DataTemplate DataType="{x:Type local:MLPTafterTime}">
+        <view:SequenceBlockView DataContext="{Binding}">
+
+            <view:SequenceBlockView.SequenceItemContent>
+                <ContentPresenter Content="{StaticResource BuildSiderealPathModelDetails}" />
+            </view:SequenceBlockView.SequenceItemContent>
+            <view:SequenceBlockView.SequenceItemProgressContent>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock VerticalAlignment="Center" Text="{ns:Loc LblElapsed}" />
+                    <TextBlock
+                        Margin="5,0,0,0"
+                        VerticalAlignment="Center"
+                        Text="{Binding Elapsed}" />
+                    <TextBlock VerticalAlignment="Center" Text=" min / " />
+                    <TextBlock VerticalAlignment="Center" Text="{Binding Amount}" />
+                    <TextBlock VerticalAlignment="Center" Text=" min" />
+                </StackPanel>
+            </view:SequenceBlockView.SequenceItemProgressContent>
+        </view:SequenceBlockView>
+    </DataTemplate>
+
+    <DataTemplate DataType="{x:Type local:MLPTafterFlip}">
+        <view:SequenceBlockView DataContext="{Binding}">
+            <view:SequenceBlockView.SequenceItemContent>
+                <ContentPresenter Content="{StaticResource BuildSiderealPathModelDetailsFlip}" />
+            </view:SequenceBlockView.SequenceItemContent>
+            <view:SequenceBlockView.SequenceItemProgressContent>
+
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock VerticalAlignment="Center" Text="Pierside" />
+                    <TextBlock
+                            Margin="5,0,0,0"
+                            VerticalAlignment="Center"
+                            Text="{Binding OldPierside , Converter={StaticResource SideOfPierConverter}}" />
+                </StackPanel>
+            </view:SequenceBlockView.SequenceItemProgressContent>
+        </view:SequenceBlockView>
+    </DataTemplate>
+
+    <DataTemplate DataType="{x:Type local:MLPTstopAfterTime}">
+        <view:SequenceBlockView DataContext="{Binding}">
+            <view:SequenceBlockView.SequenceItemContent>
+                <ContentPresenter Content="{StaticResource DisableMLTP}" />
+            </view:SequenceBlockView.SequenceItemContent>
+            <view:SequenceBlockView.SequenceItemProgressContent>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock VerticalAlignment="Center" Text="{ns:Loc LblElapsed}" />
+                    <TextBlock
+                              Margin="5,0,0,0"
+                              VerticalAlignment="Center"
+                              Text="{Binding Elapsed}" />
+                    <TextBlock VerticalAlignment="Center" Text=" min / " />
+                    <TextBlock VerticalAlignment="Center" Text="{Binding Amount}" />
+                    <TextBlock VerticalAlignment="Center" Text=" min" />
+                </StackPanel>
+            </view:SequenceBlockView.SequenceItemProgressContent>
+        </view:SequenceBlockView>
+    </DataTemplate>
+
+    <DataTemplate x:Key="NINA.Photon.Plugin.ASA.SequenceItems.SetTrackingRate_Mini">
+        <mini:MiniSequenceItem>
+            <mini:MiniSequenceItem.SequenceItemContent>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock VerticalAlignment="Center" Text="{Binding TrackingMode, Converter={StaticResource TrackingModeConverter}}" />
+                </StackPanel>
+            </mini:MiniSequenceItem.SequenceItemContent>
+        </mini:MiniSequenceItem>
+    </DataTemplate>
+
+    <!--DataTemplate DataType="{x:Type local:SetTrackingRate}">
+        <view:SequenceBlockView DataContext="{Binding}">
+            <view:SequenceBlockView.SequenceItemContent>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock VerticalAlignment="Center" Text="{ns:Loc LblTrackingRate}" />
+                    <ComboBox
+                        Height="30"
+                        Margin="10,0,0,0"
+                        ItemsSource="{Binding TrackingModeChoices}"
+                        SelectedItem="{Binding TrackingMode}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Path=., Converter={StaticResource TrackingModeConverter}}" />
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                </StackPanel>
+            </view:SequenceBlockView.SequenceItemContent>
+        </view:SequenceBlockView>
+    </DataTemplate-->
+</ResourceDictionary>

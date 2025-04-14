@@ -22,6 +22,7 @@ using NINA.Photon.Plugin.ASA.Utility;
 using NINA.Profile.Interfaces;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace NINA.Photon.Plugin.ASA.ModelManagement
 {
@@ -39,14 +40,16 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
         private readonly IASAOptions options;
         private readonly IWeatherDataMediator weatherDataMediator;
         private readonly IMountMediator mountMediator;
+        private readonly IMount mount;
 
-        public ModelPointGenerator(IProfileService profileService, ITelescopeMediator telescopeMediator, IWeatherDataMediator weatherDataMediator, IASAOptions options, IMountMediator mountMediator)
+        public ModelPointGenerator(IProfileService profileService, ITelescopeMediator telescopeMediator, IWeatherDataMediator weatherDataMediator, IASAOptions options, IMountMediator mountMediator, IMount mount)
         {
             this.profileService = profileService;
             this.telescopeMediator = telescopeMediator;
             this.weatherDataMediator = weatherDataMediator;
             this.options = options;
             this.mountMediator = mountMediator;
+            this.mount = mount;
         }
 
         public List<ModelPoint> GenerateGoldenSpiral(int numPoints, CustomHorizon horizon)
@@ -198,89 +201,154 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 throw new Exception($"RA delta ({raDelta}) cannot be less than 1 arc second");
             }
 
-            var meridianLimitDegrees = mountMediator.GetInfo().MeridianLimitDegrees;
+            var meridianLimitDegrees = 180 + mount.MeridianFlipMaxAngle();
+            Logger.Debug($"MeridianFlipMaxangle={meridianLimitDegrees}");
+
+            //  var meridianLimitDegrees = 0.0d;
             Logger.Info($"Using meridian limit {meridianLimitDegrees:0.##}°");
-            var meridianUpperLimit = meridianLimitDegrees + 0.1d;
-            var meridianLowerLimit = 360.0d - meridianLimitDegrees - 0.1d;
+            var toleranceDegrees = 0.1d; // Small buffer to avoid flip at exact limit
+            var meridianUpperLimit = meridianLimitDegrees - toleranceDegrees;
+            var meridianLowerLimit = 360.0d - meridianLimitDegrees + toleranceDegrees;
+
             var points = new List<ModelPoint>();
-            var decJitterSigmaDegrees = this.options.DecJitterSigmaDegrees;
+            var decJitterSigmaDegrees = 0;
+
+            // Adjust startTime if the object is still below the horizon
             while (true)
             {
-                points.Clear();
-                int validPoints = 0;
+                var pointCoordinates = ToTopocentric(coordinates, startTime);
+                var altitudeDegrees = pointCoordinates.Altitude.Degree;
+                var horizonAltitude = horizon.GetAltitude(pointCoordinates.Azimuth.Degree);
 
-                var currentTime = startTime;
-                var raDeltaTime = TimeSpan.FromHours(raDelta.Hours);
-                while (currentTime < endTime)
+                if (altitudeDegrees >= horizonAltitude)
                 {
-                    var nextCoordinates = coordinates.Clone();
-
-                    var decJitter = NormalDistribution.Random(mean: 0.0, stdDev: decJitterSigmaDegrees);
-                    decJitter = Math.Min(3.0d * decJitterSigmaDegrees, Math.Max(-3.0d * decJitterSigmaDegrees, decJitter));
-
-                    var nextDec = nextCoordinates.Dec + decJitter;
-                    nextCoordinates.Dec = Math.Min(90.0d, Math.Max(-90.0d, nextDec));
-
-                    var pointCoordinates = ToTopocentric(nextCoordinates, currentTime);
-                    var azimuthDegrees = pointCoordinates.Azimuth.Degree;
-                    var altitudeDegrees = pointCoordinates.Altitude.Degree;
-
-                    // Make sure no point is within the meridian limits
-                    if (azimuthDegrees < meridianUpperLimit)
-                    {
-                        Logger.Info($"Point Alt={altitudeDegrees:0.##}, Az={azimuthDegrees:0.##} within meridian limit. Adjusting azimuth to {meridianUpperLimit:0.##}");
-                        azimuthDegrees = meridianUpperLimit;
-                    }
-                    if (azimuthDegrees > meridianLowerLimit)
-                    {
-                        Logger.Info($"Point Alt={altitudeDegrees:0.##}, Az={azimuthDegrees:0.##} within meridian limit. Adjusting azimuth to {meridianLowerLimit:0.##}");
-                        azimuthDegrees = meridianLowerLimit;
-                    }
-
-                    var horizonAltitude = horizon.GetAltitude(azimuthDegrees);
-                    ModelPointStateEnum creationState;
-                    if (altitudeDegrees < options.MinPointAltitude || altitudeDegrees > options.MaxPointAltitude)
-                    {
-                        creationState = ModelPointStateEnum.OutsideAltitudeBounds;
-                    }
-                    else if (azimuthDegrees < options.MinPointAzimuth || azimuthDegrees >= options.MaxPointAzimuth)
-                    {
-                        creationState = ModelPointStateEnum.OutsideAzimuthBounds;
-                    }
-                    else if (altitudeDegrees >= horizonAltitude)
-                    {
-                        ++validPoints;
-                        creationState = ModelPointStateEnum.Generated;
-                    }
-                    else
-                    {
-                        creationState = ModelPointStateEnum.BelowHorizon;
-                    }
-
-                    points.Add(
-                        new ModelPoint(telescopeMediator)
-                        {
-                            Altitude = altitudeDegrees,
-                            Azimuth = azimuthDegrees,
-                            ModelPointState = creationState
-                        });
-                    currentTime += raDeltaTime;
+                    break;
                 }
 
-                if (validPoints <= MAX_POINTS)
+                //Logger.Info($"Object below horizon at {startTime}. Adjusting startTime.");
+                startTime += TimeSpan.FromMinutes(1);
+            }
+
+            // Determine the time when the meridian flip is hit
+            DateTime meridianFlipTime = endTime;
+            var currentTime = startTime;
+
+            var initialCoords = ToTopocentric(coordinates, startTime);
+            double initialAzimuth = initialCoords.Azimuth.Degree;
+            bool isWestOfMeridian = initialAzimuth < 180;
+
+            while (currentTime < endTime)
+            {
+                var nextCoordinates = coordinates.Clone();
+                var pointCoordinates = ToTopocentric(nextCoordinates, currentTime);
+                var azimuthDegrees = pointCoordinates.Azimuth.Degree;
+                var altitudeDegrees = pointCoordinates.Altitude.Degree;
+
+                Logger.Debug($"Az={azimuthDegrees}, upperlimit={meridianUpperLimit}, lowerlimit={meridianLowerLimit}");
+
+                var horizonAltitude = horizon.GetAltitude(azimuthDegrees);
+                // For WEST targets: Only check upper limit (195°)
+                if (isWestOfMeridian && azimuthDegrees >= meridianUpperLimit)
                 {
-                    return points;
+                    Logger.Debug($"Meridian flip triggered at {currentTime} (Az={azimuthDegrees:0.##}°)");
+                    meridianFlipTime = currentTime;
+                    break;
+                }
+                // For EAST targets: Only check lower limit (345°)
+                else if (!isWestOfMeridian && azimuthDegrees <= meridianLowerLimit)
+                {
+                    Logger.Debug($"Meridian flip triggered at {currentTime} (Az={azimuthDegrees:0.##}°)");
+                    meridianFlipTime = currentTime;
+                    break;
+                }
+                else if (azimuthDegrees < options.MinPointAzimuth || azimuthDegrees >= options.MaxPointAzimuth)
+                {
+                    //creationState = ModelPointStateEnum.OutsideAzimuthBounds;
+                    Logger.Info($"Point Az={azimuthDegrees:0.##} hits azimuth limits at {currentTime}. Adjusting endTime.");
+                    meridianFlipTime = currentTime;
+                    break;
+                }
+                else if (altitudeDegrees < horizonAltitude)
+                {
+                    //below horizon
+                    Logger.Info($"Point Alt={altitudeDegrees:0.##} hits horizon at {currentTime}. Adjusting endTime.");
+                    meridianFlipTime = currentTime;
+                    break;
+                }
+
+                //currentTime += TimeSpan.FromHours(raDelta.Hours);
+                //increase currentTime in 1 minute steps
+                currentTime += TimeSpan.FromMinutes(1);
+            }
+
+            // Adjust endTime to the meridian flip time
+            endTime = meridianFlipTime;
+
+            // Calculate the total duration and the number of intervals
+            var totalDuration = endTime - startTime;
+            var totalHours = totalDuration.TotalHours;
+            var numIntervals = (int)(totalHours / raDelta.Hours);
+
+            // Adjust raDelta to ensure equidistant points
+            if (numIntervals > 0)
+            {
+                raDelta = Angle.ByHours(totalHours / numIntervals);
+                Logger.Debug($"Using RA delta of {raDelta}");
+            }
+            else
+            {
+                raDelta = Angle.ByHours(0);
+                Logger.Info("No points found");
+            }
+
+            points.Clear();
+            int validPoints = 0;
+
+            for (int i = 0; i <= numIntervals; i++)
+            {
+                currentTime = startTime + TimeSpan.FromHours(raDelta.Hours * i);
+                var nextCoordinates = coordinates.Clone();
+
+                var decJitter = NormalDistribution.Random(mean: 0.0, stdDev: decJitterSigmaDegrees);
+                decJitter = Math.Min(3.0d * decJitterSigmaDegrees, Math.Max(-3.0d * decJitterSigmaDegrees, decJitter));
+
+                var nextDec = nextCoordinates.Dec + decJitter;
+                nextCoordinates.Dec = Math.Min(90.0d, Math.Max(-90.0d, nextDec));
+
+                var pointCoordinates = ToTopocentric(nextCoordinates, currentTime);
+                var azimuthDegrees = pointCoordinates.Azimuth.Degree;
+                var altitudeDegrees = pointCoordinates.Altitude.Degree;
+
+                var horizonAltitude = horizon.GetAltitude(azimuthDegrees);
+                ModelPointStateEnum creationState;
+                if (altitudeDegrees < options.MinPointAltitude || altitudeDegrees > options.MaxPointAltitude)
+                {
+                    creationState = ModelPointStateEnum.OutsideAltitudeBounds;
+                }
+                else if (azimuthDegrees < options.MinPointAzimuth || azimuthDegrees >= options.MaxPointAzimuth)
+                {
+                    creationState = ModelPointStateEnum.OutsideAzimuthBounds;
+                }
+                else if (altitudeDegrees >= horizonAltitude)
+                {
+                    ++validPoints;
+                    creationState = ModelPointStateEnum.Generated;
                 }
                 else
                 {
-                    // We have too many points, so increase until we're below the limit. This algorithm is guaranteed to converge as we always increase the ra delta
-                    var increaseRatio = (double)validPoints / MAX_POINTS;
-                    var nextRaDelta = Angle.ByDegree(raDelta.Degree * increaseRatio);
-                    Logger.Info($"Too many points ({validPoints}) generated with RA delta ({raDelta}). Increasing to {nextRaDelta}");
-
-                    raDelta = nextRaDelta;
+                    creationState = ModelPointStateEnum.BelowHorizon;
                 }
+
+                points.Add(
+                    new ModelPoint(telescopeMediator)
+                    {
+                        Altitude = altitudeDegrees,
+                        Azimuth = azimuthDegrees,
+                        ModelPointState = creationState
+                    });
             }
+
+            return points;
         }
     }
 }

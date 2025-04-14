@@ -95,13 +95,23 @@ namespace NINA.Photon.Plugin.ASA.Interfaces
 
         Response<bool> PowerOff();
 
+        Response<bool> MLTPStop();
+
+        Response<bool> MLTPSend(string json);
+
         Response<bool> FansOn(int strength);
 
         Response<bool> FansOff();
 
+        Response<double> MeridianFlipMaxAngle();
+
         Response<bool> CoverOpen();
 
         Response<bool> CoverClose();
+
+        Response<string> ErrorString();
+
+        Response<string> AutoslewVersion();
 
         Response<bool> GetDualAxisTrackingEnabled();
 

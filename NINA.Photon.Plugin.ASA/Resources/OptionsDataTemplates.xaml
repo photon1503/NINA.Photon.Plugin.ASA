@@ -29,12 +29,12 @@
     <tmconverters:IntZeroBooleanMultiConverter x:Key="TM_IntZeroBooleanMultiConverter" />
     <TextBlock x:Key="Placeholder_Tooltip" Text="Placeholder text" />
     <TextBlock x:Key="Stars_Tooltip" Text="Number of stars to include in the model. Must be at least 3, and no more than 100" />
-    <TextBlock x:Key="PointGenerator_Tooltip" Text="The algorithm used to generate points for an alignment model. Golden Spiral is used for a full sky model, and Sidereal Path generates points along the sidereal path of an RA/DEC coordinate" />
+    <TextBlock x:Key="PointGenerator_Tooltip" Text="The algorithm used to generate points for an alignment model. Golden Spiral is used for a full sky model, and MLTP generates points along the sidereal path of an RA/DEC coordinate" />
     <TextBlock x:Key="SiderealTrackStartTime_Tooltip" Text="The object's location at this time is used as the first point. Points are added along the way over the RA Delta interval until the end time" />
     <TextBlock x:Key="SiderealTrackEndTime_Tooltip" Text="The object's location at this time is used as the last point. Points are added along the way over the RA Delta interval" />
     <TextBlock x:Key="SiderealTrackStartTimeOffset_Tooltip" Text="Offset, in minutes, relative to the selected time provider to start point generation for the target object" />
     <TextBlock x:Key="SiderealTrackEndTimeOffset_Tooltip" Text="Offset, in minutes, relative to the selected time provider to end point generation for the target object" />
-    <TextBlock x:Key="SiderealTrackRADeltaDegrees_Tooltip" Text="Interval, in degrees, to place points along the target's sidereal track. If this is too small, an interval is chosen that will produce 90 points" />
+    <TextBlock x:Key="SiderealTrackRADeltaDegrees_Tooltip" Text="Interval, in degrees, to place points along the target's MLTP track. If this is too small, an interval is chosen that will produce 90 points" />
     <TextBlock x:Key="BuilderRetries_Tooltip" Text="How many time to retry model building when individual points fail. This will only reprocess failed points by re-using previous successful solves" />
     <TextBlock x:Key="MaxFailedPoints_Tooltip" Text="After a build iteration, another iteration isn't attempted if there are more than this many failed points" />
     <TextBlock x:Key="MaxPointRMS_Tooltip" Text="After a build iteration, any point with an RMS greater than this value will be treated as a failed point during a retry" />
@@ -66,6 +66,7 @@
                 <RowDefinition />
                 <RowDefinition />
                 <RowDefinition />
+                <RowDefinition />
             </Grid.RowDefinitions>
             <Grid.Resources>
                 <TextBlock x:Key="LogCommands_Tooltip" Text="If enabled, every ASA command sent and response received will be logged at INFO level in the NINA log" />
@@ -85,7 +86,7 @@
                 <TextBlock x:Key="AlternateDirectionsBetweenIterations_Tooltip" Text="Alternates sort directions between each build iteration. This helps minimize scope, and particularly dome, movements" />
                 <TextBlock x:Key="DisableRefractionCorrection_Tooltip" Text="Disables refraction correction for the duration of model build. It is turned back on afterwards if it was originally enabled." />
                 <TextBlock x:Key="WolBroadcastIP_Tooltip" Text="The IP address to use for broadcasting the WOL packet to power on the mount. This might not be needed based on your network setup, but try setting this if Power On from the Mount Info pane doesn't work." />
-                <TextBlock x:Key="DecJitterSigma_Tooltip" Text="When creating a sidereal path model, points are randomly jittered along the dec arc. This parameter controls how wide this can vary, with the maximum distance being 3 * sigma." />
+                <TextBlock x:Key="DecJitterSigma_Tooltip" Text="When creating a MLTP path model, points are randomly jittered along the dec arc. This parameter controls how wide this can vary, with the maximum distance being 3 * sigma." />
             </Grid.Resources>
             <TextBlock
                 Grid.Row="0"
@@ -385,7 +386,7 @@
                 IsChecked="{Binding MinimizeMeridianFlipsEnabled}"
                 ToolTip="{StaticResource MinimizeMeridianFlips_Tooltip}" />
 
-            <TextBlock
+            <!--TextBlock
                 Grid.Row="16"
                 Grid.Column="0"
                 HorizontalAlignment="Left"
@@ -410,7 +411,7 @@
                         </rules:DoubleRangeRule>
                     </Binding.ValidationRules>
                 </Binding>
-            </ninactrl:UnitTextBox>
+            </ninactrl:UnitTextBox-->
             <TextBlock
                  Grid.Row="17"
                  Grid.Column="0"
@@ -425,6 +426,20 @@
                  HorizontalAlignment="Left"
                  VerticalAlignment="Center"
                  IsChecked="{Binding IsLegacyDDM}" />
+            <TextBlock
+           Grid.Row="18"
+           Grid.Column="0"
+           VerticalAlignment="Center"
+           Text="Let NINA control the Dome"
+            ToolTip="" />
+            <CheckBox
+           Grid.Row="18"
+           Grid.Column="1"
+           MinWidth="80"
+           Margin="5,5,0,0"
+           HorizontalAlignment="Left"
+           VerticalAlignment="Center"
+           IsChecked="{Binding DomeControlNINA}" />
         </Grid>
     </DataTemplate>
 </ResourceDictionary>

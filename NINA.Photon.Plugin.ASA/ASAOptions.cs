@@ -71,6 +71,8 @@ namespace NINA.Photon.Plugin.ASA
             driverID = optionsAccessor.GetValueString("DriverID", "");
             decJitterSigmaDegrees = optionsAccessor.GetValueDouble(nameof(DecJitterSigmaDegrees), 1.0d);
             isLegacyDDM = optionsAccessor.GetValueBoolean("IsLegacyDDM", true);
+            domeControlNINA = optionsAccessor.GetValueBoolean("DomeControlNINA", false);
+            lastMLPT = optionsAccessor.GetValueDateTime("LastMLPT", DateTime.MinValue);
             highAltitudeStars = optionsAccessor.GetValueInt32("HighAltitudeStars", 10);
             highAltitudeMin = optionsAccessor.GetValueInt32("HighAltitudeMin", 70);
             highAltitudeMax = optionsAccessor.GetValueInt32("HighAltitudeMax", 89);
@@ -84,8 +86,6 @@ namespace NINA.Photon.Plugin.ASA
             syncWestAzimuth = optionsAccessor.GetValueDouble("SyncWestAzimuth", 270.0d);
             refEastAzimuth = optionsAccessor.GetValueDouble("RefEastAzimuth", 90.0d);
             refWestAzimuth = optionsAccessor.GetValueDouble("RefWestAzimuth", 270.0d);
-
-
         }
 
         public void ResetDefaults()
@@ -117,6 +117,8 @@ namespace NINA.Photon.Plugin.ASA
             MaxPointAzimuth = 359.5d;
             DisableRefractionCorrection = false;
             IsLegacyDDM = true;
+            DomeControlNINA = false;
+            LastMLPT = DateTime.MinValue;
             MACAddress = "";
             IPAddress = "";
             WolBroadcastIP = "";
@@ -137,7 +139,6 @@ namespace NINA.Photon.Plugin.ASA
             RefEastAzimuth = 90.0d;
             RefWestAzimuth = 270.0d;
         }
-    
 
         private int minPointAltitude;
 
@@ -337,6 +338,7 @@ namespace NINA.Photon.Plugin.ASA
         }
 
         private int highAltitudeStars;
+
         public int HighAltitudeStars
         {
             get => highAltitudeStars;
@@ -351,8 +353,8 @@ namespace NINA.Photon.Plugin.ASA
             }
         }
 
-
         private int highAltitudeMin;
+
         public int HighAltitudeMin
         {
             get => highAltitudeMin;
@@ -368,6 +370,7 @@ namespace NINA.Photon.Plugin.ASA
         }
 
         private int highAltitudeMax;
+
         public int HighAltitudeMax
         {
             get => highAltitudeMax;
@@ -383,6 +386,7 @@ namespace NINA.Photon.Plugin.ASA
         }
 
         private double syncEveryHA;
+
         public double SyncEveryHA
         {
             get => syncEveryHA;
@@ -398,6 +402,7 @@ namespace NINA.Photon.Plugin.ASA
         }
 
         private bool useSync;
+
         public bool UseSync
         {
             get => useSync;
@@ -413,8 +418,9 @@ namespace NINA.Photon.Plugin.ASA
         }
 
         private double syncEastAltitude;
+
         public double SyncEastAltitude
-            {
+        {
             get => syncEastAltitude;
             set
             {
@@ -428,6 +434,7 @@ namespace NINA.Photon.Plugin.ASA
         }
 
         private double syncWestAltitude;
+
         public double SyncWestAltitude
         {
             get => syncWestAltitude;
@@ -441,8 +448,9 @@ namespace NINA.Photon.Plugin.ASA
                 }
             }
         }
-     
+
         private double syncEastAzimuth;
+
         public double SyncEastAzimuth
         {
             get => syncEastAzimuth;
@@ -456,9 +464,11 @@ namespace NINA.Photon.Plugin.ASA
                 }
             }
         }
+
         private double syncWestAzimuth;
+
         public double SyncWestAzimuth
-            {
+        {
             get => syncWestAzimuth;
             set
             {
@@ -471,10 +481,11 @@ namespace NINA.Photon.Plugin.ASA
             }
         }
 
-    private double refEastAltitude;
-    public double RefEastAltitude
+        private double refEastAltitude;
+
+        public double RefEastAltitude
         {
-        get => refEastAltitude;
+            get => refEastAltitude;
             set
             {
                 if (refEastAltitude != value)
@@ -486,8 +497,9 @@ namespace NINA.Photon.Plugin.ASA
             }
         }
 
-    private double refWestAltitude;
-    public double RefWestAltitude
+        private double refWestAltitude;
+
+        public double RefWestAltitude
         {
             get => refWestAltitude;
             set
@@ -501,10 +513,11 @@ namespace NINA.Photon.Plugin.ASA
             }
         }
 
-    private double refEastAzimuth;
-    public double RefEastAzimuth
+        private double refEastAzimuth;
+
+        public double RefEastAzimuth
         {
-        get => refEastAzimuth;
+            get => refEastAzimuth;
             set
             {
                 if (refEastAzimuth != value)
@@ -516,10 +529,11 @@ namespace NINA.Photon.Plugin.ASA
             }
         }
 
-    private double refWestAzimuth;
-    public double RefWestAzimuth
+        private double refWestAzimuth;
+
+        public double RefWestAzimuth
         {
-        get => refWestAzimuth;
+            get => refWestAzimuth;
             set
             {
                 if (refWestAzimuth != value)
@@ -530,7 +544,6 @@ namespace NINA.Photon.Plugin.ASA
                 }
             }
         }
-
 
         private int builderNumRetries;
 
@@ -804,6 +817,22 @@ namespace NINA.Photon.Plugin.ASA
             }
         }
 
+        private DateTime lastMLPT;
+
+        public DateTime LastMLPT
+        {
+            get => lastMLPT;
+            set
+            {
+                if (lastMLPT != value)
+                {
+                    lastMLPT = value;
+                    optionsAccessor.SetValueDateTime("LastMLPT", lastMLPT);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
         private bool isLegacyDDM;
 
         public bool IsLegacyDDM
@@ -815,6 +844,22 @@ namespace NINA.Photon.Plugin.ASA
                 {
                     isLegacyDDM = value;
                     optionsAccessor.SetValueBoolean("IsLegacyDDM", isLegacyDDM);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private bool domeControlNINA;
+
+        public bool DomeControlNINA
+        {
+            get => domeControlNINA;
+            set
+            {
+                if (domeControlNINA != value)
+                {
+                    domeControlNINA = value;
+                    optionsAccessor.SetValueBoolean("DomeControlNINA", domeControlNINA);
                     RaisePropertyChanged();
                 }
             }

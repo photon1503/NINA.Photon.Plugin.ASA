@@ -1,5 +1,10 @@
 # Changelog
 
+## 3.2.x
+
+ - Added support for MLPT for upcoming Autoslew 7
+ - renamed to ASA Tools
+
 ## 3.1.3.0
  - Added instructions for ASA fans and cover
   
