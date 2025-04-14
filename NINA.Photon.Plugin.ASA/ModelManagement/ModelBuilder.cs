@@ -866,6 +866,15 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 }
 
                 var sideOfPier = MeridianFlip.ExpectedPierSide(celestialCoordinates, Angle.ByHours(lst));
+
+                //
+                if (state.Options.ModelPointGenerationType == ModelPointGenerationTypeEnum.SiderealPath)
+                {
+                    // For sidereal path, we need to use the real side of pier
+                    sideOfPier = telescopeMediator.DestinationSideOfPier(celestialCoordinates);
+                }
+                //
+
                 var targetDomeCoordinates = domeSynchronization.TargetDomeCoordinates(celestialCoordinates, lst, siteLatitude: latitude, siteLongitude: longitude, sideOfPier: sideOfPier);
                 var domeAzimuth = targetDomeCoordinates.Azimuth;
                 Angle minAzimuth, maxAzimuth;
@@ -1113,11 +1122,14 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                                     await localDomeSlewTask;
                                 }
 
-                                var mountReportedSideOfPier = telescopeMediator.GetInfo().SideOfPier; // mount.GetSideOfPier();
-                                if (mountReportedSideOfPier != nextPoint.ExpectedDomeSideOfPier)
+                                if (state.Options.ModelPointGenerationType != ModelPointGenerationTypeEnum.SiderealPath)
                                 {
-                                    Notification.ShowWarning($"Mount pier is on {mountReportedSideOfPier}, but the dome calculation expected {nextPoint.ExpectedDomeSideOfPier}. Point will likely fail. Please report this issue");
-                                    Logger.Warning($"Mount pier is on {mountReportedSideOfPier}, but the dome calculation expected {nextPoint.ExpectedDomeSideOfPier}");
+                                    var mountReportedSideOfPier = telescopeMediator.GetInfo().SideOfPier; // mount.GetSideOfPier();
+                                    if (mountReportedSideOfPier != nextPoint.ExpectedDomeSideOfPier)
+                                    {
+                                        Notification.ShowWarning($"Mount pier is on {mountReportedSideOfPier}, but the dome calculation expected {nextPoint.ExpectedDomeSideOfPier}. Point will likely fail. Please report this issue");
+                                        Logger.Warning($"Mount pier is on {mountReportedSideOfPier}, but the dome calculation expected {nextPoint.ExpectedDomeSideOfPier}");
+                                    }
                                 }
 
                                 var domeInfo = domeMediator.GetInfo();
