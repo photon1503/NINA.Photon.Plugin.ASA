@@ -23,27 +23,11 @@ namespace NINA.Photon.Plugin.ASA.Interfaces
     public interface IMountModelMediator : IMediator<IMountModelVM>
 
     {
-        string GetModelName(int modelIndex);
-
-        int GetModelCount();
-
         bool LoadModel(string name);
-
-        string[] GetModelNames();
 
         bool SaveModel(string name);
 
         bool DeleteModel(string name);
-
-        void DeleteAlignment();
-
-        bool DeleteAlignmentStar(int alignmentStarIndex);
-
-        int GetAlignmentStarCount();
-
-        AlignmentStarInfo GetAlignmentStarInfo(int alignmentStarIndex);
-
-        AlignmentModelInfo GetAlignmentModelInfo();
 
         bool StartNewAlignmentSpec();
 

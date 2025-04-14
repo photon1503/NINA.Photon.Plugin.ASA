@@ -1,4 +1,15 @@
-﻿using Microsoft.Build.Utilities;
+﻿#region "copyright"
+
+/*
+    Copyright © 2021 - 2021 George Hilios <ghilios+NINA@googlemail.com>
+
+    This Source Code Form is subject to the terms of the Mozilla Public
+    License, v. 2.0. If a copy of the MPL was not distributed with this
+    file, You can obtain one at http://mozilla.org/MPL/2.0/.
+*/
+
+#endregion "copyright"
+
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -31,7 +42,7 @@ namespace NINA.Photon.Plugin.ASA
         public void WritePOX(string path)
         {
             NINA.Core.Utility.Logger.Info("Writing POX file to: " + path);
-            
+
             using (System.IO.StreamWriter poxWriter = new System.IO.StreamWriter(path))
             {
                 //write number of points
@@ -44,7 +55,7 @@ namespace NINA.Photon.Plugin.ASA
                     poxWriter.WriteLine($"\"Number {cnt++}\"");
                     poxWriter.WriteLine($"\"'{pox.DateObs}'\"");
                     poxWriter.WriteLine($"\"{pox.TimeObs}\"");
-                  
+
                     poxWriter.WriteLine($"\"{pox.ExpTime.ToString("0.0000000000000000")}\"");
                     poxWriter.WriteLine(pox.TelescopeRA);
                     poxWriter.WriteLine(pox.SolvedRA);
@@ -59,8 +70,6 @@ namespace NINA.Photon.Plugin.ASA
 
     internal class POX
     {
-    
-        
         public int Number { get; set; }
         public string DateObs { get; set; }
         public string TimeObs { get; set; }
@@ -70,8 +79,6 @@ namespace NINA.Photon.Plugin.ASA
         public double TelescopeDec { get; set; }
         public double SolvedDec { get; set; }
         public int PierSide { get; set; }
-
-                
 
         public POX(int number, string dateObs, double expTime, double objCTRA, double ra, double objCTDec, double dec, int pierSide)
         {
@@ -85,6 +92,5 @@ namespace NINA.Photon.Plugin.ASA
             SolvedDec = dec;
             PierSide = pierSide;
         }
-
     }
 }

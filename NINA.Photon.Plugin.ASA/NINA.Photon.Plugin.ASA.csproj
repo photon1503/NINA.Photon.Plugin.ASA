@@ -87,8 +87,6 @@
     <PackageReference Include="Microsoft.Windows.Compatibility" Version="8.0.10" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Antlr4.Runtime.Standard" Version="4.13.1" />
-    <PackageReference Include="Antlr4BuildTasks" Version="12.7.0" PrivateAssets="all" />
     <PackageReference Include="AsyncEnumerator" Version="4.0.2" />
     <PackageReference Include="Dirkster.AvalonDock" Version="4.72.1" />
     <PackageReference Include="NINA.Plugin" Version="3.1.2.9001" />

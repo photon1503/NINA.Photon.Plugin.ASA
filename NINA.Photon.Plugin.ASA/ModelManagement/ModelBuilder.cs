@@ -33,7 +33,6 @@ using NINA.Profile.Interfaces;
 using NINA.Sequencer.SequenceItem.Platesolving;
 using NINA.WPF.Base.Mediator;
 using nom.tam.fits;
-using SharpCompress.Common;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;

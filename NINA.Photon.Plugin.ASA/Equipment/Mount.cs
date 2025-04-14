@@ -10,7 +10,6 @@
 
 #endregion "copyright"
 
-using Antlr4.Runtime;
 using NINA.Photon.Plugin.ASA.Grammars;
 using NINA.Photon.Plugin.ASA.Interfaces;
 using NINA.Photon.Plugin.ASA.Utility;
@@ -52,36 +51,6 @@ namespace NINA.Photon.Plugin.ASA.Equipment
         public override string ToString()
         {
             return Value.ToString();
-        }
-    }
-
-    public static class LexerCreator<T> where T : Lexer
-    {
-        public static readonly Func<ICharStream, T> Construct = ConstructImpl(typeof(T));
-
-        private static Func<ICharStream, T> ConstructImpl(Type type)
-        {
-            var parameters = new Type[] { typeof(ICharStream) };
-            var constructorInfo = type.GetConstructor(parameters);
-            var paramExpr = Expression.Parameter(typeof(ICharStream));
-            var body = Expression.New(constructorInfo, paramExpr);
-            var constructor = Expression.Lambda<Func<ICharStream, T>>(body, paramExpr);
-            return constructor.Compile();
-        }
-    }
-
-    public static class ParserCreator<T> where T : Parser
-    {
-        public static readonly Func<ITokenStream, T> Construct = ConstructImpl(typeof(T));
-
-        private static Func<ITokenStream, T> ConstructImpl(Type type)
-        {
-            var parameters = new Type[] { typeof(ITokenStream) };
-            var constructorInfo = type.GetConstructor(parameters);
-            var paramExpr = Expression.Parameter(typeof(ITokenStream));
-            var body = Expression.New(constructorInfo, paramExpr);
-            var constructor = Expression.Lambda<Func<ITokenStream, T>>(body, paramExpr);
-            return constructor.Compile();
         }
     }
 
@@ -139,95 +108,6 @@ namespace NINA.Photon.Plugin.ASA.Equipment
         private static int ParseIntOrDefault(string s, int defaultValue)
         {
             return s != null ? int.Parse(s) : defaultValue;
-        }
-
-        private static P GetParser<L, P>(string s)
-            where L : Lexer
-            where P : Parser
-        {
-            var inputStream = new AntlrInputStream(s);
-            var lexer = LexerCreator<L>.Construct(inputStream);
-            var commonTokenStream = new CommonTokenStream(lexer);
-            var parser = ParserCreator<P>.Construct(commonTokenStream);
-            parser.RemoveErrorListeners();
-            parser.AddErrorListener(ThrowingErrorListener.INSTANCE);
-            return parser;
-        }
-
-        public static Response<CoordinateAngle> ParseCoordinateAngle(string s)
-        {
-            var parser = GetParser<AngleLexer, AngleParser>(s);
-            var context = parser.angle();
-
-            var sign = context.sign().GetText();
-            var degrees = int.Parse(context.degrees().GetText(), CultureInfo.InvariantCulture);
-            var minutes = int.Parse(context.minutes().GetText(), CultureInfo.InvariantCulture);
-            var seconds = ParseIntOrDefault(context.seconds()?.GetText(), 0);
-            var tenthSeconds = ParseIntOrDefault(context.tenth_seconds()?.GetText(), 0);
-            var positive = sign != "-";
-            return new Response<CoordinateAngle>(new CoordinateAngle(positive, degrees, minutes, seconds, (byte)(tenthSeconds * 10)), s);
-        }
-
-        public static Response<AstrometricTime> ParseAstrometricTime(string s)
-        {
-            var parser = GetParser<TimeLexer, TimeParser>(s);
-            var context = parser.time();
-
-            var hours = int.Parse(context.hours().GetText(), CultureInfo.InvariantCulture);
-            var minutes = int.Parse(context.minutes().GetText(), CultureInfo.InvariantCulture);
-            var tenthMinutes = ParseIntOrDefault(context.tenth_minutes()?.GetText(), 0);
-            var seconds = ParseIntOrDefault(context.seconds()?.GetText(), 0);
-            var tenthSeconds = ParseIntOrDefault(context.tenth_seconds()?.GetText(), 0);
-            var hundredthSeconds = ParseIntOrDefault(context.hundredth_seconds()?.GetText(), 0) + 10 * tenthSeconds;
-            return new Response<AstrometricTime>(new AstrometricTime(hours, minutes, seconds + 6 * tenthMinutes, hundredthSeconds + 10 * tenthSeconds), s);
-        }
-
-        public static Response<AlignmentStarInfo> ParseAlignmentStarInfo(string s)
-        {
-            var parser = GetParser<AlignmentStarInfoLexer, AlignmentStarInfoParser>(s);
-            var context = parser.alignmentStarInfo();
-
-            var localHourContext = context.time();
-            var declinationAngleContext = context.angle();
-            var errorContext = context.error();
-
-            var localHours = int.Parse(localHourContext.hours().GetText(), CultureInfo.InvariantCulture);
-            var localMinutes = int.Parse(localHourContext.minutes().GetText(), CultureInfo.InvariantCulture);
-            var localSeconds = int.Parse(localHourContext.seconds().GetText(), CultureInfo.InvariantCulture);
-            var raHundredthSeconds = int.Parse(localHourContext.hundredthSeconds().GetText(), CultureInfo.InvariantCulture);
-            var rightAscension = new AstrometricTime(localHours, localMinutes, localSeconds, raHundredthSeconds);
-
-            var decSign = declinationAngleContext.sign().GetText();
-            var decDegrees = int.Parse(declinationAngleContext.degrees().GetText(), CultureInfo.InvariantCulture);
-            var decMinutes = int.Parse(declinationAngleContext.minutes().GetText(), CultureInfo.InvariantCulture);
-            var decSeconds = int.Parse(declinationAngleContext.seconds().GetText(), CultureInfo.InvariantCulture);
-            var decTenthSeconds = int.Parse(declinationAngleContext.tenthSeconds().GetText(), CultureInfo.InvariantCulture);
-            var declination = new CoordinateAngle(decSign != "-", decDegrees, decMinutes, decSeconds, decTenthSeconds * 10);
-
-            var errorArcseconds = decimal.Parse(errorContext.GetText(), CultureInfo.InvariantCulture);
-            return new Response<AlignmentStarInfo>(new AlignmentStarInfo(rightAscension, declination, errorArcseconds), s);
-        }
-
-        public static Response<AlignmentModelInfo> ParseAlignmentModelInfo(string s)
-        {
-            var parser = GetParser<AlignmentModelInfoLexer, AlignmentModelInfoParser>(s);
-            var context = parser.alignmentModelInfo();
-
-            var raAzimuth = decimal.Parse(context.raAzimuth().GetText(), CultureInfo.InvariantCulture);
-            var raAltitude = decimal.Parse(context.raAltitude().GetText(), CultureInfo.InvariantCulture);
-            var paError = decimal.Parse(context.paError().GetText(), CultureInfo.InvariantCulture);
-            var raPositionAngle = decimal.Parse(context.raPositionAngle().GetText(), CultureInfo.InvariantCulture);
-            var orthogonalityError = decimal.Parse(context.orthogonalityError().GetText(), CultureInfo.InvariantCulture);
-            var azimuthTurns = decimal.Parse(context.azimuthTurns().GetText(), CultureInfo.InvariantCulture);
-            var altitudeTurns = decimal.Parse(context.altitudeTurns().GetText(), CultureInfo.InvariantCulture);
-            var modelTerms = int.Parse(context.modelTerms().GetText(), CultureInfo.InvariantCulture);
-            var rmsError = decimal.Parse(context.rmsError().GetText(), CultureInfo.InvariantCulture);
-            return new Response<AlignmentModelInfo>(
-                new AlignmentModelInfo(
-                    rightAscensionAzimuth: raAzimuth, rightAscensionAltitude: raAltitude, polarAlignErrorDegrees: paError,
-                    rightAscensionPolarPositionAngleDegrees: raPositionAngle, orthogonalityErrorDegrees: orthogonalityError, azimuthAdjustmentTurns: azimuthTurns,
-                    altitudeAdjustmentTurns: altitudeTurns, modelTerms: modelTerms, rmsError: rmsError),
-                s);
         }
 
         private static string SanitizeIP(string ip)
@@ -345,54 +225,6 @@ namespace NINA.Photon.Plugin.ASA.Equipment
             return new Response<double>(0, rc);
         }
 
-        public Response<CoordinateAngle> GetDeclination()
-        {
-            const string command = ":GD#";
-            var rawResponse = this.mountCommander.SendCommandString(command, true);
-            return MountResponseParser.ParseCoordinateAngle(rawResponse);
-        }
-
-        public Response<AstrometricTime> GetRightAscension()
-        {
-            const string command = ":GR#";
-            var rawResponse = this.mountCommander.SendCommandString(command, true);
-            return MountResponseParser.ParseAstrometricTime(rawResponse);
-        }
-
-        public Response<AstrometricTime> GetLocalSiderealTime()
-        {
-            const string command = ":GS#";
-            var rawResponse = this.mountCommander.SendCommandString(command, true);
-            return MountResponseParser.ParseAstrometricTime(rawResponse);
-        }
-
-        public Response<int> GetModelCount()
-        {
-            const string command = ":modelcnt#";
-
-            // returns nnn#
-            var rawResponse = this.mountCommander.SendCommandString(command, true);
-            var result = int.Parse(rawResponse.TrimEnd('#'), CultureInfo.InvariantCulture);
-            return new Response<int>(result, rawResponse);
-        }
-
-        public Response<string> GetModelName(int modelIndex)
-        {
-            if (modelIndex < 1 || modelIndex > 99)
-            {
-                throw new ArgumentException("modelIndex must be between 1 and 99 inclusive", "modelIndex");
-            }
-            string command = $":modelnam{modelIndex}#";
-            // returns name#, or just # if it is not valid
-            var rawResponse = this.mountCommander.SendCommandString(command, true);
-            var name = rawResponse.TrimEnd('#');
-            if (string.IsNullOrEmpty(name))
-            {
-                throw new Exception($"{modelIndex} is not a valid model index");
-            }
-            return new Response<string>(name, rawResponse);
-        }
-
         public Response<bool> LoadModel(string name)
         {
             string command = $":modelld0{name}#";
@@ -430,38 +262,6 @@ namespace NINA.Photon.Plugin.ASA.Equipment
                 throw new Exception($"Failed to delete alignment. {command} returned {rawResponse}");
             }
             */
-        }
-
-        public Response<int> GetAlignmentStarCount()
-        {
-            const string command = ":getalst#";
-
-            // Returns count followed by #
-            var rawResponse = this.mountCommander.SendCommandString(command, true);
-            var result = int.Parse(rawResponse.TrimEnd('#'), CultureInfo.InvariantCulture);
-            return new Response<int>(result, rawResponse);
-        }
-
-        public Response<AlignmentStarInfo> GetAlignmentStarInfo(int alignmentStarIndex)
-        {
-            if (alignmentStarIndex < 1)
-            {
-                throw new ArgumentException("alignmentStarIndex must be >= 1", "alignmentStarIndex");
-            }
-            string command = $":getali{alignmentStarIndex}#";
-
-            // returns HH:MM:SS.SS,+dd*mm:ss.s,eeee.e#
-            var rawResponse = this.mountCommander.SendCommandString(command, true);
-            return MountResponseParser.ParseAlignmentStarInfo(rawResponse);
-        }
-
-        public Response<AlignmentModelInfo> GetAlignmentModelInfo()
-        {
-            const string command = ":getain#";
-
-            // returns ZZZ.ZZZZ,+AA.AAAA,EE.EEEE,PPP.PP,+OO.OOOO,+aa.aa,+bb.bb,NN,RRRRR.R#
-            var rawResponse = this.mountCommander.SendCommandString(command, true);
-            return MountResponseParser.ParseAlignmentModelInfo(rawResponse);
         }
 
         public Response<bool> StartNewAlignmentSpec()

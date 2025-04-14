@@ -3,6 +3,7 @@
 ## 3.2.x
 
  - Added support for MLPT for upcoming Autoslew 7
+ - Fixed dome azimut calculation for EQ piers
  - renamed to ASA Tools
 
 ## 3.1.3.0
