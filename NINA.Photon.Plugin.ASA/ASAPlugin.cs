@@ -71,7 +71,7 @@ namespace NINA.Photon.Plugin.ASA
             DateTime = new SystemDateTime();
             ModelAccessor = new ModelAccessor(telescopeMediator, MountModelMediator, DateTime);
             ModelPointGenerator = new ModelPointGenerator(profileService, telescopeMediator, weatherDataMediator, ASAOptions, MountMediator, Mount);
-            ModelBuilder = new ModelBuilder(profileService, MountModelMediator, Mount, telescopeMediator, domeMediator, cameraMediator, domeSynchronization, plateSolverFactory, imagingMediator, filterWheelMediator, weatherDataMediator, imageDataFactory);
+            ModelBuilder = new ModelBuilder(profileService, MountModelMediator, Mount, telescopeMediator, domeMediator, cameraMediator, domeSynchronization, plateSolverFactory, imagingMediator, filterWheelMediator, weatherDataMediator, imageDataFactory, ASAOptions);
             MountModelBuilderMediator = new MountModelBuilderMediator();
         }
 

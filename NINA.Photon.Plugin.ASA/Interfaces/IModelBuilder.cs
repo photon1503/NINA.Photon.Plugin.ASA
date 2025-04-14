@@ -35,6 +35,7 @@ namespace NINA.Photon.Plugin.ASA.Interfaces
         public bool AlternateDirectionsBetweenIterations { get; set; } = true;
         public bool DisableRefractionCorrection { get; set; } = false;
         public bool IsLegacyDDM { get; set; } = false;
+        public bool DomeControlNINA { get; set; } = false;
 
         public bool UseSync { get; set; } = false;
         public double SyncEveryHA { get; set; } = 0.0d;

@@ -66,6 +66,7 @@
                 <RowDefinition />
                 <RowDefinition />
                 <RowDefinition />
+                <RowDefinition />
             </Grid.RowDefinitions>
             <Grid.Resources>
                 <TextBlock x:Key="LogCommands_Tooltip" Text="If enabled, every ASA command sent and response received will be logged at INFO level in the NINA log" />
@@ -425,6 +426,20 @@
                  HorizontalAlignment="Left"
                  VerticalAlignment="Center"
                  IsChecked="{Binding IsLegacyDDM}" />
+            <TextBlock
+           Grid.Row="18"
+           Grid.Column="0"
+           VerticalAlignment="Center"
+           Text="Let NINA control the Dome"
+            ToolTip="" />
+            <CheckBox
+           Grid.Row="18"
+           Grid.Column="1"
+           MinWidth="80"
+           Margin="5,5,0,0"
+           HorizontalAlignment="Left"
+           VerticalAlignment="Center"
+           IsChecked="{Binding DomeControlNINA}" />
         </Grid>
     </DataTemplate>
 </ResourceDictionary>

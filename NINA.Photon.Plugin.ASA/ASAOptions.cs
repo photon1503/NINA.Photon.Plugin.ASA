@@ -71,6 +71,7 @@ namespace NINA.Photon.Plugin.ASA
             driverID = optionsAccessor.GetValueString("DriverID", "");
             decJitterSigmaDegrees = optionsAccessor.GetValueDouble(nameof(DecJitterSigmaDegrees), 1.0d);
             isLegacyDDM = optionsAccessor.GetValueBoolean("IsLegacyDDM", true);
+            domeControlNINA = optionsAccessor.GetValueBoolean("DomeControlNINA", false);
             lastMLPT = optionsAccessor.GetValueDateTime("LastMLPT", DateTime.MinValue);
             highAltitudeStars = optionsAccessor.GetValueInt32("HighAltitudeStars", 10);
             highAltitudeMin = optionsAccessor.GetValueInt32("HighAltitudeMin", 70);
@@ -116,6 +117,7 @@ namespace NINA.Photon.Plugin.ASA
             MaxPointAzimuth = 359.5d;
             DisableRefractionCorrection = false;
             IsLegacyDDM = true;
+            DomeControlNINA = false;
             LastMLPT = DateTime.MinValue;
             MACAddress = "";
             IPAddress = "";
@@ -842,6 +844,22 @@ namespace NINA.Photon.Plugin.ASA
                 {
                     isLegacyDDM = value;
                     optionsAccessor.SetValueBoolean("IsLegacyDDM", isLegacyDDM);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private bool domeControlNINA;
+
+        public bool DomeControlNINA
+        {
+            get => domeControlNINA;
+            set
+            {
+                if (domeControlNINA != value)
+                {
+                    domeControlNINA = value;
+                    optionsAccessor.SetValueBoolean("DomeControlNINA", domeControlNINA);
                     RaisePropertyChanged();
                 }
             }

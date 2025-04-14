@@ -20,8 +20,8 @@ using System.Runtime.InteropServices;
 // [MANDATORY] The assembly versioning
 //Should be incremented for each new release build of a plugin
 
-[assembly: AssemblyVersion("3.2.1.5")]
-[assembly: AssemblyFileVersion("3.2.1.5")]
+[assembly: AssemblyVersion("3.2.1.6")]
+[assembly: AssemblyFileVersion("3.2.1.6")]
 
 // [MANDATORY] The name of your plugin
 [assembly: AssemblyTitle("ASA Tools")]

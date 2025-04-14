@@ -66,6 +66,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
         private readonly IProfileService profileService;
         private readonly IPlateSolverFactory plateSolverFactory;
         private readonly IFilterWheelMediator filterWheelMediator;
+        private readonly IASAOptions asaOptions;
         private readonly ICustomDateTime nowProvider = new SystemDateTime();
         private volatile int processingInProgressCount;
         private bool IsTelescopePositionRestored = false;
@@ -77,7 +78,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
         public ModelBuilder(
             IProfileService profileService, IMountModelMediator mountModelMediator, IMount mount, ITelescopeMediator telescopeMediator, IDomeMediator domeMediator, ICameraMediator cameraMediator,
             IDomeSynchronization domeSynchronization, IPlateSolverFactory plateSolverFactory, IImagingMediator imagingMediator, IFilterWheelMediator filterWheelMediator,
-            IWeatherDataMediator weatherDataMediator, IImageDataFactory imageDataFactory)
+            IWeatherDataMediator weatherDataMediator, IImageDataFactory imageDataFactory, IASAOptions asaOptions)
         {
             this.imageDataFactory = imageDataFactory;
             this.mountModelMediator = mountModelMediator;
@@ -91,13 +92,15 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             this.profileService = profileService;
             this.plateSolverFactory = plateSolverFactory;
             this.filterWheelMediator = filterWheelMediator;
+            this.asaOptions = asaOptions;
         }
 
         private class ModelBuilderState
         {
-            public ModelBuilderState(ModelBuilderOptions options, IList<ModelPoint> modelPoints, IMount mount, IDomeMediator domeMediator, IWeatherDataMediator weatherDataMediator, ICameraMediator cameraMediator, IProfileService profileService)
+            public ModelBuilderState(ModelBuilderOptions options, IList<ModelPoint> modelPoints, IMount mount, IDomeMediator domeMediator, IWeatherDataMediator weatherDataMediator, ICameraMediator cameraMediator, IProfileService profileService, IASAOptions asaOptions)
             {
                 this.Options = options;
+                this.asaOptions = asaOptions;
 
                 var maxConcurrent = options.MaxConcurrency > 0 ? options.MaxConcurrency : int.MaxValue;
                 this.ProcessingSemaphore = new SemaphoreSlim(maxConcurrent, maxConcurrent);
@@ -107,6 +110,10 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
 
                 var domeInfo = domeMediator.GetInfo();
                 this.UseDome = domeInfo?.Connected == true && domeInfo?.CanSetAzimuth == true;
+                if (asaOptions.DomeControlNINA == true)
+                {
+                    this.UseDome = false;
+                }
                 this.PointAzimuthComparer = GetPointComparer(this.UseDome, options, false);
 
                 var refractionCorrectionEnabled = mount.GetRefractionCorrectionEnabled();
@@ -162,6 +169,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             public Separation SyncSeparation { get; set; } = null;
             public DateTime IterationStartTime { get; set; }
             public ModelBuilderOptions Options { get; private set; }
+            public IASAOptions asaOptions { get; private set; }
             public ImmutableList<ModelPoint> ModelPoints { get; private set; }
             public ImmutableList<ModelPoint> ValidPoints { get; private set; }
 
@@ -373,7 +381,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             }
 
             var reenableDomeFollower = false;
-            var state = new ModelBuilderState(options, modelPoints, mount, domeMediator, weatherDataMediator, cameraMediator, profileService);
+            var state = new ModelBuilderState(options, modelPoints, mount, domeMediator, weatherDataMediator, cameraMediator, profileService, asaOptions);
             if (state.UseDome && domeMediator.IsFollowingScope)
             {
                 if (!await domeMediator.DisableFollowing(ct))
@@ -1042,8 +1050,25 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             {
                 // slew to last point and then back
                 var lastPoint = eligiblePointsOrdered.Last();
+                // disable dome sync
+                bool domeSyncEnabled = false;
+                if (domeMediator != null && domeMediator.IsFollowingScope)
+                {
+                    domeMediator.DisableFollowing(ct);
+                    domeSyncEnabled = true;
+                    Logger.Info("Disabling dome sync to slew to last point");
+                    Notification.ShowInformation("Disabling dome sync to slew to last point");
+                }
+
                 await SlewTelescopeToPoint(state, lastPoint, ct);
                 await SlewTelescopeToPoint(state, nextPoint, ct);
+
+                if (domeMediator != null && domeSyncEnabled)
+                {
+                    await domeMediator.EnableFollowing(ct);
+                    Logger.Info("Re-enabling dome sync after slew to last point");
+                    Notification.ShowInformation("Re-enabling dome sync after slew to last point");
+                }
             }
 
             while (nextPoint != null)
@@ -1243,6 +1268,16 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                     Notification.ShowError("Dome Slew failed");
                     return false;
                 }
+
+                // Wait for the dome to finish slewing
+                var domeInfo = domeMediator.GetInfo();
+                while (domeInfo.Slewing)
+                {
+                    //Logger.Info("Waiting for dome to finish slewing");
+                    // pause
+                    await Task.Delay(1000, ct);
+                }
+
                 return true;
             }
             catch (OperationCanceledException)
