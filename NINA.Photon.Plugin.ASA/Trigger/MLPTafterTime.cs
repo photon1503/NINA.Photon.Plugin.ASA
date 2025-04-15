@@ -642,38 +642,29 @@ namespace NINA.Photon.Plugin.ASA.MLTP
         public bool Validate()
         {
             var i = new List<string>();
-            /*if (!mountMediator.GetInfo().Connected)             // TODO CRASH
 
+            if (telescopeMediator != null && telescopeMediator.GetDevice() != null && telescopeMediator.GetDevice().Connected)
             {
-                i.Add("ASA mount not connected");
-            }*/
-
-            try
-            {
-                var version = mount.AutoslewVersion();
-
-                // check if version is older then 7.1.4.4
-                if (VersionHelper.IsOlderVersion(version, "7.1.4.4"))
+                try
                 {
-                    i.Add("Autoslew Version not supported");
+                    var version = mount.AutoslewVersion();
+
+                    // check if version is older then 7.1.4.4
+                    if (VersionHelper.IsOlderVersion(version, "7.1.4.4"))
+                    {
+                        i.Add("Autoslew Version not supported");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    i.Add($"Autoslew not connected");
                 }
             }
-            catch (Exception ex)
-            {
-                i.Add($"Autoslew not connected");
-            }
+
             if (!cameraMediator.GetInfo().Connected)
             {
                 i.Add("Camera not connected");
             }
-            /* if (!Inherited)
-             {
-                 i.Add("Not within a container that has a target");
-             } */
-            /*if (ModelPoints.Count < 3)
-            {
-                i.Add($"Model builds require at least 3 points. Only {ModelPoints.Count} points were generated");
-            }*/
 
             Issues = i;
             return i.Count == 0;
