@@ -416,7 +416,7 @@
         <mini:MiniTrigger>
             <mini:MiniTrigger.TriggerProgressContent>
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock VerticalAlignment="Center" Text="MLPT After Time" />
+                    <TextBlock VerticalAlignment="Center" Text="{ns:Loc LblElapsed}" />
                     <TextBlock
                         Margin="5,0,0,0"
                         VerticalAlignment="Center"
@@ -451,7 +451,7 @@
         <mini:MiniTrigger>
             <mini:MiniTrigger.TriggerProgressContent>
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock VerticalAlignment="Center" Text="MLPT Flip After Time" />
+                    <TextBlock VerticalAlignment="Center" Text="{ns:Loc LblElapsed}" />
                     <TextBlock
                         Margin="5,0,0,0"
                         VerticalAlignment="Center"
@@ -488,7 +488,7 @@
         <mini:MiniTrigger>
             <mini:MiniTrigger.TriggerProgressContent>
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock VerticalAlignment="Center" Text="MLPT Stop After Time" />
+                    <TextBlock VerticalAlignment="Center" Text="{ns:Loc LblElapsed}" />
                     <TextBlock
                         Margin="5,0,0,0"
                         VerticalAlignment="Center"

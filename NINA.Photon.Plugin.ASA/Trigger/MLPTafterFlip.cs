@@ -162,6 +162,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
         {
             initialized = false;
             initialTime = DateTime.MinValue;
+            options.LastMLPT = DateTime.MinValue;
             base.SequenceBlockTeardown();
         }
 

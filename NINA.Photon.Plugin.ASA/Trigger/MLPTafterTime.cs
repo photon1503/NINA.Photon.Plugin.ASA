@@ -151,8 +151,9 @@ namespace NINA.Photon.Plugin.ASA.MLTP
         /*
         public override void SequenceBlockTeardown()
         {
-            initialized = false;
-            initialTime = DateTime.MinValue;
+            //initialized = false;
+            //initialTime = DateTime.MinValue;
+            options.LastMLPT = DateTime.MinValue;
             base.SequenceBlockTeardown();
         }
         */
@@ -601,6 +602,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             if (options.LastMLPT == DateTime.MinValue)
             {
                 Logger.Debug("MLPTstopAfterTime: LastMLPT is not set, skipping trigger check.");
+                options.LastMLPT = DateTime.Now;
                 return false;
             }
 
