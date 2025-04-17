@@ -560,10 +560,6 @@ namespace NINA.Photon.Plugin.ASA.MLTP
                     i.Add($"Autoslew not connected");
                 }
             }
-            else
-            {
-                i.Add("Telescope not connected");
-            }
 
             if (!cameraMediator.GetInfo().Connected)
             {
