@@ -412,11 +412,11 @@
         </view:SequenceBlockView>
     </DataTemplate>
 
-    <DataTemplate x:Key="local:MLPTafterTime_Mini">
+    <DataTemplate x:Key="NINA.Photon.Plugin.ASA.MLTP.MLPTafterTime_Mini">
         <mini:MiniTrigger>
             <mini:MiniTrigger.TriggerProgressContent>
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock VerticalAlignment="Center" Text="{ns:Loc LblElapsed}" />
+                    <TextBlock VerticalAlignment="Center" Text="start after time" />
                     <TextBlock
                         Margin="5,0,0,0"
                         VerticalAlignment="Center"
@@ -447,18 +447,11 @@
         </view:SequenceBlockView>
     </DataTemplate>
 
-    <DataTemplate x:Key="local:MLPTafterFlip_Mini">
+    <DataTemplate x:Key="NINA.Photon.Plugin.ASA.MLTP..MLPTafterFlip_Mini">
         <mini:MiniTrigger>
             <mini:MiniTrigger.TriggerProgressContent>
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock VerticalAlignment="Center" Text="{ns:Loc LblElapsed}" />
-                    <TextBlock
-                        Margin="5,0,0,0"
-                        VerticalAlignment="Center"
-                        Text="{Binding Elapsed}" />
-                    <TextBlock VerticalAlignment="Center" Text=" min / " />
-                    <TextBlock VerticalAlignment="Center" Text="{Binding Amount}" />
-                    <TextBlock VerticalAlignment="Center" Text=" min" />
+                    <TextBlock VerticalAlignment="Center" Text="start after flip" />
                 </StackPanel>
             </mini:MiniTrigger.TriggerProgressContent>
         </mini:MiniTrigger>
@@ -484,11 +477,11 @@
         </view:SequenceBlockView>
     </DataTemplate>
 
-    <DataTemplate x:Key="local:MLPTstopAfterTime_Mini">
+    <DataTemplate x:Key="NINA.Photon.Plugin.ASA.MLTP.MLPTstopAfterTime_Mini">
         <mini:MiniTrigger>
             <mini:MiniTrigger.TriggerProgressContent>
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock VerticalAlignment="Center" Text="{ns:Loc LblElapsed}" />
+                    <TextBlock VerticalAlignment="Center" Text="stop after time" />
                     <TextBlock
                         Margin="5,0,0,0"
                         VerticalAlignment="Center"
