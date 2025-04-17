@@ -47,7 +47,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
 {
     [ExportMetadata("Name", "MLPT After Flip")]
     [ExportMetadata("Description", "Start MLPT after Meridian Flip")]
-    [ExportMetadata("Icon", "ASASVG")]
+    [ExportMetadata("Icon", "ASAMLPTSVG")]
     [ExportMetadata("Category", "ASA Tools")]
     [Export(typeof(ISequenceTrigger))]
     [JsonObject(MemberSerialization.OptIn)]

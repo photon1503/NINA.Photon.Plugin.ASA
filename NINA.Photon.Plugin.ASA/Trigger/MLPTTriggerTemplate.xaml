@@ -447,7 +447,7 @@
         </view:SequenceBlockView>
     </DataTemplate>
 
-    <DataTemplate x:Key="NINA.Photon.Plugin.ASA.MLTP..MLPTafterFlip_Mini">
+    <DataTemplate x:Key="NINA.Photon.Plugin.ASA.MLTP.MLPTafterFlip_Mini">
         <mini:MiniTrigger>
             <mini:MiniTrigger.TriggerProgressContent>
                 <StackPanel Orientation="Horizontal">

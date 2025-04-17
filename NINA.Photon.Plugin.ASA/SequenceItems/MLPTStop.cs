@@ -30,7 +30,7 @@ namespace NINA.Photon.Plugin.ASA.SequenceItems
 {
     [ExportMetadata("Name", "MLPT Stop")]
     [ExportMetadata("Description", "Stop MLPT")]
-    [ExportMetadata("Icon", "ASASVG")]
+    [ExportMetadata("Icon", "ASAMLPTSVG")]
     [ExportMetadata("Category", "ASA Tools")]
     [Export(typeof(ISequenceItem))]
     [JsonObject(MemberSerialization.OptIn)]
