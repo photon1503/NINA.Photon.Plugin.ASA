@@ -47,7 +47,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
 {
     [ExportMetadata("Name", "MLPT After Flip")]
     [ExportMetadata("Description", "Start MLPT after Meridian Flip")]
-    [ExportMetadata("Icon", "ASASVG")]
+    [ExportMetadata("Icon", "ASAMLPTSVG")]
     [ExportMetadata("Category", "ASA Tools")]
     [Export(typeof(ISequenceTrigger))]
     [JsonObject(MemberSerialization.OptIn)]
@@ -162,6 +162,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
         {
             initialized = false;
             initialTime = DateTime.MinValue;
+            options.LastMLPT = DateTime.MinValue;
             base.SequenceBlockTeardown();
         }
 
@@ -649,31 +650,27 @@ namespace NINA.Photon.Plugin.ASA.MLTP
         public bool Validate()
         {
             var i = new List<string>();
-
-            try
+            if (mountMediator != null && mountMediator.GetInfo() != null && mountMediator.GetInfo().Connected)
             {
-                var version = mount.AutoslewVersion();
-
-                // check if version is older then 7.1.4.4
-                if (VersionHelper.IsOlderVersion(version, "7.1.4.4"))
+                try
                 {
-                    i.Add("Autoslew Version not supported");
+                    var version = mount.AutoslewVersion();
+
+                    // check if version is older then 7.1.4.4
+                    if (VersionHelper.IsOlderVersion(version, "7.1.4.4"))
+                    {
+                        i.Add("Autoslew Version not supported");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    i.Add($"Autoslew not connected");
                 }
             }
-            catch (Exception ex)
+            else
             {
-                i.Add($"Autoslew not connected");
+                i.Add("Telescope not connected");
             }
-            /*if (!mountMediator.GetInfo().Connected)             // TODO CRASH
-
-            {
-                i.Add("ASA mount not connected");
-            }*/
-
-            /*    if (ModelPoints.Count < 3)
-                {
-                    i.Add($"Model builds require at least 3 points. Only {ModelPoints.Count} points were generated");
-                } */
 
             Issues = i;
             return i.Count == 0;

@@ -561,20 +561,26 @@ namespace NINA.Photon.Plugin.ASA.MLTP
         public bool Validate()
         {
             var i = new List<string>();
-
-            try
+            if (mountMediator?.GetInfo()?.Connected == true)
             {
-                var version = mount.AutoslewVersion();
-
-                // check if version is older then 7.1.4.4
-                if (VersionHelper.IsOlderVersion(version, "7.1.4.4"))
+                try
                 {
-                    i.Add("Autoslew Version not supported");
+                    var version = mount.AutoslewVersion();
+
+                    // check if version is older then 7.1.4.4
+                    if (VersionHelper.IsOlderVersion(version, "7.1.4.4"))
+                    {
+                        i.Add("Autoslew Version not supported");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    i.Add($"Autoslew not connected");
                 }
             }
-            catch (Exception ex)
+            else
             {
-                i.Add($"Autoslew not connected");
+                i.Add("Telescope not connected");
             }
 
             Issues = i;

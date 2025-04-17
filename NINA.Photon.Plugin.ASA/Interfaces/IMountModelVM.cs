@@ -21,27 +21,13 @@ namespace NINA.Photon.Plugin.ASA.Interfaces
 {
     public interface IMountModelVM : IDockableVM
     {
-        string GetModelName(int modelIndex);
-
-        int GetModelCount();
-
-        string[] GetModelNames();
-
         bool LoadModel(string name);
 
         bool SaveModel(string name);
 
         bool DeleteModel(string name);
 
-        void DeleteAlignment();
-
         bool DeleteAlignmentStar(int alignmentStarIndex);
-
-        int GetAlignmentStarCount();
-
-        AlignmentStarInfo GetAlignmentStarInfo(int alignmentStarIndex);
-
-        AlignmentModelInfo GetAlignmentModelInfo();
 
         bool StartNewAlignmentSpec();
 

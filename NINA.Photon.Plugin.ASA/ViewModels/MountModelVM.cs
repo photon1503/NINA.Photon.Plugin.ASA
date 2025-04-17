@@ -128,7 +128,6 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             this.SaveSelectedModelCommand = new AsyncRelayCommand(SaveSelectedModel);
             this.SaveAsModelCommand = new AsyncRelayCommand(SaveAsModel);
             this.DeleteWorstStarCommand = new AsyncRelayCommand(DeleteWorstStar);
-            this.ClearAlignmentCommand = new RelayCommand(DeleteAlignment);
 
             mountModelMediator.RegisterHandler(this);
             this.telescopeMediator.RegisterConsumer(this);
@@ -146,11 +145,9 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             CancellationTokenSource timeoutCts = null;
             try
             {
-
                 //await MountUtility.WaitUntilResponding(ipAddress, this.Options.Port, linkedCt.Token);
                 //TODO MotorOn
                 telescopeMediator.Action("MotorOn", "");
-                
 
                 return await telescopeMediator.Connect();
             }
@@ -181,6 +178,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             }
             return false;
         }
+
         private Task<bool> DeleteWorstStar()
         {
             try
@@ -514,14 +512,14 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 try
                 {
                     ModelNamesLoaded = false;
-                    var modelCount = this.GetModelCount();
+                    //var modelCount = this.GetModelCount();
                     ct.ThrowIfCancellationRequested();
                     this.ModelNames.Clear();
                     this.ModelNames.Add(GetUnselectedModelName());
-                    for (int i = 1; i <= modelCount; i++)
+                    for (int i = 1; i <= 1; i++)
                     {
                         ct.ThrowIfCancellationRequested();
-                        this.ModelNames.Add(this.GetModelName(i));
+                        //        this.ModelNames.Add(this.GetModelName(i));
                     }
                     succeeded = true;
                 }
@@ -665,24 +663,6 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             };
         }
 
-        public string GetModelName(int modelIndex)
-        {
-            if (Connected)
-            {
-                return mount.GetModelName(modelIndex);
-            }
-            return "";
-        }
-
-        public int GetModelCount()
-        {
-            if (Connected)
-            {
-                return mount.GetModelCount();
-            }
-            return 0;
-        }
-
         public string[] GetModelNames()
         {
             if (Connected)
@@ -726,45 +706,6 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 return mount.DeleteModel(name);
             }
             return false;
-        }
-
-        public void DeleteAlignment()
-        {
-            /*
-            if (Connected)
-            {
-                mount.DeleteAlignment();
-                LoadedAlignmentModel.Clear();
-                ModelLoaded = false;
-            }
-            */
-        }
-
-        public int GetAlignmentStarCount()
-        {
-            if (Connected)
-            {
-                return mount.GetAlignmentStarCount();
-            }
-            return 0;
-        }
-
-        public AlignmentStarInfo GetAlignmentStarInfo(int alignmentStarIndex)
-        {
-            if (Connected)
-            {
-                return mount.GetAlignmentStarInfo(alignmentStarIndex);
-            }
-            return null;
-        }
-
-        public AlignmentModelInfo GetAlignmentModelInfo()
-        {
-            if (Connected)
-            {
-                return mount.GetAlignmentModelInfo();
-            }
-            return null;
         }
 
         public bool StartNewAlignmentSpec()

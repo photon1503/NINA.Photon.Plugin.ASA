@@ -21,11 +21,6 @@ namespace NINA.Photon.Plugin.ASA.Equipment
 {
     public class MountModelMediator : Mediator<IMountModelVM>, IMountModelMediator
     {
-        public void DeleteAlignment()
-        {
-            handler.DeleteAlignment();
-        }
-
         public bool DeleteAlignmentStar(int alignmentStarIndex)
         {
             return handler.DeleteAlignmentStar(alignmentStarIndex);
@@ -39,36 +34,6 @@ namespace NINA.Photon.Plugin.ASA.Equipment
         public bool FinishAlignmentSpec()
         {
             return handler.FinishAlignmentSpec();
-        }
-
-        public AlignmentModelInfo GetAlignmentModelInfo()
-        {
-            return handler.GetAlignmentModelInfo();
-        }
-
-        public int GetAlignmentStarCount()
-        {
-            return handler.GetAlignmentStarCount();
-        }
-
-        public AlignmentStarInfo GetAlignmentStarInfo(int alignmentStarIndex)
-        {
-            return handler.GetAlignmentStarInfo(alignmentStarIndex);
-        }
-
-        public int GetModelCount()
-        {
-            return handler.GetModelCount();
-        }
-
-        public string GetModelName(int modelIndex)
-        {
-            return handler.GetModelName(modelIndex);
-        }
-
-        public string[] GetModelNames()
-        {
-            return handler.GetModelNames();
         }
 
         public bool LoadModel(string name)

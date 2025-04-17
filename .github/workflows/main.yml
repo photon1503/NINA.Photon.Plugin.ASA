@@ -11,6 +11,7 @@ env:
 jobs:
   build-and-release:
     runs-on: windows-latest
+    permissions: write-all 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -24,7 +25,7 @@ jobs:
       - name: Get Assembly Version
         id: get_version
         run: |
-          $version = (Select-String -Path "NINA.Photon.Plugin.ASA/Properties/AssemblyInfo.cs" -Pattern 'AssemblyVersion\("([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)"\)').Matches.Groups[1].Value
+          $version = (Select-String -Path "NINA.Photon.Plugin.ASA\Properties/AssemblyInfo.cs" -Pattern 'AssemblyVersion\("([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)"\)').Matches.Groups[1].Value
           echo "version=$version" >> $env:GITHUB_OUTPUT
 
       # This will build your solution. If the solution name differs from your plugin name, please adjust it here
@@ -52,33 +53,25 @@ jobs:
         run: |
           curl https://api.bitbucket.org/2.0/repositories/isbeorn/nina.plugin.manifests/src/main/tools/CreateNET7Manifest.ps1 >> CreateNET7Manifest.ps1
           pwsh CreateNET7Manifest.ps1 -file packages/${{ env.PLUGIN_NAME }}/${{ env.PLUGIN_NAME }}.dll -installerUrl https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/${{ env.PLUGIN_NAME }}.${{ github.ref_name }}.zip -createArchive -includeAll -appendVersionToArchive
-          Rename-Item -Path "manifest.json" -NewName "${{ env.PLUGIN_NAME }}.${{ steps.get_version.outputs.version }}.manifest.json" 
+          ls
+          ls packages/${{ env.PLUGIN_NAME }}
+          Move-Item -Path "${{ env.PLUGIN_NAME }}.${{ steps.get_version.outputs.version }}.zip" -Destination "packages/${{ env.PLUGIN_NAME }}/" -Force
+          Move-Item -Path "manifest.json" -Destination "packages/${{ env.PLUGIN_NAME }}/manifest.json" -Force
+      
+      - name: List files for debugging
+        run: |
+            ls -R packages
 
       - name: Create Release
         id: create_release
-        uses: actions/create-release@v1
+        uses: softprops/action-gh-release@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.ref_name }}
-          release_name: Release ${{ steps.get_version.outputs.version }}
+          tag_name: ${{ steps.get_version.outputs.version }}
+          name: Release ${{ steps.get_version.outputs.version }}
           draft: false
           prerelease: false
-      - name: Upload Plugin Zip
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./${{ env.PLUGIN_NAME }}.${{ steps.get_version.outputs.version }}.zip
-          asset_name: ${{ env.PLUGIN_NAME }}.${{ steps.get_version.outputs.version }}.zip
-          asset_content_type: application/zip
-      - name: Upload Manifest
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./${{ env.PLUGIN_NAME }}.${{ steps.get_version.outputs.version }}.manifest.json
-          asset_name: ${{ env.PLUGIN_NAME }}.${{ steps.get_version.outputs.version }}.manifest.json
-          asset_content_type: application/json
+          files: |
+            packages/${{ env.PLUGIN_NAME }}/${{ env.PLUGIN_NAME }}.${{ steps.get_version.outputs.version }}.zip
+            packages/${{ env.PLUGIN_NAME }}/manifest.json

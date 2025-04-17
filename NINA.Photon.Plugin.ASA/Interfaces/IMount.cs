@@ -19,16 +19,6 @@ namespace NINA.Photon.Plugin.ASA.Interfaces
 {
     public interface IMount
     {
-        Response<CoordinateAngle> GetDeclination();
-
-        Response<AstrometricTime> GetRightAscension();
-
-        Response<AstrometricTime> GetLocalSiderealTime();
-
-        Response<int> GetModelCount();
-
-        Response<string> GetModelName(int modelIndex);
-
         Response<bool> LoadModel(string name);
 
         Response<bool> SaveModel(string name);
@@ -38,12 +28,6 @@ namespace NINA.Photon.Plugin.ASA.Interfaces
         void DeleteAlignment();
 
         Response<bool> DeleteAlignmentStar(int alignmentStarIndex);
-
-        Response<int> GetAlignmentStarCount();
-
-        Response<AlignmentStarInfo> GetAlignmentStarInfo(int alignmentStarIndex);
-
-        Response<AlignmentModelInfo> GetAlignmentModelInfo();
 
         Response<bool> StartNewAlignmentSpec();
 

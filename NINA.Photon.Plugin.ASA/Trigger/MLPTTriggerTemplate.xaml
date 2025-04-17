@@ -412,6 +412,23 @@
         </view:SequenceBlockView>
     </DataTemplate>
 
+    <DataTemplate x:Key="NINA.Photon.Plugin.ASA.MLTP.MLPTafterTime_Mini">
+        <mini:MiniTrigger>
+            <mini:MiniTrigger.TriggerProgressContent>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock VerticalAlignment="Center" Text="start after time" />
+                    <TextBlock
+                        Margin="5,0,0,0"
+                        VerticalAlignment="Center"
+                        Text="{Binding Elapsed}" />
+                    <TextBlock VerticalAlignment="Center" Text=" min / " />
+                    <TextBlock VerticalAlignment="Center" Text="{Binding Amount}" />
+                    <TextBlock VerticalAlignment="Center" Text=" min" />
+                </StackPanel>
+            </mini:MiniTrigger.TriggerProgressContent>
+        </mini:MiniTrigger>
+    </DataTemplate>
+
     <DataTemplate DataType="{x:Type local:MLPTafterFlip}">
         <view:SequenceBlockView DataContext="{Binding}">
             <view:SequenceBlockView.SequenceItemContent>
@@ -428,6 +445,16 @@
                 </StackPanel>
             </view:SequenceBlockView.SequenceItemProgressContent>
         </view:SequenceBlockView>
+    </DataTemplate>
+
+    <DataTemplate x:Key="NINA.Photon.Plugin.ASA.MLTP.MLPTafterFlip_Mini">
+        <mini:MiniTrigger>
+            <mini:MiniTrigger.TriggerProgressContent>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock VerticalAlignment="Center" Text="start after flip" />
+                </StackPanel>
+            </mini:MiniTrigger.TriggerProgressContent>
+        </mini:MiniTrigger>
     </DataTemplate>
 
     <DataTemplate DataType="{x:Type local:MLPTstopAfterTime}">
@@ -448,6 +475,23 @@
                 </StackPanel>
             </view:SequenceBlockView.SequenceItemProgressContent>
         </view:SequenceBlockView>
+    </DataTemplate>
+
+    <DataTemplate x:Key="NINA.Photon.Plugin.ASA.MLTP.MLPTstopAfterTime_Mini">
+        <mini:MiniTrigger>
+            <mini:MiniTrigger.TriggerProgressContent>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock VerticalAlignment="Center" Text="stop after time" />
+                    <TextBlock
+                        Margin="5,0,0,0"
+                        VerticalAlignment="Center"
+                        Text="{Binding Elapsed}" />
+                    <TextBlock VerticalAlignment="Center" Text=" min / " />
+                    <TextBlock VerticalAlignment="Center" Text="{Binding Amount}" />
+                    <TextBlock VerticalAlignment="Center" Text=" min" />
+                </StackPanel>
+            </mini:MiniTrigger.TriggerProgressContent>
+        </mini:MiniTrigger>
     </DataTemplate>
 
     <DataTemplate x:Key="NINA.Photon.Plugin.ASA.SequenceItems.SetTrackingRate_Mini">

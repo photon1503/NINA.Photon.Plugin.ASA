@@ -46,7 +46,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
 {
     [ExportMetadata("Name", "MLPT After Time")]
     [ExportMetadata("Description", "Start MLPT after x Minutes")]
-    [ExportMetadata("Icon", "ASASVG")]
+    [ExportMetadata("Icon", "ASAMLPTSVG")]
     [ExportMetadata("Category", "ASA Tools")]
     [Export(typeof(ISequenceTrigger))]
     [JsonObject(MemberSerialization.OptIn)]
@@ -151,8 +151,9 @@ namespace NINA.Photon.Plugin.ASA.MLTP
         /*
         public override void SequenceBlockTeardown()
         {
-            initialized = false;
-            initialTime = DateTime.MinValue;
+            //initialized = false;
+            //initialTime = DateTime.MinValue;
+            options.LastMLPT = DateTime.MinValue;
             base.SequenceBlockTeardown();
         }
         */
@@ -601,6 +602,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             if (options.LastMLPT == DateTime.MinValue)
             {
                 Logger.Debug("MLPTstopAfterTime: LastMLPT is not set, skipping trigger check.");
+                options.LastMLPT = DateTime.Now;
                 return false;
             }
 
@@ -642,38 +644,33 @@ namespace NINA.Photon.Plugin.ASA.MLTP
         public bool Validate()
         {
             var i = new List<string>();
-            /*if (!mountMediator.GetInfo().Connected)             // TODO CRASH
 
+            if (telescopeMediator != null && telescopeMediator.GetDevice() != null && telescopeMediator.GetDevice().Connected)
             {
-                i.Add("ASA mount not connected");
-            }*/
-
-            try
-            {
-                var version = mount.AutoslewVersion();
-
-                // check if version is older then 7.1.4.4
-                if (VersionHelper.IsOlderVersion(version, "7.1.4.4"))
+                try
                 {
-                    i.Add("Autoslew Version not supported");
+                    var version = mount.AutoslewVersion();
+
+                    // check if version is older then 7.1.4.4
+                    if (VersionHelper.IsOlderVersion(version, "7.1.4.4"))
+                    {
+                        i.Add("Autoslew Version not supported");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    i.Add($"Autoslew not connected");
                 }
             }
-            catch (Exception ex)
+            else
             {
-                i.Add($"Autoslew not connected");
+                i.Add("Telescope not connected");
             }
+
             if (!cameraMediator.GetInfo().Connected)
             {
                 i.Add("Camera not connected");
             }
-            /* if (!Inherited)
-             {
-                 i.Add("Not within a container that has a target");
-             } */
-            /*if (ModelPoints.Count < 3)
-            {
-                i.Add($"Model builds require at least 3 points. Only {ModelPoints.Count} points were generated");
-            }*/
 
             Issues = i;
             return i.Count == 0;

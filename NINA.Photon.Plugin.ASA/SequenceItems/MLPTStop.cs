@@ -30,7 +30,7 @@ namespace NINA.Photon.Plugin.ASA.SequenceItems
 {
     [ExportMetadata("Name", "MLPT Stop")]
     [ExportMetadata("Description", "Stop MLPT")]
-    [ExportMetadata("Icon", "ASASVG")]
+    [ExportMetadata("Icon", "ASAMLPTSVG")]
     [ExportMetadata("Category", "ASA Tools")]
     [Export(typeof(ISequenceItem))]
     [JsonObject(MemberSerialization.OptIn)]
@@ -75,25 +75,22 @@ namespace NINA.Photon.Plugin.ASA.SequenceItems
         public bool Validate()
         {
             var i = new List<string>();
-            /*if (!mountMediator.GetInfo().Connected)             // TODO CRASH
-
+            if (mountMediator?.GetInfo()?.Connected == true)
             {
-                i.Add("ASA mount not connected");
-            }*/
-
-            try
-            {
-                var version = mount.AutoslewVersion();
-
-                // check if version is older then 7.1.4.4
-                if (VersionHelper.IsOlderVersion(version, "7.1.4.4"))
+                try
                 {
-                    i.Add("Autoslew Version not supported");
+                    var version = mount.AutoslewVersion();
+
+                    // check if version is older then 7.1.4.4
+                    if (VersionHelper.IsOlderVersion(version, "7.1.4.4"))
+                    {
+                        i.Add("Autoslew Version not supported");
+                    }
                 }
-            }
-            catch (Exception ex)
-            {
-                i.Add($"Autoslew not connected");
+                catch (Exception ex)
+                {
+                    i.Add($"Autoslew not connected");
+                }
             }
 
             Issues = i;
