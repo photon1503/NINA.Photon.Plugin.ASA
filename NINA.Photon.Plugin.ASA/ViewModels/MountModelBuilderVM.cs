@@ -562,8 +562,8 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
 
         private bool GenerateSiderealPath(bool showNotifications)
         {
-            if (Connected == false)
-            { return false; }
+            //     if (Connected == false)
+            //     { return false; }
 
             if (SiderealPathObjectCoordinates == null)
             {

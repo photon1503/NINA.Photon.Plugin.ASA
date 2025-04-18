@@ -979,7 +979,6 @@
                     <ColumnDefinition Width="*" MinWidth="200" />
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="2*" />
                     <RowDefinition Height="1*" />
                     <RowDefinition Height="1*" />
                 </Grid.RowDefinitions>
@@ -1138,10 +1137,85 @@
                     </oxy:Plot.Annotations>
                 </oxy:Plot>
 
-                <TextBlock Grid.Row="1" Grid.Column="0"
-                         MinHeight="100"
-                         Text="{Binding LoggerWindow}">
-                </TextBlock>
+                <oxy:Plot
+                        Grid.Row="1"
+                        Grid.Column="0"
+                        Width="Auto"
+                        MinWidth="300"
+                        MinHeight="300"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Stretch"
+                        Background="{StaticResource BackgroundBrush}"
+                        PlotAreaBackground="{StaticResource BackgroundBrush}"
+                        PlotAreaBorderColor="Transparent"
+                        PlotType="Polar">
+                    <oxy:Plot.Axes>
+                        <oxy:MagnitudeAxis
+                                Key="AltitudeAxis"
+                                AxislineColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}"
+                                EndPosition="1"
+                                IntervalLength="9"
+                                IsPanEnabled="False"
+                                IsZoomEnabled="False"
+                                MajorGridlineColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}, Converter={StaticResource SetAlphaToColorConverter}, ConverterParameter=60}"
+                                MajorGridlineStyle="LongDash"
+                                MajorStep="30"
+                                Maximum="90"
+                                Minimum="0"
+                                StartPosition="0"
+                                TextColor="Transparent"
+                                TicklineColor="{Binding Path=Color, Source={StaticResource SecondaryBrush}}" />
+                        <oxy:AngleAxis
+                                Key="AzimuthAxis"
+                                AxislineColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}"
+                                EndAngle="90"
+                                EndPosition="1"
+                                IntervalLength="15"
+                                IsPanEnabled="False"
+                                IsZoomEnabled="False"
+                                MajorGridlineColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}, Converter={StaticResource SetAlphaToColorConverter}, ConverterParameter=60}"
+                                MajorGridlineStyle="LongDash"
+                                MajorStep="30"
+                                Maximum="360"
+                                Minimum="0"
+                                StartAngle="450"
+                                StartPosition="0"
+                                TextColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}"
+                                TicklineColor="{Binding Path=Color, Source={StaticResource SecondaryBrush}}" />
+                        <oxy:LinearColorAxis
+                                Key="ErrorColorAxis"
+                                AxisDistance="50"
+                                HighColor="Transparent"
+                                InvalidNumberColor="Black"
+                                IsAxisVisible="{Binding DisplayModelPoints.AlignmentStars, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource CollectionContainsItemsToBooleanConverter}}"
+                                LowColor="Transparent"
+                                Maximum="{Binding DisplayModelPoints.MaxRMSError}"
+                                Minimum="0.0"
+                                PaletteSize="200"
+                                Position="Right">
+                            <oxy:LinearColorAxis.GradientStops>
+                                <swm:GradientStopCollection>
+                                    <swm:GradientStop Offset="0.0" Color="Green" />
+                                    <swm:GradientStop Offset="0.5" Color="#80FF00" />
+                                    <swm:GradientStop Offset="1.0" Color="Red" />
+                                </swm:GradientStopCollection>
+                            </oxy:LinearColorAxis.GradientStops>
+                        </oxy:LinearColorAxis>
+                    </oxy:Plot.Axes>
+                    <oxy:Plot.Series>
+                        <oxy:ScatterSeries
+                                ColorAxisKey="ErrorColorAxis"
+                                DataFieldSize="ErrorPointRadius"
+                                DataFieldValue="ModelPointState"
+                                DataFieldX="InvertedAltitude"
+                                DataFieldY="Azimuth"
+                                ItemsSource="{Binding DisplayModelPoints, UpdateSourceTrigger=PropertyChanged}"
+                                MarkerType="Circle"
+                                TrackerFormatString="{}Altitude: {Altitude:###.####}&#176;&#x0a;Azimuth: {Azimuth:###.####}&#176;&#x0a;RMS Error: {ErrorArcsec:###.##} arcsec"
+                                XAxisKey="AltitudeAxis"
+                                YAxisKey="AzimuthAxis" />
+                    </oxy:Plot.Series>
+                </oxy:Plot>
             </Grid>
         </Grid>
     </ScrollViewer>
