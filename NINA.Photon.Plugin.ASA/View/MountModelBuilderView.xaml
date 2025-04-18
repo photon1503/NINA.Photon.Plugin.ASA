@@ -1085,7 +1085,7 @@
                     <oxy:Plot.Annotations>
                         <oxy:PointAnnotation
                             Stroke="{Binding Path=Color, Source={StaticResource PrimaryBrush}, Converter={StaticResource SetAlphaToColorConverter}, ConverterParameter=60}"
-                            StrokeThickness="2"
+                            StrokeThickness="3"
                             Shape="Cross"
                             Size="8"
                             Opacity="0.6"
@@ -1215,6 +1215,17 @@
                                 XAxisKey="AltitudeAxis"
                                 YAxisKey="AzimuthAxis" />
                     </oxy:Plot.Series>
+                    <oxy:Plot.Annotations>
+                        <oxy:PointAnnotation
+         Stroke="{Binding Path=Color, Source={StaticResource PrimaryBrush}, Converter={StaticResource SetAlphaToColorConverter}, ConverterParameter=60}"
+         StrokeThickness="3"
+         Shape="Cross"
+         Size="8"
+         Opacity="0.6"
+         TextColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}"
+         X="{Binding TelescopePositionInverted.Y}"
+         Y="{Binding TelescopePositionInverted.X}" />
+                    </oxy:Plot.Annotations>
                 </oxy:Plot>
             </Grid>
         </Grid>

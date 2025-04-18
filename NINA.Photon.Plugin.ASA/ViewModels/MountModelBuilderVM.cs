@@ -163,6 +163,8 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             this.ExportCommand = new AsyncRelayCommand(ExportPoints);
             this.SolveCommand = new AsyncRelayCommand(SolveFolder);
 
+            this.ModelPointGenerationType = ModelPointGenerationTypeEnum.GoldenSpiral;
+
             // progress
 
             if (SynchronizationContext.Current == synchronizationContext)
@@ -354,8 +356,21 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 if (telescopePosition.X != value.X || telescopePosition.Y != value.Y)
                 {
                     telescopePosition = value;
+                    TelescopePositionInverted = new DataPoint(value.X, 90 - value.Y);
                     RaisePropertyChanged();
                 }
+            }
+        }
+
+        private DataPoint telescopePositionInverted;
+
+        public DataPoint TelescopePositionInverted
+        {
+            get => telescopePositionInverted;
+            set
+            {
+                telescopePositionInverted = value;
+                RaisePropertyChanged();
             }
         }
 
