@@ -1203,6 +1203,11 @@
                         </oxy:LinearColorAxis>
                     </oxy:Plot.Axes>
                     <oxy:Plot.Series>
+                        <!-- oxy:LineSeries
+
+            ItemsSource="{Binding HorizonDataPointsPolar}"
+            TrackerFormatString="Altitude: {2:0.00}&#176;&#x0a;Azimuth: {4:0.00}&#176;"
+            Color="{Binding Path=Color, Source={StaticResource ButtonBackgroundBrush}}" /-->
                         <oxy:ScatterSeries
                                 ColorAxisKey="ErrorColorAxis"
                                 DataFieldSize="ErrorPointRadius"

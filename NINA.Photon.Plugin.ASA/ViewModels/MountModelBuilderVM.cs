@@ -1594,6 +1594,21 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             }
         }
 
+        public List<DataPoint> HorizonDataPointsPolar
+        {
+            get
+            {
+                return HorizonDataPoints.Select(p =>
+                {
+                    double radius = p.Y; // Altitude becomes radius
+                    double angle = p.X;   // Azimuth is angle
+                    double x = radius * Math.Cos(angle * Math.PI / 180);
+                    double y = radius * Math.Sin(angle * Math.PI / 180);
+                    return new DataPoint(x, y);
+                }).ToList();
+            }
+        }
+
         private Angle domeShutterAzimuthForOpening;
 
         private AsyncObservableCollection<DomeShutterOpeningDataPoint> domeShutterOpeningDataPoints = new AsyncObservableCollection<DomeShutterOpeningDataPoint>();
