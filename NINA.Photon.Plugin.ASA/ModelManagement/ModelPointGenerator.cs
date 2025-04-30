@@ -309,7 +309,6 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             {
                 currentTime = startTime + TimeSpan.FromHours(raDelta.Hours * i);
 
-                //   currentTime = startTime + TimeSpan.FromHours(raDelta.Hours * i);
                 var nextCoordinates = coordinates.Clone();
 
                 var decJitter = NormalDistribution.Random(mean: 0.0, stdDev: decJitterSigmaDegrees);
@@ -317,14 +316,6 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
 
                 var nextDec = nextCoordinates.Dec + decJitter;
                 nextCoordinates.Dec = Math.Min(90.0d, Math.Max(-90.0d, nextDec));
-
-                // get hour angle
-                //var hourAngle = Angle.ByHours(nextCoordinates.RA);
-                // Determine tracking direction: Reverse if west of meridian (HA > 0)
-                //double raDirection = (hourAngle.Hours > 0) ? 1.0 : -1.0;
-
-                // Apply corrected RA direction
-                //currentTime = startTime + TimeSpan.FromHours(raDelta.Hours * i * raDirection);
 
                 var pointCoordinates = ToTopocentric(nextCoordinates, currentTime);
                 var azimuthDegrees = pointCoordinates.Azimuth.Degree;
