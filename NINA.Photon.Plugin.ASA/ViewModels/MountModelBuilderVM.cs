@@ -163,6 +163,8 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             this.ExportCommand = new AsyncRelayCommand(ExportPoints);
             this.SolveCommand = new AsyncRelayCommand(SolveFolder);
 
+            this.ModelPointGenerationType = ModelPointGenerationTypeEnum.GoldenSpiral;
+
             // progress
 
             if (SynchronizationContext.Current == synchronizationContext)
@@ -354,8 +356,21 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 if (telescopePosition.X != value.X || telescopePosition.Y != value.Y)
                 {
                     telescopePosition = value;
+                    TelescopePositionInverted = new DataPoint(value.X, 90 - value.Y);
                     RaisePropertyChanged();
                 }
+            }
+        }
+
+        private DataPoint telescopePositionInverted;
+
+        public DataPoint TelescopePositionInverted
+        {
+            get => telescopePositionInverted;
+            set
+            {
+                telescopePositionInverted = value;
+                RaisePropertyChanged();
             }
         }
 
@@ -553,8 +568,8 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             ModelPointGenerationType = ModelPointGenerationTypeEnum.SiderealPath;
             if (!GenerateSiderealPath(false))
             {
-                if (Connected)
-                    throw new Exception("Failed to generate MLPT path");
+                //if (Connected)
+                throw new Exception("Failed to generate MLPT path");
             }
 
             return this.ModelPoints;
@@ -562,8 +577,8 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
 
         private bool GenerateSiderealPath(bool showNotifications)
         {
-            if (Connected == false)
-            { return false; }
+            //     if (Connected == false)
+            //     { return false; }
 
             if (SiderealPathObjectCoordinates == null)
             {
@@ -1576,6 +1591,21 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             {
                 horizonDataPoints = value;
                 RaisePropertyChanged();
+            }
+        }
+
+        public List<DataPoint> HorizonDataPointsPolar
+        {
+            get
+            {
+                return HorizonDataPoints.Select(p =>
+                {
+                    double radius = p.Y; // Altitude becomes radius
+                    double angle = p.X;   // Azimuth is angle
+                    double x = radius * Math.Cos(angle * Math.PI / 180);
+                    double y = radius * Math.Sin(angle * Math.PI / 180);
+                    return new DataPoint(x, y);
+                }).ToList();
             }
         }
 

@@ -28,7 +28,7 @@ namespace NINA.Photon.Plugin.ASA.SequenceItems
 {
     [ExportMetadata("Name", "Power Off Motor")]
     [ExportMetadata("Description", "Powers off the ASA motor")]
-    [ExportMetadata("Icon", "ASASVG")]
+    [ExportMetadata("Icon", "ASAMOTORSVG")]
     [ExportMetadata("Category", "ASA Tools")]
     [Export(typeof(ISequenceItem))]
     [JsonObject(MemberSerialization.OptIn)]

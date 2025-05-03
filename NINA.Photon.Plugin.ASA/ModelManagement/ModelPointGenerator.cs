@@ -10,6 +10,7 @@
 
 #endregion "copyright"
 
+using Accord.Statistics;
 using Accord.Statistics.Distributions.Univariate;
 using NINA.Astrometry;
 using NINA.Core.Model;
@@ -248,14 +249,14 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
 
                 var horizonAltitude = horizon.GetAltitude(azimuthDegrees);
                 // For WEST targets: Only check upper limit (195°)
-                if (isWestOfMeridian && azimuthDegrees >= meridianUpperLimit)
+                if (isWestOfMeridian && (azimuthDegrees >= meridianUpperLimit || azimuthDegrees < 0))
                 {
                     Logger.Debug($"Meridian flip triggered at {currentTime} (Az={azimuthDegrees:0.##}°)");
                     meridianFlipTime = currentTime;
                     break;
                 }
                 // For EAST targets: Only check lower limit (345°)
-                else if (!isWestOfMeridian && azimuthDegrees <= meridianLowerLimit)
+                else if (!isWestOfMeridian && (azimuthDegrees <= meridianLowerLimit || azimuthDegrees > 360))
                 {
                     Logger.Debug($"Meridian flip triggered at {currentTime} (Az={azimuthDegrees:0.##}°)");
                     meridianFlipTime = currentTime;
@@ -307,6 +308,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             for (int i = 0; i <= numIntervals; i++)
             {
                 currentTime = startTime + TimeSpan.FromHours(raDelta.Hours * i);
+
                 var nextCoordinates = coordinates.Clone();
 
                 var decJitter = NormalDistribution.Random(mean: 0.0, stdDev: decJitterSigmaDegrees);

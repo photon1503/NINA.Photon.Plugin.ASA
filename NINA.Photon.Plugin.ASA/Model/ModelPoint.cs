@@ -82,8 +82,9 @@ namespace NINA.Photon.Plugin.ASA.Model
         }
 
         private bool isSyncPoint = false;
+
         public bool IsSyncPoint
-            {
+        {
             get => isSyncPoint;
             set
             {
@@ -109,6 +110,8 @@ namespace NINA.Photon.Plugin.ASA.Model
                 }
             }
         }
+
+        public double InvertedAltitude => 90.0 - Altitude;
 
         private double altitude;
 

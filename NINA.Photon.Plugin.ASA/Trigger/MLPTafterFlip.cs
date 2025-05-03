@@ -184,16 +184,10 @@ namespace NINA.Photon.Plugin.ASA.MLTP
                 ModelPointGenerationType = ModelPointGenerationTypeEnum.SiderealPath
             };
 
-            if (Coordinates == null || Coordinates.Coordinates == null ||
-              Coordinates.Coordinates.RA == 0 || Coordinates.Coordinates.Dec == 0)
-            {
-                Coordinates.Coordinates = telescope.GetCurrentPosition();
-                Logger.Debug($"MLPTafterFlip: Coordinates not set, using telescope coordinates: {Coordinates.Coordinates}");
-            }
-            else
-            {
-                Logger.Debug($"MLPTafMLPTafterFlipterTime: Coordinates set: {Coordinates.Coordinates}");
-            }
+            Logger.Debug($"MLPTafterFlip: Coordinates not set, using telescope coordinates: {Coordinates.Coordinates}");
+
+            Logger.Debug($"MLPTafMLPTafterFlipterTime: Coordinates set: {Coordinates.Coordinates}");
+
             //UpdateModelPoints();
             // delete old model
             mount.MLTPStop();
