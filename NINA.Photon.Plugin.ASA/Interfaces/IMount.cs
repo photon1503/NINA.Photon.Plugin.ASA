@@ -97,6 +97,10 @@ namespace NINA.Photon.Plugin.ASA.Interfaces
 
         Response<string> AutoslewVersion();
 
+        Response<double> MLPTTimeLeft();
+
+        Response<double> TimeToLimit();
+
         Response<bool> GetDualAxisTrackingEnabled();
 
         Response<bool> SetDualAxisTracking(bool enabled);

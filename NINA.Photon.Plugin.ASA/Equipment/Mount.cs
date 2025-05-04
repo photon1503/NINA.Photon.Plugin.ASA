@@ -192,6 +192,39 @@ namespace NINA.Photon.Plugin.ASA.Equipment
             return new Response<string>(rc, rc);
         }
 
+        public Response<double> MLPTTimeLeft()
+        {
+            string rc = this.mountCommander.SendCommandString("MLPTTimeLeft", true);
+            double result = 0;
+            rc = rc.Replace(',', '.');
+            if (double.TryParse(rc, NumberStyles.Float, CultureInfo.InvariantCulture, out result))
+            {
+                return new Response<double>(result, rc);
+            }
+            return new Response<double>(0, rc);
+        }
+
+        public Response<double> TimeToLimit()
+        {
+            string rc = "0";
+            try
+            {
+                rc = this.mountCommander.SendCommandString("TimeToLimit", true);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"CommandString TimeToLimit: {ex.Message}");
+            }
+            Logger.Debug($"TimeToLimit: {rc}");
+            double result = 0;
+            rc = rc.Replace(',', '.');
+            if (double.TryParse(rc, NumberStyles.Float, CultureInfo.InvariantCulture, out result))
+            {
+                return new Response<double>(result, rc);
+            }
+            return new Response<double>(0, rc);
+        }
+
         public Response<bool> FansOn(int strength = 9)
         {
             this.mountCommander.Action("Telescope:StartFans", strength.ToString());

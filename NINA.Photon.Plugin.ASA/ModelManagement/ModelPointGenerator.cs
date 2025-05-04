@@ -202,6 +202,9 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 throw new Exception($"RA delta ({raDelta}) cannot be less than 1 arc second");
             }
 
+            double timeToLimit = mount.TimeToLimit();
+            Logger.Debug($"TimeToLimit={timeToLimit}");
+
             var meridianLimitDegrees = 180 + mount.MeridianFlipMaxAngle();
             Logger.Debug($"MeridianFlipMaxangle={meridianLimitDegrees}");
 
@@ -234,6 +237,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             DateTime meridianFlipTime = endTime;
             var currentTime = startTime;
 
+            /*
             var initialCoords = ToTopocentric(coordinates, startTime);
             double initialAzimuth = initialCoords.Azimuth.Degree;
             bool isWestOfMeridian = initialAzimuth < 180;
@@ -284,11 +288,16 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
 
             // Adjust endTime to the meridian flip time
             endTime = meridianFlipTime;
+            */
+
+            endTime = currentTime + TimeSpan.FromMinutes(timeToLimit) - TimeSpan.FromMinutes(2);
 
             // Calculate the total duration and the number of intervals
             var totalDuration = endTime - startTime;
             var totalHours = totalDuration.TotalHours;
             var numIntervals = (int)(totalHours / raDelta.Hours);
+
+            Logger.Debug($"Total duration: {totalDuration}, total hours: {totalHours}, numIntervals: {numIntervals}");
 
             // Adjust raDelta to ensure equidistant points
             if (numIntervals > 0)
@@ -327,10 +336,10 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 {
                     creationState = ModelPointStateEnum.OutsideAltitudeBounds;
                 }
-                else if (azimuthDegrees < options.MinPointAzimuth || azimuthDegrees >= options.MaxPointAzimuth)
+                /*else if (azimuthDegrees < options.MinPointAzimuth || azimuthDegrees >= options.MaxPointAzimuth)
                 {
                     creationState = ModelPointStateEnum.OutsideAzimuthBounds;
-                }
+                }*/
                 else if (altitudeDegrees >= horizonAltitude)
                 {
                     ++validPoints;
