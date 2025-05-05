@@ -460,7 +460,9 @@
 
     <DataTemplate DataType="{x:Type local:MLPTifExceeds}">
         <view:SequenceBlockView DataContext="{Binding}">
-
+            <view:SequenceBlockView.SequenceItemContent>
+                <ContentPresenter Content="{StaticResource BuildSiderealPathModelDetailsFlip}" />
+            </view:SequenceBlockView.SequenceItemContent>
             <view:SequenceBlockView.SequenceItemProgressContent>
 
                 <StackPanel Orientation="Horizontal">
