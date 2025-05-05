@@ -290,7 +290,12 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             endTime = meridianFlipTime;
             */
 
-            endTime = currentTime + TimeSpan.FromMinutes(timeToLimit) - TimeSpan.FromMinutes(2);
+            var maxEndTime = currentTime + TimeSpan.FromMinutes(timeToLimit) - TimeSpan.FromMinutes(2);
+            if (endTime > maxEndTime)
+            {
+                endTime = maxEndTime;
+                Logger.Info($"Adjusted end time to {endTime}");
+            }
 
             // Calculate the total duration and the number of intervals
             var totalDuration = endTime - startTime;

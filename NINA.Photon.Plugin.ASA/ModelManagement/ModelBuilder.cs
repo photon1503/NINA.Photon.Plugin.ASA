@@ -1031,7 +1031,14 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
 
             PointNextUp?.Invoke(this, new PointNextUpEventArgs() { Point = nextPoint });
 
-            Logger.Info($"Processing {eligiblePointsOrdered.Count} points. First point Alt={nextPoint.Altitude:0.###}, Az={nextPoint.Azimuth:0.###}, MinDomeAz={nextPoint.MinDomeAzimuth:0.###}, MaxDomeAz={nextPoint.MaxDomeAzimuth:0.###}");
+            if (eligiblePointsOrdered.Count == 0)
+            {
+                Logger.Info("No points to process");
+                Notification.ShowInformation("No points to process");
+                return;
+            }
+
+            //  Logger.Info($"Processing {eligiblePointsOrdered.Count} points. First point Alt={nextPoint.Altitude:0.###}, Az={nextPoint.Azimuth:0.###}, MinDomeAz={nextPoint.MinDomeAzimuth:0.###}, MaxDomeAz={nextPoint.MaxDomeAzimuth:0.###}");
             if (state.UseDome)
             {
                 _ = SlewDomeIfNecessary(state, eligiblePointsOrdered, ct);

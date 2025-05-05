@@ -440,6 +440,18 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             }
         }
 
+        private double timeLeft;
+
+        public double TimeLeft
+        {
+            get => timeLeft;
+            private set
+            {
+                timeLeft = value;
+                RaisePropertyChanged();
+            }
+        }
+
         private double amount;
 
         [JsonProperty]
@@ -602,6 +614,8 @@ namespace NINA.Photon.Plugin.ASA.MLTP
 
         public override bool ShouldTrigger(ISequenceItem previousItem, ISequenceItem nextItem)
         {
+            TimeLeft = Math.Round(mount.TimeToLimit(), 2);
+
             if (nextItem == null) { return false; }
             if (!(nextItem is IExposureItem exposureItem)) { return false; }
             if (exposureItem.ImageType != "LIGHT") { return false; }

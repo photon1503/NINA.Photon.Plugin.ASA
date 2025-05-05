@@ -22,6 +22,13 @@ namespace NINA.Photon.Plugin.ASA.SequenceItems
 
     public class VersionHelper
     {
+        public static string VersionString { get; set; }
+
+        public VersionHelper()
+        {
+            VersionString = string.Empty;
+        }
+
         public static bool IsOlderVersion(string versionA, string versionB)
         {
             Version vA = ParseVersion(versionA);

@@ -437,11 +437,12 @@
             <view:SequenceBlockView.SequenceItemProgressContent>
 
                 <StackPanel Orientation="Horizontal">
-                    <TextBlock VerticalAlignment="Center" Text="Pierside" />
+                    <TextBlock VerticalAlignment="Center" Text="Time to limit " />
                     <TextBlock
                             Margin="5,0,0,0"
                             VerticalAlignment="Center"
-                            Text="{Binding OldPierside , Converter={StaticResource SideOfPierConverter}}" />
+                            Text="{Binding TimeLeft}" />
+                    <TextBlock VerticalAlignment="Center" Text=" min" />
                 </StackPanel>
             </view:SequenceBlockView.SequenceItemProgressContent>
         </view:SequenceBlockView>
@@ -452,6 +453,33 @@
             <mini:MiniTrigger.TriggerProgressContent>
                 <StackPanel Orientation="Horizontal">
                     <TextBlock VerticalAlignment="Center" Text="start after flip" />
+                </StackPanel>
+            </mini:MiniTrigger.TriggerProgressContent>
+        </mini:MiniTrigger>
+    </DataTemplate>
+
+    <DataTemplate DataType="{x:Type local:MLPTifExceeds}">
+        <view:SequenceBlockView DataContext="{Binding}">
+
+            <view:SequenceBlockView.SequenceItemProgressContent>
+
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock VerticalAlignment="Center" Text="MLPT Time Left" />
+                    <TextBlock
+                            Margin="5,0,0,0"
+                            VerticalAlignment="Center"
+                            Text="{Binding MLPTTimeLeft}" />
+                    <TextBlock VerticalAlignment="Center" Text=" min" />
+                </StackPanel>
+            </view:SequenceBlockView.SequenceItemProgressContent>
+        </view:SequenceBlockView>
+    </DataTemplate>
+
+    <DataTemplate x:Key="NINA.Photon.Plugin.ASA.MLTP.MLPTifExceeds_Mini">
+        <mini:MiniTrigger>
+            <mini:MiniTrigger.TriggerProgressContent>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock VerticalAlignment="Center" Text="restart if exceeds" />
                 </StackPanel>
             </mini:MiniTrigger.TriggerProgressContent>
         </mini:MiniTrigger>

@@ -591,13 +591,6 @@ namespace NINA.Photon.Plugin.ASA.MLTP
 
             bool shouldTrigger = false;
 
-            // get MLPTTimeLeft
-            double mlptTimeLeft = mount.MLPTTimeLeft();
-            if (mlptTimeLeft < 0)
-            {
-                return true;
-            }
-
             if (options.LastMLPT == DateTime.MinValue)
             {
                 Logger.Debug("MLPTstopAfterTime: LastMLPT is not set, skipping trigger check.");
