@@ -619,7 +619,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
 
             double exposureTime = exposureItem.ExposureTime;
 
-            if (MLPTTimeLeft < exposureTime)
+            if (MLPTTimeLeft * 60 < exposureTime)
             {
                 Logger.Debug("MLPTifExceeds: MLPT time left is 0, skipping trigger check.");
                 return true;
