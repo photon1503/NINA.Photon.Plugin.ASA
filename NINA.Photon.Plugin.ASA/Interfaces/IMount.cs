@@ -87,6 +87,12 @@ namespace NINA.Photon.Plugin.ASA.Interfaces
 
         Response<bool> FansOff();
 
+        Response<bool> SetTemperature(double temperature);
+
+        Response<bool> SetHumidity(double humidity);
+
+        Response<bool> SetPressure(double pressure);
+
         Response<double> MeridianFlipMaxAngle();
 
         Response<bool> CoverOpen();

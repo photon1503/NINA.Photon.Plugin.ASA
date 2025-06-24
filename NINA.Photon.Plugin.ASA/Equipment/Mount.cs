@@ -237,6 +237,27 @@ namespace NINA.Photon.Plugin.ASA.Equipment
             return new Response<bool>(true, "");
         }
 
+        public Response<bool> SetHumidity(double humidity)
+        {
+            // standard is 0.7. Expect move of mount because change is updated immediatly in refraction model
+            this.mountCommander.Action("refracthumidity", (humidity / 100).ToString());
+            return new Response<bool>(true, "");
+        }
+
+        public Response<bool> SetTemperature(double temperature)
+        {
+            // Expect move of mount because change is updated immediatly in refraction model
+            this.mountCommander.Action("refracttemperature", (temperature).ToString());
+            return new Response<bool>(true, "");
+        }
+
+        public Response<bool> SetPressure(double pressure)
+        {
+            // this is the real pressure at the site, not the reduced MSL pressure !
+            this.mountCommander.Action("refractpressure", (pressure).ToString());
+            return new Response<bool>(true, "");
+        }
+
         public Response<double> MeridianFlipMaxAngle()
         {
             string rc = "0";

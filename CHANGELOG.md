@@ -1,4 +1,8 @@
 # Changelog
+## 3.2.4.0
+
+ - Added trigger to send weather data to Autoslew for refraction correction
+
 
 ## 3.2.x
 
