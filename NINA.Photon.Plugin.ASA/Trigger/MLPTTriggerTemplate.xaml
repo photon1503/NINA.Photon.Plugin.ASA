@@ -367,6 +367,28 @@
     </WrapPanel>
 
     <WrapPanel
+     x:Key="WeatherUpdateAfterTimeTemplate"
+     x:Shared="false"
+     Orientation="Horizontal">
+        <StackPanel Orientation="Vertical">
+
+            <StackPanel Orientation="Vertical">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock VerticalAlignment="Center" Text="{ns:Loc LblAmount}" />
+                    <ninactrl:UnitTextBox
+                     MinWidth="50"
+                     Margin="5,0,0,0"
+                     VerticalAlignment="Center"
+                     VerticalContentAlignment="Center"
+                     Text="{Binding Amount}"
+                     TextAlignment="Right"
+                     Unit="min" />
+                </StackPanel>
+            </StackPanel>
+        </StackPanel>
+    </WrapPanel>
+
+    <WrapPanel
      x:Key="BuildSiderealPathModelDetailsFlip"
      x:Shared="false"
      Orientation="Horizontal">
@@ -508,6 +530,43 @@
     </DataTemplate>
 
     <DataTemplate x:Key="NINA.Photon.Plugin.ASA.MLTP.MLPTstopAfterTime_Mini">
+        <mini:MiniTrigger>
+            <mini:MiniTrigger.TriggerProgressContent>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock VerticalAlignment="Center" Text="stop after time" />
+                    <TextBlock
+                        Margin="5,0,0,0"
+                        VerticalAlignment="Center"
+                        Text="{Binding Elapsed}" />
+                    <TextBlock VerticalAlignment="Center" Text=" min / " />
+                    <TextBlock VerticalAlignment="Center" Text="{Binding Amount}" />
+                    <TextBlock VerticalAlignment="Center" Text=" min" />
+                </StackPanel>
+            </mini:MiniTrigger.TriggerProgressContent>
+        </mini:MiniTrigger>
+    </DataTemplate>
+
+    <DataTemplate DataType="{x:Type local:WeatherUpdateAfterTime}">
+        <view:SequenceBlockView DataContext="{Binding}">
+            <view:SequenceBlockView.SequenceItemContent>
+                <ContentPresenter Content="{StaticResource WeatherUpdateAfterTimeTemplate}" />
+            </view:SequenceBlockView.SequenceItemContent>
+            <view:SequenceBlockView.SequenceItemProgressContent>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock VerticalAlignment="Center" Text="{ns:Loc LblElapsed}" />
+                    <TextBlock
+                              Margin="5,0,0,0"
+                              VerticalAlignment="Center"
+                              Text="{Binding Elapsed}" />
+                    <TextBlock VerticalAlignment="Center" Text=" min / " />
+                    <TextBlock VerticalAlignment="Center" Text="{Binding Amount}" />
+                    <TextBlock VerticalAlignment="Center" Text=" min" />
+                </StackPanel>
+            </view:SequenceBlockView.SequenceItemProgressContent>
+        </view:SequenceBlockView>
+    </DataTemplate>
+
+    <DataTemplate x:Key="NINA.Photon.Plugin.ASA.MLTP.WeatherUpdateAfterTime_Mini">
         <mini:MiniTrigger>
             <mini:MiniTrigger.TriggerProgressContent>
                 <StackPanel Orientation="Horizontal">

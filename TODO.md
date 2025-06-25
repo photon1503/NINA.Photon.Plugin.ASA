@@ -1,0 +1,1 @@
+- add option to disable autoguiding during MLTP build
