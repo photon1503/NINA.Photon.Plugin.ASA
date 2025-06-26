@@ -47,7 +47,7 @@ namespace NINA.Photon.Plugin.ASA
         [ImportingConstructor]
         public ASAPlugin(
             IProfileService profileService, ITelescopeMediator telescopeMediator, IApplicationStatusMediator applicationStatusMediator, IDomeMediator domeMediator, IDomeSynchronization domeSynchronization,
-            IPlateSolverFactory plateSolverFactory, IImagingMediator imagingMediator, IFilterWheelMediator filterWheelMediator, IWeatherDataMediator weatherDataMediator, ICameraMediator cameraMediator, IImageDataFactory imageDataFactory)
+            IPlateSolverFactory plateSolverFactory, IImagingMediator imagingMediator, IFilterWheelMediator filterWheelMediator, IWeatherDataMediator weatherDataMediator, ICameraMediator cameraMediator, IImageDataFactory imageDataFactory, IGuiderMediator guiderMediator)
         {
             if (Settings.Default.UpdateSettings)
             {
@@ -71,7 +71,7 @@ namespace NINA.Photon.Plugin.ASA
             DateTime = new SystemDateTime();
             ModelAccessor = new ModelAccessor(telescopeMediator, MountModelMediator, DateTime);
             ModelPointGenerator = new ModelPointGenerator(profileService, telescopeMediator, weatherDataMediator, ASAOptions, MountMediator, Mount);
-            ModelBuilder = new ModelBuilder(profileService, MountModelMediator, Mount, telescopeMediator, domeMediator, cameraMediator, domeSynchronization, plateSolverFactory, imagingMediator, filterWheelMediator, weatherDataMediator, imageDataFactory, ASAOptions);
+            ModelBuilder = new ModelBuilder(profileService, MountModelMediator, Mount, telescopeMediator, domeMediator, cameraMediator, domeSynchronization, plateSolverFactory, imagingMediator, filterWheelMediator, weatherDataMediator, imageDataFactory, guiderMediator, ASAOptions);
             MountModelBuilderMediator = new MountModelBuilderMediator();
         }
 

@@ -38,6 +38,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -65,6 +66,8 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
         private readonly IProfileService profileService;
         private readonly IPlateSolverFactory plateSolverFactory;
         private readonly IFilterWheelMediator filterWheelMediator;
+        private readonly IGuiderMediator guiderMediator;
+
         private readonly IASAOptions asaOptions;
         private readonly ICustomDateTime nowProvider = new SystemDateTime();
         private volatile int processingInProgressCount;
@@ -77,7 +80,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
         public ModelBuilder(
             IProfileService profileService, IMountModelMediator mountModelMediator, IMount mount, ITelescopeMediator telescopeMediator, IDomeMediator domeMediator, ICameraMediator cameraMediator,
             IDomeSynchronization domeSynchronization, IPlateSolverFactory plateSolverFactory, IImagingMediator imagingMediator, IFilterWheelMediator filterWheelMediator,
-            IWeatherDataMediator weatherDataMediator, IImageDataFactory imageDataFactory, IASAOptions asaOptions)
+            IWeatherDataMediator weatherDataMediator, IImageDataFactory imageDataFactory, IGuiderMediator guiderMediator, IASAOptions asaOptions)
         {
             this.imageDataFactory = imageDataFactory;
             this.mountModelMediator = mountModelMediator;
@@ -91,6 +94,8 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             this.profileService = profileService;
             this.plateSolverFactory = plateSolverFactory;
             this.filterWheelMediator = filterWheelMediator;
+            this.guiderMediator = guiderMediator;
+
             this.asaOptions = asaOptions;
         }
 
@@ -419,6 +424,15 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 }
             }
 
+            // disable autoguiding
+            bool stoppedGuiding = false;
+            if (guiderMediator.GetInfo().Connected)
+            {
+                Logger.Info("Disabling autoguiding to build ASA model");
+                Notification.ShowInformation("Disabling autoguiding to build ASA model");
+                stoppedGuiding = await guiderMediator.StopGuiding(innerCts.Token);
+            }
+
             try
             {
                 return await DoBuild(state, linkedCts.Token, stopToken, overallProgress, stepProgress);
@@ -476,12 +490,18 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                     }
                 }
 
-                overallProgress?.Report(new ApplicationStatus() { });
-                stepProgress?.Report(new ApplicationStatus() { });
-                state.ProcessingSemaphore?.Dispose();
-                // Make sure any remaining tasks are cancelled, just in case an exception left some remaining work in progress
-                innerCts.Cancel();
+                if (guiderMediator.GetInfo().Connected && stoppedGuiding)
+                {
+                    Logger.Info("Re-enabling autoguiding after ASA model build");
+                    await guiderMediator.StartGuiding(false, overallProgress, ct);
+                }
             }
+
+            overallProgress?.Report(new ApplicationStatus() { });
+            stepProgress?.Report(new ApplicationStatus() { });
+            state.ProcessingSemaphore?.Dispose();
+            // Make sure any remaining tasks are cancelled, just in case an exception left some remaining work in progress
+            innerCts.Cancel();
         }
 
         private void PreFlightChecks(IList<ModelPoint> modelPoints)
