@@ -1,8 +1,12 @@
 # Changelog
+## 3.2.4.2
+ - Disable (and re-enable) autoguiding during MLPT building process
+   
+## 3.2.4.1
+ - Added sequence item to send weather data to Autoslew for refraction correction
+   
 ## 3.2.4.0
-
  - Added trigger to send weather data to Autoslew for refraction correction
-
 
 ## 3.2.x
 
