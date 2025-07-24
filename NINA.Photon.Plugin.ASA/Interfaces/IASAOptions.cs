@@ -98,6 +98,8 @@ namespace NINA.Photon.Plugin.ASA.Interfaces
 
         double DecJitterSigmaDegrees { get; set; }
 
+        string POXOutputDirectory { get; set; }
+
         void ResetDefaults();
     }
 }

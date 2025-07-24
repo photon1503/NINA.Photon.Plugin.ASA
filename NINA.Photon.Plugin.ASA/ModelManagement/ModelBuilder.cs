@@ -768,14 +768,11 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                     //this.mountModelMediator.FinishAlignmentSpec();
                 }
 
-                // C:\ProgramData\ASA\Sequence
-                var programdata = System.Environment.GetFolderPath(System.Environment.SpecialFolder.CommonApplicationData);
-
                 string fileName = DateTime.Now.ToString("NINA-ASA-yyyy-MM-dd-HH-mm") + ".pox";
+                var filePath = System.IO.Path.Combine(asaOptions.POXOutputDirectory, fileName);
 
-                var filePath = System.IO.Path.Combine(programdata, "ASA", "Sequence", "PointingPics", fileName);
-                //creata path if not exists
-                System.IO.Directory.CreateDirectory(System.IO.Path.Combine(programdata, "ASA", "Sequence", "PointingPics"));
+                //create path if not exists
+                System.IO.Directory.CreateDirectory(asaOptions.POXOutputDirectory);
 
                 using (StreamWriter writer = new StreamWriter(filePath))
                 {
