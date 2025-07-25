@@ -65,25 +65,11 @@ using System.Runtime.InteropServices;
 //[Optional] An additional url to an example example screenshot of your plugin in action
 [assembly: AssemblyMetadata("AltScreenshotURL", "https://user-images.githubusercontent.com/14548927/277363713-5b8b6940-2fb1-4c91-9dcc-ca5618206fa0.png")]
 //[Optional] An in-depth description of your plugin
-[assembly: AssemblyMetadata("LongDescription", @"This plugin provides building pointing models for ASA mounts.
+[assembly: AssemblyMetadata("LongDescription", @"This plugin provides different tools for ASA mounts.
 
-This project is based on @ghilios TenMicron plugin (https://github.com/ghilios/NINA.Joko.Plugin.TenMicron)
-Many thanks for the great work!
+## [Documentation](https://github.com/photon1503/NINA.Photon.Plugin.ASA/wiki)
 
-# Features #
-
-* Build full sky models using Golden Spiral in an Imaging tab dock
-* MW4 and NINA horizons supported. Load the horizon file in NINA Options -> General
-* Dome optimization to reduce dome slews during model build
-* Export and import grids (compatible for Sequence)
-* Retry model build failures using only the failed points, unless a maximum number of failures is exceeded
-
-# Usage #
-* Configure the settings on the plugin options page
-* Always sync your telescope to a know position before starting any model build. Can by easily done by using plate solve directly in N.I.N.A
-* Also clear your old (current) configuration in Autoslew
-* Start building your model using the plugin.
-* Load the created POX file from %programdata%\ASA\Sequence\NINA-ASA-*.pox into AutoSlew and calculate the model
+## [Changelog](https://github.com/photon1503/NINA.Photon.Plugin.ASA/blob/master/CHANGELOG.md)
 
 # Getting Help #
 
