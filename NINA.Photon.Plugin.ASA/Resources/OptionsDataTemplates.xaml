@@ -38,6 +38,7 @@
     <TextBlock x:Key="BuilderRetries_Tooltip" Text="How many time to retry model building when individual points fail. This will only reprocess failed points by re-using previous successful solves" />
     <TextBlock x:Key="MaxFailedPoints_Tooltip" Text="After a build iteration, another iteration isn't attempted if there are more than this many failed points" />
     <TextBlock x:Key="MaxPointRMS_Tooltip" Text="After a build iteration, any point with an RMS greater than this value will be treated as a failed point during a retry" />
+    <TextBlock x:Key="PoxOutputDirectory_Tooltip" Text="The directory where the POX files will be saved. By default, the POX files are created in the folder where Autoslew expects them. Change this if you want more control, or if you are running Autoslew on a different computer." />
     <DataTemplate x:Key="ASA_ModelBuilder_Options">
         <Grid d:DataContext="{d:DesignInstance local:ASAOptions, IsDesignTimeCreatable=False}">
             <Grid.ColumnDefinitions>
@@ -426,20 +427,69 @@
                  HorizontalAlignment="Left"
                  VerticalAlignment="Center"
                  IsChecked="{Binding IsLegacyDDM}" />
+            
             <TextBlock
-           Grid.Row="18"
-           Grid.Column="0"
-           VerticalAlignment="Center"
-           Text="Let NINA control the Dome"
-            ToolTip="" />
+                 Grid.Row="18"
+                 Grid.Column="0"
+                 VerticalAlignment="Center"
+                 Text="Let NINA control the Dome"
+                 ToolTip="" />
             <CheckBox
-           Grid.Row="18"
-           Grid.Column="1"
-           MinWidth="80"
-           Margin="5,5,0,0"
-           HorizontalAlignment="Left"
-           VerticalAlignment="Center"
-           IsChecked="{Binding DomeControlNINA}" />
+                 Grid.Row="18"
+                 Grid.Column="1"
+                 MinWidth="80"
+                 Margin="5,5,0,0"
+                 HorizontalAlignment="Left"
+                 VerticalAlignment="Center"
+                 IsChecked="{Binding DomeControlNINA}" />
+            
+            <TextBlock
+                Grid.Row="19"
+                Grid.Column="0"
+                VerticalAlignment="Center"
+                Text="POX Output Directory"
+                ToolTip="{StaticResource PoxOutputDirectory_Tooltip}" />
+
+            <Grid
+                Margin="5,5,0,0"
+                Grid.Row="19"
+                Grid.Column="1" 
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+            >
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition />
+                </Grid.ColumnDefinitions>
+                <TextBox
+                    Grid.Column="0"
+                    VerticalAlignment="Center"
+                    VerticalContentAlignment="Center">
+                    <TextBox.Text>
+                        <Binding Path="POXOutputDirectory" UpdateSourceTrigger="LostFocus">
+                            <Binding.ValidationRules>
+                                <rules:DirectoryExistsRule />
+                            </Binding.ValidationRules>
+                        </Binding>
+                    </TextBox.Text>
+                </TextBox>
+
+                <Button
+                    Grid.Column="1"
+                    Width="40"
+                    Height="20"
+                    Margin="5,0,0,0"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Command="{Binding ShowSelectPOXOutputDirectoryDialogCommand}">
+                    <Path
+                        Margin="12,10,12,0"
+                        Data="{StaticResource DotsSVG}"
+                        Fill="{StaticResource ButtonForegroundBrush}"
+                        Stretch="Uniform"
+                        UseLayoutRounding="True" />
+                </Button>
+            </Grid>
         </Grid>
     </DataTemplate>
 </ResourceDictionary>

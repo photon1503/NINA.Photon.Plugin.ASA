@@ -10,13 +10,17 @@
 
 #endregion "copyright"
 
+using System;
+using System.IO;
 using NINA.Core.Utility;
 using NINA.Photon.Plugin.ASA.Interfaces;
 using NINA.Photon.Plugin.ASA.Model;
 using NINA.Photon.Plugin.ASA.ModelManagement;
+using RelayCommand = CommunityToolkit.Mvvm.Input.RelayCommand;
 using NINA.Profile;
 using NINA.Profile.Interfaces;
-using System;
+using System.Windows.Input;
+using Microsoft.Win32;
 
 namespace NINA.Photon.Plugin.ASA
 {
@@ -34,6 +38,8 @@ namespace NINA.Photon.Plugin.ASA
 
             this.optionsAccessor = new PluginOptionsAccessor(profileService, guid.Value);
             InitializeOptions();
+
+            this.ShowSelectPOXOutputDirectoryDialogCommand = new RelayCommand(ShowSelectPOXOutputDirectoryDialog);
         }
 
         private void InitializeOptions()
@@ -86,6 +92,7 @@ namespace NINA.Photon.Plugin.ASA
             syncWestAzimuth = optionsAccessor.GetValueDouble("SyncWestAzimuth", 270.0d);
             refEastAzimuth = optionsAccessor.GetValueDouble("RefEastAzimuth", 90.0d);
             refWestAzimuth = optionsAccessor.GetValueDouble("RefWestAzimuth", 270.0d);
+            poxOutputDirectory = optionsAccessor.GetValueString("POXOutputDirectory", DefaultASAPointingPicsPath());
         }
 
         public void ResetDefaults()
@@ -138,7 +145,19 @@ namespace NINA.Photon.Plugin.ASA
             RefWestAltitude = 35.0d;
             RefEastAzimuth = 90.0d;
             RefWestAzimuth = 270.0d;
+
+            POXOutputDirectory = DefaultASAPointingPicsPath();
         }
+
+        private string DefaultASAPointingPicsPath()
+        {
+            var programdata = System.Environment.GetFolderPath(System.Environment.SpecialFolder.CommonApplicationData);
+            var filePath = System.IO.Path.Combine(programdata, "ASA", "Sequence", "PointingPics");
+
+            return filePath;
+        }
+
+        public ICommand ShowSelectPOXOutputDirectoryDialogCommand { get; private set; }
 
         private int minPointAltitude;
 
@@ -992,5 +1011,47 @@ namespace NINA.Photon.Plugin.ASA
                 }
             }
         }
+
+        private string poxOutputDirectory;
+
+
+
+        public string POXOutputDirectory {
+            get => poxOutputDirectory;
+            set 
+            {
+                if (poxOutputDirectory != value)
+                {
+                    // Validate that the directory exists
+
+
+                    if (value == this.DefaultASAPointingPicsPath())
+                    {
+                        // Intentionally left blank:
+                        // Always allow the default path, will be created during first save operation.
+                        // Otherwise we would get an exception when resetting the options to its default.
+                    } else if (!Directory.Exists(value))
+                    {
+                        throw new DirectoryNotFoundException($"The specified POX output directory does not exist: {value}");
+                    }
+
+                    poxOutputDirectory = value;
+                    optionsAccessor.SetValueString("POXOutputDirectory", poxOutputDirectory);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private void ShowSelectPOXOutputDirectoryDialog()
+        {
+            var diag = new OpenFolderDialog();
+            diag.InitialDirectory = POXOutputDirectory;
+            if (diag.ShowDialog() == true)
+            {
+                POXOutputDirectory = diag.FolderName;
+            }
+
+        }
+
     }
 }
