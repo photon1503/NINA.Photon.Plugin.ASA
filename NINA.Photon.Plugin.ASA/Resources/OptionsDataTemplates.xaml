@@ -451,9 +451,11 @@
                 ToolTip="{StaticResource PoxOutputDirectory_Tooltip}" />
 
             <Grid
-                Margin="10,0,0,0"
+                Margin="5,5,0,0"
                 Grid.Row="19"
                 Grid.Column="1" 
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
             >
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
