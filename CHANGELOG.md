@@ -1,4 +1,9 @@
 # Changelog
+
+## 3.2.4.3
+ - Added sequence item to send weather data to Autoslew for refraction correction
+ - Added option to define indivdual path for POX file generation (bastiaigner)
+	
 ## 3.2.4.2
  - Disable (and re-enable) autoguiding during MLPT building process
    
