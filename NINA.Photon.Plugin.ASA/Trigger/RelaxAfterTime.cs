@@ -41,6 +41,17 @@ using NINA.WPF.Base.Mediator;
 using NINA.Sequencer.Container;
 using NINA.Sequencer.Interfaces;
 using NINA.Photon.Plugin.ASA.SequenceItems;
+using NINA.Core.Utility.WindowService;
+using NINA.PlateSolving;
+using NINA.WPF.Base.ViewModel.Equipment.Dome;
+using NINA.Profile.Interfaces;
+using NINA.Equipment.Interfaces;
+using NINA.PlateSolving.Interfaces;
+using NINA.WPF.Base.Interfaces.Mediator;
+using NINA.WPF.Base.Interfaces.ViewModel;
+using NINA.WPF.Base.ViewModel;
+using System.Windows.Media;
+using System.Windows;
 
 namespace NINA.Photon.Plugin.ASA.MLTP
 {
@@ -60,47 +71,83 @@ namespace NINA.Photon.Plugin.ASA.MLTP
         private readonly INighttimeCalculator nighttimeCalculator;
         private readonly ICameraMediator cameraMediator;
         private readonly ITelescopeMediator telescopeMediator;
+        protected IProfileService profileService;
+
+        protected IApplicationStatusMediator applicationStatusMediator;
+
+        protected IFocuserMediator focuserMediator;
+
+        protected IGuiderMediator guiderMediator;
+
+        protected IFilterWheelMediator filterWheelMediator;
+
+        protected IDomeMediator domeMediator;
+        protected IDomeFollower domeFollower;
+        protected IPlateSolverFactory plateSolverFactory;
+        protected IWindowServiceFactory windowServiceFactory;
+
+        protected IImagingMediator imagingMediator;
+
+        private GeometryGroup PlatesolveIcon = (GeometryGroup)Application.Current.Resources["PlatesolveSVG"];
 
         private DateTime initialTime;
         private bool initialized = false;
 
         [ImportingConstructor]
-        public RelaxAfterTime(INighttimeCalculator nighttimeCalculator, ICameraMediator cameraMediator, ITelescopeMediator telescopeMediator) :
-            this(ASAPlugin.ASAOptions, ASAPlugin.MountMediator, ASAPlugin.Mount,
-                ASAPlugin.MountModelBuilderMediator, ASAPlugin.ModelPointGenerator,
-                nighttimeCalculator, cameraMediator, telescopeMediator)
+        public RelaxAfterTime(IProfileService profileService,
+            ICameraMediator cameraMediator, ITelescopeMediator telescopeMediator,
+             IApplicationStatusMediator applicationStatusMediator,
+            IGuiderMediator guiderMediator, IFilterWheelMediator filterWheelMediator,
+            IDomeMediator domeMediator, IDomeFollower domeFollower, IPlateSolverFactory plateSolverFactory, IWindowServiceFactory windowServiceFactory,
+            IImagingMediator imagingMediator
+            )
         {
-        }
-
-        public RelaxAfterTime(IASAOptions options, IMountMediator mountMediator, IMount mount,
-            IMountModelBuilderMediator mountModelBuilderMediator, IModelPointGenerator modelPointGenerator,
-            INighttimeCalculator nighttimeCalculator, ICameraMediator cameraMediator, ITelescopeMediator telescopeMediator)
-        {
-            this.options = options;
-            this.mount = mount;
-            this.mountMediator = mountMediator;
-            this.mountModelBuilderMediator = mountModelBuilderMediator;
-            this.modelPointGenerator = modelPointGenerator;
-            this.nighttimeCalculator = nighttimeCalculator;
             this.cameraMediator = cameraMediator;
             this.telescopeMediator = telescopeMediator;
+
+            this.profileService = profileService;
+            this.telescopeMediator = telescopeMediator;
+            this.applicationStatusMediator = applicationStatusMediator;
+            this.cameraMediator = cameraMediator;
+            this.focuserMediator = focuserMediator;
+
+            this.guiderMediator = guiderMediator;
+
+            this.filterWheelMediator = filterWheelMediator;
+
+            this.domeMediator = domeMediator;
+            this.domeFollower = domeFollower;
+            this.plateSolverFactory = plateSolverFactory;
+            this.windowServiceFactory = windowServiceFactory;
+
+            this.imagingMediator = imagingMediator;
             this.Coordinates = new InputCoordinates();
+
+            NINA.Sequencer.SequenceItem.Platesolving.Center c = new(profileService, telescopeMediator, imagingMediator, filterWheelMediator, guiderMediator,
+               domeMediator, domeFollower, plateSolverFactory, windowServiceFactory)
+            { Name = "Slew and center", Icon = PlatesolveIcon };
+            TriggerRunner = new SequentialContainer();
+            AddItem(TriggerRunner, c);
 
             Amount = 90;
         }
 
-        private RelaxAfterTime(RelaxAfterTime cloneMe) : this(cloneMe.nighttimeCalculator, cloneMe.cameraMediator, cloneMe.telescopeMediator)
+        private void AddItem(SequentialContainer runner, ISequenceItem item)
+        {
+            runner.Items.Add(item);
+            item.AttachNewParent(runner);
+        }
+
+        private RelaxAfterTime(RelaxAfterTime cloneMe) : this(cloneMe.profileService, cloneMe.cameraMediator, cloneMe.telescopeMediator, cloneMe.applicationStatusMediator, cloneMe.guiderMediator, cloneMe.filterWheelMediator, cloneMe.domeMediator, cloneMe.domeFollower, cloneMe.plateSolverFactory, cloneMe.windowServiceFactory, cloneMe.imagingMediator)
         {
             CopyMetaData(cloneMe);
         }
 
         public override object Clone()
         {
-            var cloned = new RelaxAfterTime(this)
+            return new RelaxAfterTime(this)
             {
             };
-
-            return cloned;
         }
 
         private bool inherited;
@@ -121,13 +168,85 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             initialTime = DateTime.Now;
         }
 
+        public Coordinates GetRelaxPoint(Coordinates current, double relaxDegrees = 5.0)
+        {
+            // Clamp Dec to avoid zenith/gimbal lock
+            double safeDec = Math.Max(Math.Min(current.Dec, 85), -85);
+
+            // Calculate new Dec, staying within safe range
+            double newDec = safeDec + (safeDec < 0 ? -relaxDegrees : relaxDegrees);
+            newDec = Math.Max(Math.Min(newDec, 85), -85);
+
+            // Calculate new RA, but don't cross the meridian
+            // Get current LST (local sidereal time) and hour angle
+            double lst = telescopeMediator.GetInfo().SiderealTime; // in hours
+            double ha = lst - current.RA; // in hours
+            if (ha < 0) ha += 24;
+            if (ha > 12) ha -= 24;
+
+            double newRA = current.RA;
+            if (Math.Abs(ha) < 1.0) // 1 hour = 15°
+            {
+                // Too close to meridian, move away from meridian
+                if (ha >= 0)
+                    newRA = current.RA - relaxDegrees / 15.0; // move west
+                else
+                    newRA = current.RA + relaxDegrees / 15.0; // move east
+
+                if (newRA < 0) newRA += 24;
+                if (newRA >= 24) newRA -= 24;
+            }
+            else
+            {
+                // Safe to relax in normal direction
+                newRA = current.RA + (ha > 0 ? -relaxDegrees / 15.0 : relaxDegrees / 15.0); // 15° per hour
+                if (newRA < 0) newRA += 24;
+                if (newRA >= 24) newRA -= 24;
+            }
+
+            // Create new coordinates
+            var relaxCoords = new Coordinates(Angle.ByHours(newRA), Angle.ByDegree(newDec), Epoch.JNOW);
+
+            // Check horizon (altitude) using your horizon model or a fixed minimum
+            var topo = relaxCoords.Transform(
+                latitude: Angle.ByDegree(profileService.ActiveProfile.AstrometrySettings.Latitude),
+                longitude: Angle.ByDegree(profileService.ActiveProfile.AstrometrySettings.Longitude),
+                elevation: profileService.ActiveProfile.AstrometrySettings.Elevation
+            );
+            if (topo.Altitude.Degree < 5) // 5° above horizon
+            {
+                Logger.Warning("Relax slew would go below safe horizon. Skipping.");
+                return current; // Return current coordinates if below horizon
+            }
+
+            return relaxCoords;
+        }
+
         public override async Task Execute(ISequenceContainer context, IProgress<ApplicationStatus> progress, CancellationToken token)
         {
             Coordinates.Coordinates = telescopeMediator.GetCurrentPosition();
-            Logger.Debug($"MLPTafterTime: Coordinates not set, using telescope coordinates: {Coordinates.Coordinates}");
+
+            Coordinates relax = GetRelaxPoint(Coordinates.Coordinates, 5.0); // Relax by 5 degrees
+
+            Logger.Debug($"Relax Slew start at {Coordinates.Coordinates}");
+
+            // make a releax slew to +5 degrees in RA and +5 degrees in DEC
+            await telescopeMediator.SlewToCoordinatesAsync(relax, token);
+
+            // slew back to original coordinates
+            Logger.Debug($"Relax Slew back to {relax}");
+            await telescopeMediator.SlewToCoordinatesAsync(Coordinates.Coordinates, token);
+
+            try
+            {
+                await TriggerRunner.Run(progress, token);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Error during RelaxAfterTime execution: {ex.Message}");
+            }
 
             initialTime = DateTime.Now;
-            options.LastMLPT = DateTime.Now;
         }
 
         [JsonProperty]
@@ -182,26 +301,10 @@ namespace NINA.Photon.Plugin.ASA.MLTP
 
         public override bool ShouldTrigger(ISequenceItem previousItem, ISequenceItem nextItem)
         {
-            if (nextItem == null) { return false; }
-            if (!(nextItem is IExposureItem exposureItem)) { return false; }
-            if (exposureItem.ImageType != "LIGHT") { return false; }
+            TimeSpan ts = DateTime.Now - initialTime;
+            Elapsed = Math.Round(ts.TotalMinutes, 2);
 
-            bool shouldTrigger = false;
-
-            if (options.LastMLPT == DateTime.MinValue)
-            {
-                Logger.Debug("MLPTstopAfterTime: LastMLPT is not set, skipping trigger check.");
-                options.LastMLPT = DateTime.Now;
-                return false;
-            }
-
-            Elapsed = Math.Round((DateTime.Now - options.LastMLPT).TotalMinutes, 2);
-            bool timeConditionMet = (DateTime.Now - options.LastMLPT) >= TimeSpan.FromMinutes(Amount);
-            Logger.Debug($"MLPTafterTime: Elapsed={Elapsed}min, Required={Amount}min, TimeConditionMet={timeConditionMet}");
-
-            shouldTrigger = timeConditionMet;
-
-            return shouldTrigger;
+            return Elapsed >= Amount;
         }
 
         private ImmutableList<ModelPoint> ModelPoints = ImmutableList.Create<ModelPoint>();
@@ -210,7 +313,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
         {
             var i = new List<string>();
 
-            if (telescopeMediator.GetDevice().Connected)
+            if (!telescopeMediator.GetInfo().Connected)
             {
                 i.Add("Mount not connected");
             }

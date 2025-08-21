@@ -413,6 +413,27 @@
         </StackPanel>
     </WrapPanel>
 
+    <DataTemplate DataType="{x:Type local:RelaxAfterTime}">
+        <view:SequenceBlockView DataContext="{Binding}">
+
+            <view:SequenceBlockView.SequenceItemContent>
+                <ContentPresenter Content="{StaticResource WeatherUpdateAfterTimeTemplate}" />
+            </view:SequenceBlockView.SequenceItemContent>
+            <view:SequenceBlockView.SequenceItemProgressContent>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock VerticalAlignment="Center" Text="{ns:Loc LblElapsed}" />
+                    <TextBlock
+                    Margin="5,0,0,0"
+                    VerticalAlignment="Center"
+                    Text="{Binding Elapsed}" />
+                    <TextBlock VerticalAlignment="Center" Text=" min / " />
+                    <TextBlock VerticalAlignment="Center" Text="{Binding Amount}" />
+                    <TextBlock VerticalAlignment="Center" Text=" min" />
+                </StackPanel>
+            </view:SequenceBlockView.SequenceItemProgressContent>
+        </view:SequenceBlockView>
+    </DataTemplate>
+
     <DataTemplate DataType="{x:Type local:MLPTafterTime}">
         <view:SequenceBlockView DataContext="{Binding}">
 
