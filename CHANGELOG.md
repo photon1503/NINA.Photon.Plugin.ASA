@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.2.5.x
+ - Sending MLPT data will now wait until the mount has restored its position.
+ - Fixed bug where the progress bar was not closed correctly.
+	
 ## 3.2.4.3
  - Added sequence item to send weather data to Autoslew for refraction correction
  - Added option to define indivdual path for POX file generation (bastiaigner)
