@@ -170,49 +170,64 @@ namespace NINA.Photon.Plugin.ASA.MLTP
 
         public Coordinates GetRelaxPoint(Coordinates current, double relaxDegrees = 5.0)
         {
+            // Get current topocentric coordinates to determine altitude
+            var topo = current.Transform(
+                latitude: Angle.ByDegree(profileService.ActiveProfile.AstrometrySettings.Latitude),
+                longitude: Angle.ByDegree(profileService.ActiveProfile.AstrometrySettings.Longitude),
+                elevation: profileService.ActiveProfile.AstrometrySettings.Elevation
+            );
+            double currentAlt = topo.Altitude.Degree;
+
             // Clamp Dec to avoid zenith/gimbal lock
             double safeDec = Math.Max(Math.Min(current.Dec, 85), -85);
 
-            // Calculate new Dec, staying within safe range
-            double newDec = safeDec + (safeDec < 0 ? -relaxDegrees : relaxDegrees);
-            newDec = Math.Max(Math.Min(newDec, 85), -85);
+            double siteLat = profileService.ActiveProfile.AstrometrySettings.Latitude;
 
-            // Calculate new RA, but don't cross the meridian
-            // Get current LST (local sidereal time) and hour angle
-            double lst = telescopeMediator.GetInfo().SiderealTime; // in hours
-            double ha = lst - current.RA; // in hours
-            if (ha < 0) ha += 24;
-            if (ha > 12) ha -= 24;
-
-            double newRA = current.RA;
-            if (Math.Abs(ha) < 1.0) // 1 hour = 15°
+            // Decide direction: towards zenith if below 45°, away if above 45°
+            double newDec;
+            if (currentAlt < 45)
             {
-                // Too close to meridian, move away from meridian
-                if (ha >= 0)
-                    newRA = current.RA - relaxDegrees / 15.0; // move west
-                else
-                    newRA = current.RA + relaxDegrees / 15.0; // move east
-
-                if (newRA < 0) newRA += 24;
-                if (newRA >= 24) newRA -= 24;
+                // Move Dec towards zenith
+                newDec = safeDec + Math.Sign(siteLat) * relaxDegrees;
             }
             else
             {
-                // Safe to relax in normal direction
-                newRA = current.RA + (ha > 0 ? -relaxDegrees / 15.0 : relaxDegrees / 15.0); // 15° per hour
-                if (newRA < 0) newRA += 24;
-                if (newRA >= 24) newRA -= 24;
+                // Move Dec away from zenith
+                newDec = safeDec - Math.Sign(siteLat) * relaxDegrees;
             }
+            newDec = Math.Max(Math.Min(newDec, 85), -85);
+            newDec = Math.Max(Math.Min(newDec, 85), -85);
+
+            // Get current LST (local sidereal time) and hour angle
+            double lst = telescopeMediator.GetInfo().SiderealTime; // in hours
+            double ha = lst - current.RA; // in hours
+            if (ha < -12) ha += 24;
+            if (ha > 12) ha -= 24;
+
+            // Use user-configurable relax amount if available
+            double relaxRAHours = RArelaxDegrees / 15.0;
+
+            // Move HA further from 0, but clamp to not cross ±12h
+            double newHA;
+            if (ha >= 0)
+                newHA = Math.Min(ha + relaxRAHours, 12.0 - 1e-6); // move west, but not past +12h
+            else
+                newHA = Math.Max(ha - relaxRAHours, -12.0 + 1e-6); // move east, but not past -12h
+
+            // Convert new HA back to RA
+            double newRA = lst - newHA;
+            if (newRA < 0) newRA += 24;
+            if (newRA >= 24) newRA -= 24;
 
             // Create new coordinates
             var relaxCoords = new Coordinates(Angle.ByHours(newRA), Angle.ByDegree(newDec), Epoch.JNOW);
 
             // Check horizon (altitude) using your horizon model or a fixed minimum
-            var topo = relaxCoords.Transform(
-                latitude: Angle.ByDegree(profileService.ActiveProfile.AstrometrySettings.Latitude),
-                longitude: Angle.ByDegree(profileService.ActiveProfile.AstrometrySettings.Longitude),
-                elevation: profileService.ActiveProfile.AstrometrySettings.Elevation
-            );
+            topo = relaxCoords.Transform(
+               latitude: Angle.ByDegree(profileService.ActiveProfile.AstrometrySettings.Latitude),
+               longitude: Angle.ByDegree(profileService.ActiveProfile.AstrometrySettings.Longitude),
+               elevation: profileService.ActiveProfile.AstrometrySettings.Elevation
+           );
             if (topo.Altitude.Degree < 5) // 5° above horizon
             {
                 Logger.Warning("Relax slew would go below safe horizon. Skipping.");
@@ -285,6 +300,45 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             set
             {
                 amount = value;
+                RaisePropertyChanged();
+            }
+        }
+
+        private double derelaxDegrees = 5;
+
+        [JsonProperty]
+        public double DErelaxDegrees
+        {
+            get => derelaxDegrees;
+            set
+            {
+                derelaxDegrees = value;
+                RaisePropertyChanged();
+            }
+        }
+
+        private double rarelaxDegrees = 5;
+
+        [JsonProperty]
+        public double RArelaxDegrees
+        {
+            get => rarelaxDegrees;
+            set
+            {
+                rarelaxDegrees = value;
+                RaisePropertyChanged();
+            }
+        }
+
+        private bool recenter = true;
+
+        [JsonProperty]
+        public bool Recenter
+        {
+            get => recenter;
+            set
+            {
+                recenter = value;
                 RaisePropertyChanged();
             }
         }

@@ -217,7 +217,7 @@
             <TextBlock
                 HorizontalAlignment="Left"
                 VerticalAlignment="Center"
-                Text="RA Interval"
+                Text="| RA Interval"
                 ToolTip="{StaticResource SiderealTrackRADeltaDegrees_Tooltip}" />
             <ninactrl:UnitTextBox
                 MinWidth="80"
@@ -309,38 +309,30 @@
         x:Key="BuildSiderealPathModelDetails"
         x:Shared="false"
         Orientation="Horizontal">
-        <StackPanel Orientation="Vertical">
+        <StackPanel Orientation="Horizontal">
 
-            <StackPanel Orientation="Vertical">
-                <StackPanel Orientation="Horizontal">
-                    <TextBlock VerticalAlignment="Center" Text="{ns:Loc LblAmount}" />
-                    <ninactrl:UnitTextBox
+            <TextBlock VerticalAlignment="Center" Text="{ns:Loc LblAmount}" />
+            <ninactrl:UnitTextBox
                         MinWidth="50"
                         Margin="5,0,0,0"
                         VerticalAlignment="Center"
                         VerticalContentAlignment="Center"
                         Text="{Binding Amount}"
-                        TextAlignment="Right"
-                        Unit="min" />
-                </StackPanel>
-            </StackPanel>
+                         Unit="min"
+                        TextAlignment="Right" />
 
-            <!--StackPanel Margin="0,5,0,0" Orientation="Horizontal">
-                <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource StartTimeDetails}" />
-            </StackPanel-->
-            <StackPanel Margin="0,5,0,0" Orientation="Horizontal">
-                <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource EndTimeDetails}" />
-            </StackPanel>
-            <StackPanel Margin="0,5,0,0" Orientation="Horizontal">
-                <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource RADeltaDetails}" />
-                <ContentPresenter
-                    Margin="10,0,0,0"
-                    Content="{Binding}"
-                    ContentTemplate="{StaticResource ModelPointCountDetails}" />
-            </StackPanel>
-            <!--StackPanel Margin="0,5,0,0" Orientation="Horizontal">
-                <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource BuildRetryDetails}" />
-            </StackPanel-->
+            <ContentPresenter  Margin="5,0,0,0" Content="{Binding}" ContentTemplate="{StaticResource EndTimeDetails}" />
+
+            <ContentPresenter  Margin="5,0,0,0" Content="{Binding}" ContentTemplate="{StaticResource RADeltaDetails}" />
+
+            <TextBlock  Margin="5,0,0,0" VerticalAlignment="Center" Text="| Re-center" />
+            <CheckBox
+       Margin="5,0,0,0"
+       VerticalAlignment="Center"
+       VerticalContentAlignment="Center"
+       IsChecked="{Binding Recenter}"
+
+       ToolTip="Re-Center (plate solve) after relax slew" />
         </StackPanel>
     </WrapPanel>
 
@@ -372,6 +364,27 @@
      Orientation="Horizontal">
         <StackPanel Orientation="Vertical">
 
+            <StackPanel Orientation="Horizontal">
+
+                <TextBlock VerticalAlignment="Center" Text="{ns:Loc LblAmount}" />
+                <ninactrl:UnitTextBox
+                     MinWidth="50"
+                     Margin="5,0,0,0"
+                     VerticalAlignment="Center"
+                     VerticalContentAlignment="Center"
+                     Text="{Binding Amount}"
+                     TextAlignment="Right"
+                     Unit="min" />
+            </StackPanel>
+        </StackPanel>
+    </WrapPanel>
+
+    <WrapPanel
+     x:Key="RelaxSlewTemplate"
+     x:Shared="false"
+     Orientation="Horizontal">
+        <StackPanel Orientation="Vertical">
+
             <StackPanel Orientation="Vertical">
                 <StackPanel Orientation="Horizontal">
                     <TextBlock VerticalAlignment="Center" Text="{ns:Loc LblAmount}" />
@@ -382,7 +395,39 @@
                      VerticalContentAlignment="Center"
                      Text="{Binding Amount}"
                      TextAlignment="Right"
+                         ToolTip="Relax Slews every x minutes"
                      Unit="min" />
+
+                    <TextBlock VerticalAlignment="Center" Text="| RA" Margin="5,0,0,0" />
+                    <ninactrl:UnitTextBox
+                     MinWidth="50"
+                     Margin="5,0,0,0"
+                     VerticalAlignment="Center"
+                     VerticalContentAlignment="Center"
+                     Text="{Binding RArelaxDegrees}"
+                     TextAlignment="Right"
+                         ToolTip="Relax Slew RA axis in decimal degrees"
+                     Unit="deg" />
+
+                    <TextBlock VerticalAlignment="Center" Text="| Dec" Margin="5,0,0,0" />
+                    <ninactrl:UnitTextBox
+                      MinWidth="50"
+                      Margin="5,0,0,0"
+                      VerticalAlignment="Center"
+                      VerticalContentAlignment="Center"
+                      Text="{Binding DErelaxDegrees}"
+                      TextAlignment="Right"
+                        ToolTip="Relax Slew DEC axis in decimal degrees"
+                      Unit="deg" />
+
+                    <TextBlock VerticalAlignment="Center" Text="| Re-center" Margin="5,0,0,0" />
+                    <CheckBox
+                     Margin="5,0,0,0"
+                     VerticalAlignment="Center"
+                     VerticalContentAlignment="Center"
+                     IsChecked="{Binding Recenter}"
+
+                     ToolTip="Re-Center (plate solve) after relax slew" />
                 </StackPanel>
             </StackPanel>
         </StackPanel>
@@ -392,24 +437,20 @@
      x:Key="BuildSiderealPathModelDetailsFlip"
      x:Shared="false"
      Orientation="Horizontal">
-        <StackPanel Orientation="Vertical">
+        <StackPanel Orientation="Horizontal">
 
-            <!--StackPanel Margin="0,5,0,0" Orientation="Horizontal">
-                <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource StartTimeDetails}" />
-            </StackPanel-->
-            <StackPanel Margin="0,5,0,0" Orientation="Horizontal">
-                <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource EndTimeDetails}" />
-            </StackPanel>
-            <StackPanel Margin="0,5,0,0" Orientation="Horizontal">
-                <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource RADeltaDetails}" />
-                <ContentPresenter
-                 Margin="10,0,0,0"
-                 Content="{Binding}"
-                 ContentTemplate="{StaticResource ModelPointCountDetails}" />
-            </StackPanel>
-            <!--StackPanel Margin="0,5,0,0" Orientation="Horizontal">
-                <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource BuildRetryDetails}" />
-            </StackPanel-->
+            <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource EndTimeDetails}" />
+
+            <ContentPresenter  Margin="5,0,0,0" Content="{Binding}" ContentTemplate="{StaticResource RADeltaDetails}" />
+
+            <TextBlock  Margin="5,0,0,0" VerticalAlignment="Center" Text="| Re-center" />
+            <CheckBox
+                     Margin="5,0,0,0"
+                     VerticalAlignment="Center"
+                     VerticalContentAlignment="Center"
+                     IsChecked="{Binding Recenter}"
+
+                     ToolTip="Re-Center (plate solve) after relax slew" />
         </StackPanel>
     </WrapPanel>
 
@@ -417,7 +458,7 @@
         <view:SequenceBlockView DataContext="{Binding}">
 
             <view:SequenceBlockView.SequenceItemContent>
-                <ContentPresenter Content="{StaticResource WeatherUpdateAfterTimeTemplate}" />
+                <ContentPresenter Content="{StaticResource RelaxSlewTemplate}" />
             </view:SequenceBlockView.SequenceItemContent>
             <view:SequenceBlockView.SequenceItemProgressContent>
                 <StackPanel Orientation="Horizontal">
