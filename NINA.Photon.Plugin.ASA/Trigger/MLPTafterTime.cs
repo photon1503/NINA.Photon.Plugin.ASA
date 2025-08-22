@@ -41,6 +41,13 @@ using NINA.WPF.Base.Mediator;
 using NINA.Sequencer.Container;
 using NINA.Sequencer.Interfaces;
 using NINA.Photon.Plugin.ASA.SequenceItems;
+using NINA.Core.Utility.WindowService;
+using NINA.Equipment.Interfaces;
+using NINA.PlateSolving.Interfaces;
+using NINA.Profile.Interfaces;
+using NINA.WPF.Base.Interfaces.Mediator;
+using System.Windows.Media;
+using System.Windows;
 
 namespace NINA.Photon.Plugin.ASA.MLTP
 {
@@ -59,22 +66,69 @@ namespace NINA.Photon.Plugin.ASA.MLTP
         private readonly IModelPointGenerator modelPointGenerator;
         private readonly INighttimeCalculator nighttimeCalculator;
         private readonly ICameraMediator cameraMediator;
+
+        protected IProfileService profileService;
+        protected IApplicationStatusMediator applicationStatusMediator;
+        protected IFocuserMediator focuserMediator;
+        protected IGuiderMediator guiderMediator;
+        protected IFilterWheelMediator filterWheelMediator;
+        protected IDomeMediator domeMediator;
+        protected IDomeFollower domeFollower;
+        protected IPlateSolverFactory plateSolverFactory;
+        protected IWindowServiceFactory windowServiceFactory;
+        protected IImagingMediator imagingMediator;
         private readonly ITelescopeMediator telescopeMediator;
+
+        private GeometryGroup PlatesolveIcon = (GeometryGroup)Application.Current.Resources["PlatesolveSVG"];
 
         private DateTime initialTime;
         private bool initialized = false;
 
+        public SequentialContainer TriggerRunner { get; protected set; }
+
         [ImportingConstructor]
-        public MLPTafterTime(INighttimeCalculator nighttimeCalculator, ICameraMediator cameraMediator, ITelescopeMediator telescopeMediator) :
+        public MLPTafterTime(INighttimeCalculator nighttimeCalculator,
+            IProfileService profileService,
+            ICameraMediator cameraMediator,
+            ITelescopeMediator telescopeMediator,
+            IApplicationStatusMediator applicationStatusMediator,
+            IGuiderMediator guiderMediator,
+            IFilterWheelMediator filterWheelMediator,
+            IDomeMediator domeMediator,
+            IDomeFollower domeFollower,
+            IPlateSolverFactory plateSolverFactory,
+            IWindowServiceFactory windowServiceFactory,
+            IImagingMediator imagingMediator) :
             this(ASAPlugin.ASAOptions, ASAPlugin.MountMediator, ASAPlugin.Mount,
                 ASAPlugin.MountModelBuilderMediator, ASAPlugin.ModelPointGenerator,
-                nighttimeCalculator, cameraMediator, telescopeMediator)
+                 nighttimeCalculator, profileService,
+                cameraMediator,
+                telescopeMediator,
+                applicationStatusMediator,
+                guiderMediator,
+                filterWheelMediator,
+                domeMediator,
+                domeFollower,
+                plateSolverFactory,
+                windowServiceFactory,
+                imagingMediator)
         {
         }
 
         public MLPTafterTime(IASAOptions options, IMountMediator mountMediator, IMount mount,
             IMountModelBuilderMediator mountModelBuilderMediator, IModelPointGenerator modelPointGenerator,
-            INighttimeCalculator nighttimeCalculator, ICameraMediator cameraMediator, ITelescopeMediator telescopeMediator)
+            INighttimeCalculator nighttimeCalculator,
+            IProfileService profileService,
+            ICameraMediator cameraMediator,
+            ITelescopeMediator telescopeMediator,
+            IApplicationStatusMediator applicationStatusMediator,
+            IGuiderMediator guiderMediator,
+            IFilterWheelMediator filterWheelMediator,
+            IDomeMediator domeMediator,
+            IDomeFollower domeFollower,
+            IPlateSolverFactory plateSolverFactory,
+            IWindowServiceFactory windowServiceFactory,
+            IImagingMediator imagingMediator)
         {
             this.options = options;
             this.mount = mount;
@@ -82,8 +136,18 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             this.mountModelBuilderMediator = mountModelBuilderMediator;
             this.modelPointGenerator = modelPointGenerator;
             this.nighttimeCalculator = nighttimeCalculator;
-            this.cameraMediator = cameraMediator;
+
+            this.profileService = profileService;
             this.telescopeMediator = telescopeMediator;
+            this.applicationStatusMediator = applicationStatusMediator;
+            this.cameraMediator = cameraMediator;
+            this.guiderMediator = guiderMediator;
+            this.filterWheelMediator = filterWheelMediator;
+            this.domeMediator = domeMediator;
+            this.domeFollower = domeFollower;
+            this.plateSolverFactory = plateSolverFactory;
+            this.windowServiceFactory = windowServiceFactory;
+            this.imagingMediator = imagingMediator;
             this.Coordinates = new InputCoordinates();
 
             var nowProvider = new NowDateTimeProvider(new SystemDateTime());
@@ -105,9 +169,33 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             SiderealTrackRADeltaDegrees = 5;
             SiderealTrackEndOffsetMinutes = 90;
             Amount = 90;
+
+            NINA.Sequencer.SequenceItem.Platesolving.Center c = new(profileService, telescopeMediator, imagingMediator, filterWheelMediator, guiderMediator,
+          domeMediator, domeFollower, plateSolverFactory, windowServiceFactory)
+            { Name = "Slew and center", Icon = PlatesolveIcon };
+            TriggerRunner = new SequentialContainer();
+            AddItem(TriggerRunner, c);
         }
 
-        private MLPTafterTime(MLPTafterTime cloneMe) : this(cloneMe.nighttimeCalculator, cloneMe.cameraMediator, cloneMe.telescopeMediator)
+        private void AddItem(SequentialContainer runner, ISequenceItem item)
+        {
+            runner.Items.Add(item);
+            item.AttachNewParent(runner);
+        }
+
+        private MLPTafterTime(MLPTafterTime cloneMe) : this(
+                cloneMe.nighttimeCalculator,
+                cloneMe.profileService,
+                cloneMe.cameraMediator,
+                cloneMe.telescopeMediator,
+                cloneMe.applicationStatusMediator,
+                cloneMe.guiderMediator,
+                cloneMe.filterWheelMediator,
+                cloneMe.domeMediator,
+                cloneMe.domeFollower,
+                cloneMe.plateSolverFactory,
+                cloneMe.windowServiceFactory,
+                cloneMe.imagingMediator)
         {
             CopyMetaData(cloneMe);
         }
@@ -194,6 +282,31 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             }
             initialTime = DateTime.Now;
             options.LastMLPT = DateTime.Now;
+
+            if (Recenter)
+            {
+                try
+                {
+                    await TriggerRunner.Run(progress, token);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"Error during RelaxAfterTime execution: {ex.Message}");
+                }
+            }
+        }
+
+        private bool recenter = true;
+
+        [JsonProperty]
+        public bool Recenter
+        {
+            get => recenter;
+            set
+            {
+                recenter = value;
+                RaisePropertyChanged();
+            }
         }
 
         [JsonProperty]
@@ -677,6 +790,12 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             {
                 Inherited = false;
             }
+
+            foreach (ISequenceItem item in TriggerRunner.Items)
+            {
+                if (item.Parent == null) item.AttachNewParent(TriggerRunner);
+            }
+            TriggerRunner.AttachNewParent(Parent);
 
             Validate();
         }

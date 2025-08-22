@@ -95,10 +95,15 @@ namespace NINA.Photon.Plugin.ASA.MLTP
 
         [ImportingConstructor]
         public RelaxAfterTime(IProfileService profileService,
-            ICameraMediator cameraMediator, ITelescopeMediator telescopeMediator,
-             IApplicationStatusMediator applicationStatusMediator,
-            IGuiderMediator guiderMediator, IFilterWheelMediator filterWheelMediator,
-            IDomeMediator domeMediator, IDomeFollower domeFollower, IPlateSolverFactory plateSolverFactory, IWindowServiceFactory windowServiceFactory,
+            ICameraMediator cameraMediator,
+            ITelescopeMediator telescopeMediator,
+            IApplicationStatusMediator applicationStatusMediator,
+            IGuiderMediator guiderMediator,
+            IFilterWheelMediator filterWheelMediator,
+            IDomeMediator domeMediator,
+            IDomeFollower domeFollower,
+            IPlateSolverFactory plateSolverFactory,
+            IWindowServiceFactory windowServiceFactory,
             IImagingMediator imagingMediator
             )
         {
@@ -109,7 +114,6 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             this.telescopeMediator = telescopeMediator;
             this.applicationStatusMediator = applicationStatusMediator;
             this.cameraMediator = cameraMediator;
-            this.focuserMediator = focuserMediator;
 
             this.guiderMediator = guiderMediator;
 
@@ -162,6 +166,8 @@ namespace NINA.Photon.Plugin.ASA.MLTP
                 RaisePropertyChanged();
             }
         }
+
+        public SequentialContainer TriggerRunner { get; protected set; }
 
         public override void Initialize()
         {
@@ -239,6 +245,8 @@ namespace NINA.Photon.Plugin.ASA.MLTP
 
         public override async Task Execute(ISequenceContainer context, IProgress<ApplicationStatus> progress, CancellationToken token)
         {
+            initialTime = DateTime.Now;
+
             Coordinates.Coordinates = telescopeMediator.GetCurrentPosition();
 
             Coordinates relax = GetRelaxPoint(Coordinates.Coordinates, 5.0); // Relax by 5 degrees
@@ -252,16 +260,17 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             Logger.Debug($"Relax Slew back to {relax}");
             await telescopeMediator.SlewToCoordinatesAsync(Coordinates.Coordinates, token);
 
-            try
+            if (Recenter)
             {
-                await TriggerRunner.Run(progress, token);
+                try
+                {
+                    await TriggerRunner.Run(progress, token);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Error($"Error during RelaxAfterTime execution: {ex.Message}");
+                }
             }
-            catch (Exception ex)
-            {
-                Logger.Error($"Error during RelaxAfterTime execution: {ex.Message}");
-            }
-
-            initialTime = DateTime.Now;
         }
 
         [JsonProperty]
@@ -394,6 +403,12 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             {
                 Inherited = false;
             }
+
+            foreach (ISequenceItem item in TriggerRunner.Items)
+            {
+                if (item.Parent == null) item.AttachNewParent(TriggerRunner);
+            }
+            TriggerRunner.AttachNewParent(Parent);
 
             Validate();
         }

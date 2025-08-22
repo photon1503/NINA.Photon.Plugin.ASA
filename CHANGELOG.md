@@ -2,6 +2,7 @@
 
 ## 3.2.5.1
  - **NEW** Added Relax Slew trigger
+	
 	- Declination (Dec) Relaxation			
 	The direction of Dec adjustment is based on the current altitude and the observatory's hemisphere.
     If the current altitude is below 45°, Dec is adjusted towards the zenith (increased in the northern hemisphere, decreased in the southern hemisphere).
@@ -22,7 +23,10 @@
 	
 	The resulting relax point is checked to ensure it remains above a minimum altitude (e.g., 5° above the horizon) before slewing
 	
+ - **NEW** Added Re-center option to all MLPT triggers. This will start a Solve & Center after MLPT.
  - Sending MLPT data will now wait until the mount has restored its position.
+ - Redesigned UI elements for all triggers to improve consistency.
+ - Removed number of estimated points for all MLPT triggers
  - Fixed bug where the progress bar was not closed correctly.
 	
 ## 3.2.4.3

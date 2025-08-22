@@ -332,7 +332,7 @@
        VerticalContentAlignment="Center"
        IsChecked="{Binding Recenter}"
 
-       ToolTip="Re-Center (plate solve) after relax slew" />
+       ToolTip="Re-Center (plate solve) after MLPT" />
         </StackPanel>
     </WrapPanel>
 
@@ -450,7 +450,7 @@
                      VerticalContentAlignment="Center"
                      IsChecked="{Binding Recenter}"
 
-                     ToolTip="Re-Center (plate solve) after relax slew" />
+                     ToolTip="Re-Center (plate solve) after MLPT" />
         </StackPanel>
     </WrapPanel>
 
