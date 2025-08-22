@@ -127,12 +127,6 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             this.imagingMediator = imagingMediator;
             this.Coordinates = new InputCoordinates();
 
-            NINA.Sequencer.SequenceItem.Platesolving.Center c = new(profileService, telescopeMediator, imagingMediator, filterWheelMediator, guiderMediator,
-               domeMediator, domeFollower, plateSolverFactory, windowServiceFactory)
-            { Name = "Slew and center", Icon = PlatesolveIcon };
-            TriggerRunner = new SequentialContainer();
-            AddItem(TriggerRunner, c);
-
             Amount = 90;
         }
 
@@ -166,8 +160,6 @@ namespace NINA.Photon.Plugin.ASA.MLTP
                 RaisePropertyChanged();
             }
         }
-
-        public SequentialContainer TriggerRunner { get; protected set; }
 
         public override void Initialize()
         {
@@ -264,7 +256,13 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             {
                 try
                 {
-                    await TriggerRunner.Run(progress, token);
+                    NINA.Sequencer.SequenceItem.Platesolving.Center c = new(profileService, telescopeMediator, imagingMediator, filterWheelMediator, guiderMediator,
+                    domeMediator, domeFollower, plateSolverFactory, windowServiceFactory)
+                    { Name = "Slew and center", Icon = PlatesolveIcon };
+
+                    c.Coordinates = Coordinates;
+
+                    await c.Run(progress, token);
                 }
                 catch (Exception ex)
                 {
@@ -403,12 +401,6 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             {
                 Inherited = false;
             }
-
-            foreach (ISequenceItem item in TriggerRunner.Items)
-            {
-                if (item.Parent == null) item.AttachNewParent(TriggerRunner);
-            }
-            TriggerRunner.AttachNewParent(Parent);
 
             Validate();
         }

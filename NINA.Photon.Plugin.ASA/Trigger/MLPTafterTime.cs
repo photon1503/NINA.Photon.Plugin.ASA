@@ -84,8 +84,6 @@ namespace NINA.Photon.Plugin.ASA.MLTP
         private DateTime initialTime;
         private bool initialized = false;
 
-        public SequentialContainer TriggerRunner { get; protected set; }
-
         [ImportingConstructor]
         public MLPTafterTime(INighttimeCalculator nighttimeCalculator,
             IProfileService profileService,
@@ -169,18 +167,6 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             SiderealTrackRADeltaDegrees = 5;
             SiderealTrackEndOffsetMinutes = 90;
             Amount = 90;
-
-            NINA.Sequencer.SequenceItem.Platesolving.Center c = new(profileService, telescopeMediator, imagingMediator, filterWheelMediator, guiderMediator,
-          domeMediator, domeFollower, plateSolverFactory, windowServiceFactory)
-            { Name = "Slew and center", Icon = PlatesolveIcon };
-            TriggerRunner = new SequentialContainer();
-            AddItem(TriggerRunner, c);
-        }
-
-        private void AddItem(SequentialContainer runner, ISequenceItem item)
-        {
-            runner.Items.Add(item);
-            item.AttachNewParent(runner);
         }
 
         private MLPTafterTime(MLPTafterTime cloneMe) : this(
@@ -287,7 +273,13 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             {
                 try
                 {
-                    await TriggerRunner.Run(progress, token);
+                    NINA.Sequencer.SequenceItem.Platesolving.Center c = new(profileService, telescopeMediator, imagingMediator, filterWheelMediator, guiderMediator,
+   domeMediator, domeFollower, plateSolverFactory, windowServiceFactory)
+                    { Name = "Slew and center", Icon = PlatesolveIcon };
+
+                    c.Coordinates = Coordinates;
+
+                    await c.Run(progress, token);
                 }
                 catch (Exception ex)
                 {
@@ -790,12 +782,6 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             {
                 Inherited = false;
             }
-
-            foreach (ISequenceItem item in TriggerRunner.Items)
-            {
-                if (item.Parent == null) item.AttachNewParent(TriggerRunner);
-            }
-            TriggerRunner.AttachNewParent(Parent);
 
             Validate();
         }

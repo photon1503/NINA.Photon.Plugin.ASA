@@ -86,8 +86,6 @@ namespace NINA.Photon.Plugin.ASA.MLTP
         private bool initialized = false;
         private bool afterFlip = false;
 
-        public SequentialContainer TriggerRunner { get; protected set; }
-
         [ImportingConstructor]
         public MLPTafterFlip(INighttimeCalculator nighttimeCalculator,
             IProfileService profileService,
@@ -175,23 +173,11 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             SiderealTrackEndOffsetMinutes = 90;
             OldPierside = PierSide.pierUnknown;
 
-            NINA.Sequencer.SequenceItem.Platesolving.Center c = new(profileService, telescopeMediator, imagingMediator, filterWheelMediator, guiderMediator,
-        domeMediator, domeFollower, plateSolverFactory, windowServiceFactory)
-            { Name = "Slew and center", Icon = PlatesolveIcon };
-            TriggerRunner = new SequentialContainer();
-            AddItem(TriggerRunner, c);
-
             telescopeMediator.AfterMeridianFlip += (sender, args) =>
             {
                 afterFlip = true;
                 return Task.CompletedTask;
             };
-        }
-
-        private void AddItem(SequentialContainer runner, ISequenceItem item)
-        {
-            runner.Items.Add(item);
-            item.AttachNewParent(runner);
         }
 
         private MLPTafterFlip(MLPTafterFlip cloneMe) : this(
@@ -293,7 +279,13 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             {
                 try
                 {
-                    await TriggerRunner.Run(progress, token);
+                    NINA.Sequencer.SequenceItem.Platesolving.Center c = new(profileService, telescopeMediator, imagingMediator, filterWheelMediator, guiderMediator,
+                    domeMediator, domeFollower, plateSolverFactory, windowServiceFactory)
+                    { Name = "Slew and center", Icon = PlatesolveIcon };
+
+                    c.Coordinates = Coordinates;
+
+                    await c.Run(progress, token);
                 }
                 catch (Exception ex)
                 {
@@ -807,12 +799,6 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             {
                 Inherited = false;
             }
-
-            foreach (ISequenceItem item in TriggerRunner.Items)
-            {
-                if (item.Parent == null) item.AttachNewParent(TriggerRunner);
-            }
-            TriggerRunner.AttachNewParent(Parent);
 
             Validate();
         }
