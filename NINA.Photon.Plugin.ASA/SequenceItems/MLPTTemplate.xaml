@@ -217,7 +217,7 @@
             <TextBlock
                 HorizontalAlignment="Left"
                 VerticalAlignment="Center"
-                Text="RA Interval"
+                Text="| RA Interval"
                 ToolTip="{StaticResource SiderealTrackRADeltaDegrees_Tooltip}" />
             <ninactrl:UnitTextBox
                 MinWidth="80"
@@ -309,23 +309,11 @@
         x:Key="BuildSiderealPathModelDetails"
         x:Shared="false"
         Orientation="Horizontal">
-        <StackPanel Orientation="Vertical">
-            <!--StackPanel Margin="0,5,0,0" Orientation="Horizontal">
-                <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource StartTimeDetails}" />
-            </StackPanel-->
-            <StackPanel Margin="0,5,0,0" Orientation="Horizontal">
-                <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource EndTimeDetails}" />
-            </StackPanel>
-            <StackPanel Margin="0,5,0,0" Orientation="Horizontal">
-                <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource RADeltaDetails}" />
-                <ContentPresenter
-                    Margin="10,0,0,0"
-                    Content="{Binding}"
-                    ContentTemplate="{StaticResource ModelPointCountDetails}" />
-            </StackPanel>
-            <!--StackPanel Margin="0,5,0,0" Orientation="Horizontal">
-                <ContentPresenter Content="{Binding}" ContentTemplate="{StaticResource BuildRetryDetails}" />
-            </StackPanel-->
+        <StackPanel Orientation="Horizontal">
+
+            <ContentPresenter   Margin="5,0,0,0" Content="{Binding}" ContentTemplate="{StaticResource EndTimeDetails}" />
+
+            <ContentPresenter  Margin="5,0,0,0"  Content="{Binding}" ContentTemplate="{StaticResource RADeltaDetails}" />
         </StackPanel>
     </WrapPanel>
 
