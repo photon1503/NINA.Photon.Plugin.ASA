@@ -533,7 +533,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             }
         }
 
-        private bool recenter = true;
+        private bool recenter = false;
 
         [JsonProperty]
         public bool Recenter

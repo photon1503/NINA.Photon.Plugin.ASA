@@ -130,12 +130,6 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             Amount = 90;
         }
 
-        private void AddItem(SequentialContainer runner, ISequenceItem item)
-        {
-            runner.Items.Add(item);
-            item.AttachNewParent(runner);
-        }
-
         private RelaxAfterTime(RelaxAfterTime cloneMe) : this(cloneMe.profileService, cloneMe.cameraMediator, cloneMe.telescopeMediator, cloneMe.applicationStatusMediator, cloneMe.guiderMediator, cloneMe.filterWheelMediator, cloneMe.domeMediator, cloneMe.domeFollower, cloneMe.plateSolverFactory, cloneMe.windowServiceFactory, cloneMe.imagingMediator)
         {
             CopyMetaData(cloneMe);
@@ -166,7 +160,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             initialTime = DateTime.Now;
         }
 
-        public Coordinates GetRelaxPoint(Coordinates current, double relaxDegrees = 5.0)
+        public Coordinates GetRelaxPoint(Coordinates current)
         {
             // Get current topocentric coordinates to determine altitude
             var topo = current.Transform(
@@ -186,12 +180,12 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             if (currentAlt < 45)
             {
                 // Move Dec towards zenith
-                newDec = safeDec + Math.Sign(siteLat) * relaxDegrees;
+                newDec = safeDec + Math.Sign(siteLat) * derelaxDegrees;
             }
             else
             {
                 // Move Dec away from zenith
-                newDec = safeDec - Math.Sign(siteLat) * relaxDegrees;
+                newDec = safeDec - Math.Sign(siteLat) * derelaxDegrees;
             }
             newDec = Math.Max(Math.Min(newDec, 85), -85);
             newDec = Math.Max(Math.Min(newDec, 85), -85);
@@ -241,7 +235,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
 
             Coordinates.Coordinates = telescopeMediator.GetCurrentPosition();
 
-            Coordinates relax = GetRelaxPoint(Coordinates.Coordinates, 5.0); // Relax by 5 degrees
+            Coordinates relax = GetRelaxPoint(Coordinates.Coordinates);
 
             Logger.Debug($"Relax Slew start at {Coordinates.Coordinates}");
 
@@ -337,7 +331,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             }
         }
 
-        private bool recenter = true;
+        private bool recenter = false;
 
         [JsonProperty]
         public bool Recenter

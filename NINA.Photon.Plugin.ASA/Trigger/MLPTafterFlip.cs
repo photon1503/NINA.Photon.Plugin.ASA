@@ -259,9 +259,8 @@ namespace NINA.Photon.Plugin.ASA.MLTP
                 ModelPointGenerationType = ModelPointGenerationTypeEnum.SiderealPath
             };
 
+            Coordinates.Coordinates = telescopeMediator.GetCurrentPosition();
             Logger.Debug($"MLPTafterFlip: Coordinates not set, using telescope coordinates: {Coordinates.Coordinates}");
-
-            Logger.Debug($"MLPTafMLPTafterFlipterTime: Coordinates set: {Coordinates.Coordinates}");
 
             //UpdateModelPoints();
             // delete old model
@@ -294,7 +293,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             }
         }
 
-        private bool recenter = true;
+        private bool recenter = false;
 
         [JsonProperty]
         public bool Recenter
