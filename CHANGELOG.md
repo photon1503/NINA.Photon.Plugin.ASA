@@ -1,5 +1,36 @@
 # Changelog
 
+## 3.2.5.1
+ - **NEW** Added Relax Slew trigger
+	
+	- Declination (Dec) Relaxation			
+	The direction of Dec adjustment is based on the current altitude and the observatory's hemisphere.
+    If the current altitude is below 45°, Dec is adjusted towards the zenith (increased in the northern hemisphere, decreased in the southern hemisphere).
+    If the current altitude is above 45°, Dec is adjusted away from the zenith (decreased in the northern hemisphere, increased in the southern hemisphere).
+    Dec is always clamped to a safe range to avoid zenith/gimbal lock.
+	
+	- Right Ascension (RA) Relaxation
+	
+    The RA adjustment is based on the current hour angle (HA), ensuring the slew always moves the telescope further from the meridian (HA = 0h) and never crosses the meridian or anti-meridian (HA = ±12h).
+    The new hour angle is calculated by moving further from the meridian, but is clamped to stay within (-12h, +12h).
+    The new RA is then computed from the local sidereal time and the new hour angle, and normalized to the [0h, 24h) range.
+
+	- Hemisphere Independence
+	
+    The logic automatically adapts to both northern and southern hemispheres by using the sign of the site latitude for Dec and geometric hour angle for RA.
+
+	- Safety Checks
+	
+	The resulting relax point is checked to ensure it remains above a minimum altitude (e.g., 5° above the horizon) before slewing
+	
+ - **NEW** Added Re-center option to all MLPT triggers. This will start a Solve & Center after MLPT.
+ - Sending MLPT data will now wait until the mount has restored its position.
+ - Redesigned UI elements for all triggers to improve consistency.
+ - Removed number of estimated points for all MLPT triggers
+ - Fixed bug where the progress bar was not closed correctly.
+ - Fixed MLPT After Flip trigger 
+	
+	
 ## 3.2.4.3
  - Added sequence item to send weather data to Autoslew for refraction correction
  - Added option to define indivdual path for POX file generation (bastiaigner)
