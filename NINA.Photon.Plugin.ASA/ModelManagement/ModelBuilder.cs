@@ -435,7 +435,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
 
             try
             {
-                return await DoBuild(state, linkedCts.Token, stopToken, overallProgress, stepProgress);
+                return await DoBuild(state, linkedCts.Token, stopToken, overallProgress, stepProgress, startCoordinates);
             }
             finally
             {
@@ -495,13 +495,13 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                     Logger.Info("Re-enabling autoguiding after ASA model build");
                     await guiderMediator.StartGuiding(false, overallProgress, ct);
                 }
-            }
 
-            overallProgress?.Report(new ApplicationStatus() { });
-            stepProgress?.Report(new ApplicationStatus() { });
-            state.ProcessingSemaphore?.Dispose();
-            // Make sure any remaining tasks are cancelled, just in case an exception left some remaining work in progress
-            innerCts.Cancel();
+                overallProgress?.Report(new ApplicationStatus() { });
+                stepProgress?.Report(new ApplicationStatus() { });
+                state.ProcessingSemaphore?.Dispose();
+                // Make sure any remaining tasks are cancelled, just in case an exception left some remaining work in progress
+                innerCts.Cancel();
+            }
         }
 
         private void PreFlightChecks(IList<ModelPoint> modelPoints)
@@ -533,7 +533,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             });
         }
 
-        private async Task<LoadedAlignmentModel> DoBuild(ModelBuilderState state, CancellationToken ct, CancellationToken stopToken, IProgress<ApplicationStatus> overallProgress, IProgress<ApplicationStatus> stepProgress)
+        private async Task<LoadedAlignmentModel> DoBuild(ModelBuilderState state, CancellationToken ct, CancellationToken stopToken, IProgress<ApplicationStatus> overallProgress, IProgress<ApplicationStatus> stepProgress, Coordinates startCoordinates)
         {
             ct.ThrowIfCancellationRequested();
             var validPoints = state.ValidPoints;
@@ -606,6 +606,18 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                     var numPendingFailures = state.PendingTasks.Select(pt => pt.Result).Count(x => !x);
                     Logger.Info($"{numPendingFailures} failures during post-capture processing");
                     state.FailedPoints += numPendingFailures;
+
+                    if (startCoordinates != null)
+                    {
+                        Notification.ShowInformation("Restoring telescope position after ASA model build");
+
+                        bool slewSuccess = await telescopeMediator.SlewToCoordinatesAsync(startCoordinates, ct);
+                        if (!slewSuccess)
+                        {
+                            Logger.Error("Failed to slew telescope to the starting coordinates after model build.");
+                        }
+                        IsTelescopePositionRestored = true; //TODO wait here
+                    }
 
                     // Now that we're through with the work, we only abort on cancellation (not stop)
                     await FinishAlignment(state, ct);
