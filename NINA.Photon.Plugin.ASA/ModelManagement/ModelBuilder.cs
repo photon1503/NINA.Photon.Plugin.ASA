@@ -1070,7 +1070,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             //  Logger.Info($"Processing {eligiblePointsOrdered.Count} points. First point Alt={nextPoint.Altitude:0.###}, Az={nextPoint.Azimuth:0.###}, MinDomeAz={nextPoint.MinDomeAzimuth:0.###}, MaxDomeAz={nextPoint.MaxDomeAzimuth:0.###}");
             if (state.UseDome)
             {
-                _ = SlewDomeIfNecessary(state, eligiblePointsOrdered, ct);
+                await SlewDomeIfNecessary(state, eligiblePointsOrdered, ct);
             }
 
             ModelPoint refPointEast = new ModelPoint(telescopeMediator)
@@ -1255,7 +1255,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                         if (nextPoint != null)
                         {
                             Logger.Info($"Next point not visible through dome. Dome slew required. Alt={nextPoint.Altitude:0.###}, Az={nextPoint.Azimuth:0.###}, MinDomeAz={nextPoint.MinDomeAzimuth:0.###}, MaxDomeAz={nextPoint.MaxDomeAzimuth:0.###}, CurrentDomeAz={domeMediator.GetInfo().Azimuth:0.###}");
-                            _ = SlewDomeIfNecessary(state, eligibleForNextPoint, ct);
+                            await SlewDomeIfNecessary(state, eligibleForNextPoint, ct);
                         }
                     }
                     else
