@@ -21,8 +21,8 @@ using System.Runtime.InteropServices;
 //Should be incremented for each new release build of a plugin
 
 
-[assembly: AssemblyVersion("3.2.5.6")]
-[assembly: AssemblyFileVersion("3.2.5.6")]
+[assembly: AssemblyVersion("3.2.5.7")]
+[assembly: AssemblyFileVersion("3.2.5.7")]
 
 
 // [MANDATORY] The name of your plugin
