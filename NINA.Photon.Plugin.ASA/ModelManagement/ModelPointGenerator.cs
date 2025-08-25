@@ -304,6 +304,13 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
 
             Logger.Debug($"Total duration: {totalDuration}, total hours: {totalHours}, numIntervals: {numIntervals}");
 
+            if (numIntervals < 2)
+            {
+                numIntervals = 2;
+                raDelta = Angle.ByHours(totalHours / numIntervals);
+                Logger.Info("Adjusted to minimum of 3 points for sidereal path.");
+            }
+
             // Adjust raDelta to ensure equidistant points
             if (numIntervals > 0)
             {

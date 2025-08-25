@@ -1,9 +1,17 @@
 # Changelog
 
+## 3.2.5.7
+ - Ensure we always get at least 3 points for MLPT by decreasing the RA interval.
+This helps to get a valid MLPT path also when the mount is near a limit (meridian, horizon).
+	
+## 3.2.5.6
+ - Fixed model builder not waiting for dome to finish slew
+
 ## 3.2.5.1
  - **NEW** Added Relax Slew trigger
 	
-	- Declination (Dec) Relaxation			
+	- Declination (Dec) Relaxation
+			
 	The direction of Dec adjustment is based on the current altitude and the observatory's hemisphere.
     If the current altitude is below 45°, Dec is adjusted towards the zenith (increased in the northern hemisphere, decreased in the southern hemisphere).
     If the current altitude is above 45°, Dec is adjusted away from the zenith (decreased in the northern hemisphere, increased in the southern hemisphere).
