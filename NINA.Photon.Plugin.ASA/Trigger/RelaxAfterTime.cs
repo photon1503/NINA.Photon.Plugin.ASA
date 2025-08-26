@@ -61,7 +61,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
     [ExportMetadata("Category", "ASA Tools")]
     [Export(typeof(ISequenceTrigger))]
     [JsonObject(MemberSerialization.OptIn)]
-    public class RelaxAfterTime : SequenceTrigger, IValidatable
+    public class RelaxAfterTime : SequenceTrigger, IValidatable, IDSOTargetProxy
     {
         private IASAOptions options;
         private readonly IMountMediator mountMediator;
@@ -233,7 +233,18 @@ namespace NINA.Photon.Plugin.ASA.MLTP
         {
             initialTime = DateTime.Now;
 
-            Coordinates.Coordinates = telescopeMediator.GetCurrentPosition();
+            Target = DSOTarget.FindTarget(Parent);
+            if (Target != null)
+            {
+                Logger.Info("Found Target: " + Target);
+                // UpdateChildren(Instructions);
+                Coordinates.Coordinates = Target.InputCoordinates?.Coordinates;
+            }
+            else
+            {
+                Logger.Warning("No target found for Relax Slew. Using current mount position.");
+                Coordinates.Coordinates = telescopeMediator.GetCurrentPosition();
+            }
 
             Coordinates relax = GetRelaxPoint(Coordinates.Coordinates);
 
@@ -402,6 +413,26 @@ namespace NINA.Photon.Plugin.ASA.MLTP
         public override string ToString()
         {
             return $"Category: {Category}, Item: {nameof(RelaxAfterTime)}, Coordinates: {Coordinates?.Coordinates}, Inherited: {Inherited}";
+        }
+
+        public InputTarget DSOProxyTarget()
+        {
+            return Target;
+        }
+
+        public InputTarget Target = null;
+
+        public InputTarget FindTarget(ISequenceContainer c)
+        {
+            while (c != null)
+            {
+                if (c is IDSOTargetProxy dso)
+                {
+                    return dso.DSOProxyTarget();
+                }
+                c = c.Parent;
+            }
+            return null;
         }
     }
 }
