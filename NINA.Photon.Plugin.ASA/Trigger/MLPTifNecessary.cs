@@ -238,7 +238,12 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             {
                 Logger.Info("Found Target: " + Target);
                 // UpdateChildren(Instructions);
-                Coordinates.Coordinates = Target.InputCoordinates?.Coordinates;
+                Coordinates = Target.InputCoordinates.Clone();
+            }
+            else
+            {
+                Coordinates.Coordinates = telescopeMediator.GetCurrentPosition();
+                Logger.Debug($"MLPTifExceeds: Coordinates not set, using telescope coordinates: {Coordinates.Coordinates}");
             }
 
             var modelBuilderOptions = new ModelBuilderOptions()
@@ -257,8 +262,6 @@ namespace NINA.Photon.Plugin.ASA.MLTP
                 ModelPointGenerationType = ModelPointGenerationTypeEnum.SiderealPath
             };
 
-            Coordinates.Coordinates = telescopeMediator.GetCurrentPosition();
-            Logger.Debug($"MLPTifExceeds: Coordinates not set, using telescope coordinates: {Coordinates.Coordinates}");
             UpdateModelPoints();
 
             // delete old model
@@ -451,7 +454,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
                     siderealTrackRADeltaDegrees = value;
 
                     RaisePropertyChanged();
-                    UpdateModelPoints();
+                    //  UpdateModelPoints();
                 }
             }
         }
@@ -651,7 +654,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
                 StartSeconds = t.Second;
             }
 
-            UpdateModelPoints();
+            //  UpdateModelPoints();
         }
 
         private void UpdateEndTime()
@@ -664,7 +667,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
                 EndSeconds = t.Second;
             }
 
-            UpdateModelPoints();
+            //  UpdateModelPoints();
         }
 
         /*
@@ -798,7 +801,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             if (contextCoordinates != null)
             {
                 Coordinates.Coordinates = contextCoordinates.Coordinates;
-                UpdateModelPoints();
+                //  UpdateModelPoints();
                 Inherited = true;
             }
             else

@@ -566,6 +566,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             SiderealTrackStartOffsetMinutes = startOffsetMinutes;
             SiderealTrackEndOffsetMinutes = endOffsetMinutes;
             ModelPointGenerationType = ModelPointGenerationTypeEnum.SiderealPath;
+
             if (!GenerateSiderealPath(false))
             {
                 //if (Connected)

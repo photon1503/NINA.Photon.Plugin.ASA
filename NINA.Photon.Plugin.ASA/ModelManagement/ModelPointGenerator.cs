@@ -189,6 +189,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
 
         public List<ModelPoint> GenerateSiderealPath(Coordinates coordinates, Angle raDelta, DateTime startTime, DateTime endTime, CustomHorizon horizon)
         {
+            Logger.Debug($"Generating sidereal path for {coordinates.RA}, {coordinates.Dec}");
             if (endTime < startTime)
             {
                 throw new Exception($"End time ({endTime}) comes before start time ({startTime})");
