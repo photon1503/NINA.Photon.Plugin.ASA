@@ -173,11 +173,18 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             SiderealTrackEndOffsetMinutes = 90;
             OldPierside = PierSide.pierUnknown;
 
-            telescopeMediator.AfterMeridianFlip += (sender, args) =>
+            try
             {
-                afterFlip = true;
-                return Task.CompletedTask;
-            };
+                telescopeMediator.AfterMeridianFlip += (sender, args) =>
+                {
+                    afterFlip = true;
+                    return Task.CompletedTask;
+                };
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Error subscribing to AfterMeridianFlip event: {ex.Message}");
+            }
         }
 
         private MLPTafterFlip(MLPTafterFlip cloneMe) : this(
@@ -719,6 +726,11 @@ namespace NINA.Photon.Plugin.ASA.MLTP
 
         public override bool ShouldTrigger(ISequenceItem previousItem, ISequenceItem nextItem)
         {
+            if (mount == null || !mountMediator.GetInfo().Connected)
+            {
+                return false;
+            }
+
             TimeLeft = Math.Round(mount.TimeToLimit(), 2);
 
             if (nextItem == null) { return false; }

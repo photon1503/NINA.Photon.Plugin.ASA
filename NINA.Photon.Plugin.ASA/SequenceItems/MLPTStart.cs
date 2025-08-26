@@ -45,7 +45,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
     [ExportMetadata("Category", "ASA Tools")]
     [Export(typeof(ISequenceItem))]
     [JsonObject(MemberSerialization.OptIn)]
-    public class MLPTStart : SequenceItem, IValidatable
+    public class MLPTStart : SequenceItem, IValidatable, IDSOTargetProxy
     {
         [ImportingConstructor]
         public MLPTStart(INighttimeCalculator nighttimeCalculator, ICameraMediator cameraMediator) :
@@ -456,6 +456,14 @@ namespace NINA.Photon.Plugin.ASA.MLTP
 
         public override async Task Execute(IProgress<ApplicationStatus> progress, CancellationToken token)
         {
+            Target = DSOTarget.FindTarget(Parent);
+            if (Target != null)
+            {
+                Logger.Info("Found Target: " + Target);
+                // UpdateChildren(Instructions);
+                Coordinates.Coordinates = Target.InputCoordinates?.Coordinates;
+            }
+
             UpdateModelPoints();
 
             var modelBuilderOptions = new ModelBuilderOptions()
@@ -580,6 +588,26 @@ namespace NINA.Photon.Plugin.ASA.MLTP
         public override string ToString()
         {
             return $"Category: {Category}, Item: {nameof(MLPTStart)}, Coordinates: {Coordinates?.Coordinates}, Inherited: {Inherited}, RADelta: {SiderealTrackRADeltaDegrees}, Start: {SelectedSiderealPathStartDateTimeProvider?.Name} ({SiderealTrackStartOffsetMinutes} minutes), Start: {SelectedSiderealPathEndDateTimeProvider?.Name} ({SiderealTrackEndOffsetMinutes} minutes), NumRetries: {BuilderNumRetries}, MaxFailedPoints: {MaxFailedPoints}, MaxPointRMS: {MaxPointRMS}";
+        }
+
+        public InputTarget DSOProxyTarget()
+        {
+            return Target;
+        }
+
+        public InputTarget Target = null;
+
+        public InputTarget FindTarget(ISequenceContainer c)
+        {
+            while (c != null)
+            {
+                if (c is IDSOTargetProxy dso)
+                {
+                    return dso.DSOProxyTarget();
+                }
+                c = c.Parent;
+            }
+            return null;
         }
     }
 }
