@@ -1,6 +1,11 @@
 
 # Changelog
 
+## 3.2.5.8
+ - Fixed MLPT After Flip trigger not showing up on some systems
+ - MLPT will now always get the DSO target coordinates instead of the current mount position.
+ - Avoid unnessary MLPT calculation and logs
+
 ## 3.2.5.7
  - Ensure we always get at least 3 points for MLPT by decreasing the RA interval.
 This helps to get a valid MLPT path also when the mount is near a limit (meridian, horizon).

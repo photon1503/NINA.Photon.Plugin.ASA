@@ -45,7 +45,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
     [ExportMetadata("Category", "ASA Tools")]
     [Export(typeof(ISequenceItem))]
     [JsonObject(MemberSerialization.OptIn)]
-    public class MLPTStart : SequenceItem, IValidatable
+    public class MLPTStart : SequenceItem, IValidatable, IDSOTargetProxy
     {
         [ImportingConstructor]
         public MLPTStart(INighttimeCalculator nighttimeCalculator, ICameraMediator cameraMediator) :
@@ -286,7 +286,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
                 {
                     siderealTrackRADeltaDegrees = value;
                     RaisePropertyChanged();
-                    UpdateModelPoints();
+                    //  UpdateModelPoints();
                 }
             }
         }
@@ -302,7 +302,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
                 if (maxPointRMS != value)
                 {
                     maxPointRMS = value;
-                    RaisePropertyChanged();
+                    //    RaisePropertyChanged();
                 }
             }
         }
@@ -438,7 +438,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
                 StartSeconds = t.Second;
             }
 
-            UpdateModelPoints();
+            // UpdateModelPoints();
         }
 
         private void UpdateEndTime()
@@ -451,11 +451,19 @@ namespace NINA.Photon.Plugin.ASA.MLTP
                 EndSeconds = t.Second;
             }
 
-            UpdateModelPoints();
+            //  UpdateModelPoints();
         }
 
         public override async Task Execute(IProgress<ApplicationStatus> progress, CancellationToken token)
         {
+            Target = DSOTarget.FindTarget(Parent);
+            if (Target != null)
+            {
+                Logger.Info("Found Target: " + Target);
+                // UpdateChildren(Instructions);
+                Coordinates = Target.InputCoordinates;
+            }
+
             UpdateModelPoints();
 
             var modelBuilderOptions = new ModelBuilderOptions()
@@ -487,13 +495,16 @@ namespace NINA.Photon.Plugin.ASA.MLTP
 
         private void UpdateModelPoints()
         {
+            Logger.Debug($"UpdateModelPoints called for RA={Coordinates.Coordinates.RA} Dec={Coordinates.Coordinates.Dec}");
             if (SelectedSiderealPathStartDateTimeProvider == null || SelectedSiderealPathEndDateTimeProvider == null || Coordinates?.Coordinates == null || SiderealTrackRADeltaDegrees <= 0)
             {
+                Logger.Debug("UpdateModelPoints: Missing required parameters");
                 return;
             }
 
             try
             {
+                Logger.Debug("Generating MLPT model points...");
                 ModelPoints = mountModelBuilderMediator.GenerateSiderealPath(
                     Coordinates,
                     Angle.ByDegree(SiderealTrackRADeltaDegrees),
@@ -503,6 +514,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
                     SiderealTrackEndOffsetMinutes);
                 ModelPointCount = ModelPoints.Count(p => p.ModelPointState == ModelPointStateEnum.Generated);
                 hasModelPointsUpdated = true;
+                Logger.Debug($"Generated {ModelPointCount} MLPT model points.");
             }
             catch (Exception e)
             {
@@ -535,16 +547,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             if (!cameraMediator.GetInfo().Connected)
             {
                 i.Add("Camera not connected");
-            } /*
-            if (!Inherited)
-            {
-                i.Add("Not within a container that has a target");
-            } */
-
-            /*    if (ModelPoints.Count < 3)
-                {
-                    i.Add($"Model builds require at least 3 points. Only {ModelPoints.Count} points were generated");
-                } */
+            }
 
             Issues = i;
             return i.Count == 0;
@@ -567,7 +570,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             {
                 Coordinates.Coordinates = contextCoordinates.Coordinates;
 
-                UpdateModelPoints();
+                //  UpdateModelPoints();
                 Inherited = true;
             }
             else
@@ -580,6 +583,26 @@ namespace NINA.Photon.Plugin.ASA.MLTP
         public override string ToString()
         {
             return $"Category: {Category}, Item: {nameof(MLPTStart)}, Coordinates: {Coordinates?.Coordinates}, Inherited: {Inherited}, RADelta: {SiderealTrackRADeltaDegrees}, Start: {SelectedSiderealPathStartDateTimeProvider?.Name} ({SiderealTrackStartOffsetMinutes} minutes), Start: {SelectedSiderealPathEndDateTimeProvider?.Name} ({SiderealTrackEndOffsetMinutes} minutes), NumRetries: {BuilderNumRetries}, MaxFailedPoints: {MaxFailedPoints}, MaxPointRMS: {MaxPointRMS}";
+        }
+
+        public InputTarget DSOProxyTarget()
+        {
+            return Target;
+        }
+
+        public InputTarget Target = null;
+
+        public InputTarget FindTarget(ISequenceContainer c)
+        {
+            while (c != null)
+            {
+                if (c is IDSOTargetProxy dso)
+                {
+                    return dso.DSOProxyTarget();
+                }
+                c = c.Parent;
+            }
+            return null;
         }
     }
 }
