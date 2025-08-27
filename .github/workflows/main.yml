@@ -3,7 +3,10 @@ name: Build and Release
 # Every time a new tag with the typical assembly format is pushed this will run. e.g. tag name "1.0.0.0"
 on:
   workflow_dispatch:
-
+  
+permissions:
+  contents: write
+  
 env:
   # Adjust this to your plugin title
   PLUGIN_NAME: "NINA.Photon.Plugin.ASA"
