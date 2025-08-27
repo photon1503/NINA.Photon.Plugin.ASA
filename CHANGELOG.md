@@ -1,6 +1,9 @@
 
 # Changelog
 
+## 3.2.5.9 (2025-08-27)
+ - Removed unecessary notification when using model builder with a dome.
+
 ## 3.2.5.8
  - Fixed MLPT After Flip trigger not showing up on some systems
  - MLPT will now always get the DSO target coordinates instead of the current mount position.
