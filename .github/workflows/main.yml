@@ -52,7 +52,7 @@ jobs:
       - name: Create Plugin archives and manifests
         run: |
           curl -LO https://raw.githubusercontent.com/isbeorn/nina.plugin.manifests/refs/heads/main/tools/CreateManifest.ps1?raw=true
-          pwsh CreateManifest.ps1 -file "packages/${{ env.PLUGIN_NAME }}/${{ env.PLUGIN_NAME }}.dll" -installerUrl "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/${{ env.PLUGIN_NAME }}.${{ steps.get_version.outputs.version }}.zip" -createArchive -includeAll -appendVersionToArchive
+          pwsh CreateManifest.ps1 -file "packages/${{ env.PLUGIN_NAME }}/${{ env.PLUGIN_NAME }}.dll" -installerUrl "https://github.com/${{ github.repository }}/releases/download/${{ steps.get_version.outputs.version }}/${{ env.PLUGIN_NAME }}.${{ steps.get_version.outputs.version }}.zip" -createArchive -includeAll -appendVersionToArchive
           
           
       - name: List files for debugging
