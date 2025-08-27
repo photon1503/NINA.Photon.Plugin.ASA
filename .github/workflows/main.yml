@@ -130,3 +130,14 @@ jobs:
           git add .
           git commit -m "Add manifest for release ${{ steps.get_version.outputs.version }}"
           git push origin "${{ env.PLUGIN_NAME_SANITIZED }}/${{ github.ref_name }}"
+
+      - name: Create pull request
+        shell: bash
+        run: |
+          echo "${{ secrets.PAT }}" | gh auth login --with-token
+          gh pr create \
+            --title "Add manifest for ${{ env.PLUGIN_NAME }} ${{ github.ref_name }}" \
+            --body "Automatically generated manifest for release ${{ steps.get_version.outputs.version }}" \
+            --head ${{ github.repository_owner }}:${{ env.PLUGIN_NAME_SANITIZED }}/${{ github.ref_name }} \
+            --base main \
+            --repo isbeorn/nina.plugin.manifests
