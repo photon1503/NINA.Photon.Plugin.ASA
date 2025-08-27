@@ -8,7 +8,6 @@ env:
   # Adjust this to your plugin title
   PLUGIN_NAME: "NINA.Photon.Plugin.ASA"
 
-
 jobs:
   build-and-release:
     runs-on: windows-latest
@@ -71,5 +70,5 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            ./${{ env.PLUGIN_NAME }}/${{ env.PLUGIN_NAME }}/${{ env.PLUGIN_NAME }}.${{ steps.get_version.outputs.version }}.zip
-            ./${{ env.PLUGIN_NAME }}/${{ env.PLUGIN_NAME }}/manifest.json
+            ./${{ env.PLUGIN_NAME }}.${{ steps.get_version.outputs.version }}.zip
+            ./manifest.json
