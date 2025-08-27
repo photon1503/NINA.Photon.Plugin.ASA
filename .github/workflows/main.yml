@@ -71,5 +71,5 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            ./${{ env.PLUGIN_NAME }}/${{ env.PLUGIN_NAME }}.${{ steps.get_version.outputs.version }}.zip
-            ./${{ env.PLUGIN_NAME }}/manifest.json
+            ./${{ env.PLUGIN_NAME }}/${{ env.PLUGIN_NAME }}/${{ env.PLUGIN_NAME }}.${{ steps.get_version.outputs.version }}.zip
+            ./${{ env.PLUGIN_NAME }}/${{ env.PLUGIN_NAME }}/manifest.json
