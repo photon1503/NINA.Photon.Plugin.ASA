@@ -7,7 +7,7 @@ on:
 env:
   # Adjust this to your plugin title
   PLUGIN_NAME: "NINA.Photon.Plugin.ASA"
-  PLUGIN_MANIFEST_PATH: "g/ASA Tools/3.0.0"
+  PLUGIN_MANIFEST_PATH: "a/ASA Tools/3.0.0"
 
 jobs:
   build-and-release:
