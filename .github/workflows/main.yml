@@ -54,11 +54,11 @@ jobs:
         run: |
           curl -LO https://raw.githubusercontent.com/isbeorn/nina.plugin.manifests/refs/heads/main/tools/CreateManifest.ps1?raw=true
           pwsh CreateManifest.ps1 -file "packages/${{ env.PLUGIN_NAME }}/${{ env.PLUGIN_NAME }}.dll" -installerUrl "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/${{ env.PLUGIN_NAME }}.${{ steps.get_version.outputs.version }}.zip" -createArchive -includeAll -appendVersionToArchive
-          Rename-Item -Path "manifest.json" -NewName "${{ env.PLUGIN_NAME }}.${{ steps.get_version.outputs.version }}.manifest.json"
+          
           
       - name: List files for debugging
         run: |
-            ls -R packages
+            ls -R .
 
       - name: Create Release
         id: create_release
@@ -71,5 +71,5 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            packages/${{ env.PLUGIN_NAME }}/${{ env.PLUGIN_NAME }}.${{ steps.get_version.outputs.version }}.zip
-            packages/${{ env.PLUGIN_NAME }}/manifest.json
+            ./${{ env.PLUGIN_NAME }}/${{ env.PLUGIN_NAME }}.${{ steps.get_version.outputs.version }}.zip
+            ./${{ env.PLUGIN_NAME }}/manifest.json
