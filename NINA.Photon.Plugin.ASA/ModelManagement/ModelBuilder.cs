@@ -1174,11 +1174,6 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                                     Logger.Warning("Dome is still slewing after we expected it to be complete");
                                 }
 
-                                if (!IsPointVisibleThroughDome(nextPoint, 1.0d))
-                                {
-                                    Notification.ShowWarning("Next point isn't expected to be visible through the dome. Point will likely fail.");
-                                    Logger.Warning("Next point isn't expected to be visible through the dome. Point will likely fail.");
-                                }
                             }
 
                             // Successfully slewed to point. Take an exposure
