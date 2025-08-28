@@ -85,6 +85,9 @@ namespace NINA.Photon.Plugin.ASA.MLTP
         private DateTime initialTime;
         private bool initialized = false;
         private bool afterFlip = false;
+        private bool subscribed = false;
+        private bool _isApproachingFlip = false;
+        private PierSide _lastPierSide = PierSide.pierUnknown;
 
         [ImportingConstructor]
         public MLPTafterFlip(INighttimeCalculator nighttimeCalculator,
@@ -175,16 +178,21 @@ namespace NINA.Photon.Plugin.ASA.MLTP
 
             try
             {
-                telescopeMediator.AfterMeridianFlip += (sender, args) =>
-                {
-                    afterFlip = true;
-                    return Task.CompletedTask;
-                };
+                telescopeMediator.AfterMeridianFlip += OnAfterMeridianFlip;
+                subscribed = true;
+                Logger.Info("Subscribed to AfterMeridianFlip event");
             }
             catch (Exception ex)
             {
                 Logger.Error($"Error subscribing to AfterMeridianFlip event: {ex.Message}");
+                Logger.Info("Falling back to manual flip detection");
             }
+        }
+
+        private Task OnAfterMeridianFlip(object sender, AfterMeridianFlipEventArgs args)
+        {
+            afterFlip = true;
+            return Task.CompletedTask;
         }
 
         private MLPTafterFlip(MLPTafterFlip cloneMe) : this(
@@ -736,7 +744,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
 
         public override bool ShouldTrigger(ISequenceItem previousItem, ISequenceItem nextItem)
         {
-            if (mount == null || !mountMediator.GetInfo().Connected)
+            if (mount == null)
             {
                 return false;
             }
@@ -746,6 +754,36 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             if (nextItem == null) { return false; }
             if (!(nextItem is IExposureItem exposureItem)) { return false; }
             if (exposureItem.ImageType != "LIGHT") { return false; }
+
+            // manually check for flip
+            if (!subscribed)
+            {
+                var currentPierSide = telescopeMediator.GetInfo().SideOfPier;
+                // Detect when we're approaching the meridian (TimeLeft is decreasing)
+                if (TimeLeft < 15 && !_isApproachingFlip)
+                {
+                    _isApproachingFlip = true;
+                    _lastPierSide = currentPierSide;
+                    Logger.Info($"Approaching flip detected. TimeLeft: {TimeLeft}s, PierSide: {_lastPierSide}");
+                }
+
+                // Detect flip completion: pier side changed AND we were approaching flip
+                if (_isApproachingFlip && currentPierSide != _lastPierSide && options.LastMLPT != DateTime.MinValue)
+                {
+                    _isApproachingFlip = false;
+                    afterFlip = true;
+                    Logger.Info($"Meridian flip detected! PierSide changed from {_lastPierSide} to {currentPierSide}. Timeleft {TimeLeft}");
+                }
+
+                // Reset if we're no longer approaching meridian but no flip occurred
+                if (_isApproachingFlip && TimeLeft > 20)
+                {
+                    _isApproachingFlip = false;
+                    Logger.Info("Reset flip detection - moved away from meridian");
+                }
+
+                _lastPierSide = currentPierSide;
+            }
 
             if (afterFlip)
             {
