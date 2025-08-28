@@ -127,6 +127,7 @@ jobs:
         run: |
           cp "./manifest.json" "./nina.plugin.manifests/manifests/${{ env.PLUGIN_MANIFEST_PATH }}/manifest.json"
           cd nina.plugin.manifests
+          git pull
           git add .
           git commit -m "Add manifest for release ${{ steps.get_version.outputs.version }}"
           git push origin "${{ env.PLUGIN_NAME_SANITIZED }}/${{ github.ref_name }}"
