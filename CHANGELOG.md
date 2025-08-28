@@ -1,6 +1,11 @@
 
 # Changelog
 
+## 3.2.5.10 (2025-08-28)
+ - MLPT After Flip does not work on all NINA version.
+   On system where we do not get an event after a meridian flip, we now use a workaround to manually detect meridan flips.
+	
+	
 ## 3.2.5.9 (2025-08-27)
  - Removed unecessary notification when using model builder with a dome.
 
