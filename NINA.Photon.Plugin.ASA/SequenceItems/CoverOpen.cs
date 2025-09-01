@@ -26,8 +26,8 @@ using System.Threading.Tasks;
 
 namespace NINA.Photon.Plugin.ASA.SequenceItems
 {
-    [ExportMetadata("Name", "Open Cover")]
-    [ExportMetadata("Description", "Open the ASA cover")]
+    [ExportMetadata("Name", "Covers Open")]
+    [ExportMetadata("Description", "Open the ASA cover (via Autoslew, not ACC)")]
     [ExportMetadata("Icon", "ASASVG")]
     [ExportMetadata("Category", "ASA Tools")]
     [Export(typeof(ISequenceItem))]

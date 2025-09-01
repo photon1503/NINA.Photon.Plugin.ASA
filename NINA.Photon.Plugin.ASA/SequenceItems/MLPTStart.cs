@@ -42,7 +42,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
     [ExportMetadata("Name", "MLPT Start")]
     [ExportMetadata("Description", "Build and start MLPT")]
     [ExportMetadata("Icon", "ASAMLPTSVG")]
-    [ExportMetadata("Category", "ASA Tools")]
+    [ExportMetadata("Category", "ASA Tools (MLPT)")]
     [Export(typeof(ISequenceItem))]
     [JsonObject(MemberSerialization.OptIn)]
     public class MLPTStart : SequenceItem, IValidatable, IDSOTargetProxy
@@ -126,7 +126,6 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             }
         }
 
-        [JsonProperty]
         public InputCoordinates Coordinates { get; set; }
 
         private IASAOptions options;
@@ -555,28 +554,6 @@ namespace NINA.Photon.Plugin.ASA.MLTP
 
         public override void AfterParentChanged()
         {
-            var contextCoordinates = ItemUtility.RetrieveContextCoordinates(this.Parent);
-
-            if (contextCoordinates == null)
-            {
-                // Navigate up 2 levels to bypass the immediate container
-                contextCoordinates = ItemUtility.RetrieveContextCoordinates(
-                   this.Parent?.Parent?.Parent ?? // Trigger container's parent
-                   this.Parent?.Parent            // Immediate container
-               );
-            }
-
-            if (contextCoordinates != null)
-            {
-                Coordinates.Coordinates = contextCoordinates.Coordinates;
-
-                //  UpdateModelPoints();
-                Inherited = true;
-            }
-            else
-            {
-                Inherited = false;
-            }
             Validate();
         }
 

@@ -303,7 +303,9 @@
                             </Style.Triggers>
                         </Style>
                     </GroupBox.Style>
+
                     <GroupBox.Header>
+
                         <Grid Height="36" Margin="5">
                             <TextBlock
                   VerticalAlignment="Center"
@@ -311,27 +313,28 @@
                   Text="Sync Options" />
                         </Grid>
                     </GroupBox.Header>
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" SharedSizeGroup="SettingsCol0" />
-                            <ColumnDefinition Width="Auto" SharedSizeGroup="SettingsCol1" />
-                            <ColumnDefinition Width="Auto" SharedSizeGroup="SettingsCol2" />
-                        </Grid.ColumnDefinitions>
-                        <Grid.RowDefinitions>
-                            <RowDefinition />
-                            <RowDefinition />
-                            <RowDefinition />
-                            <RowDefinition />
-                            <RowDefinition />
-                            <RowDefinition />
-                        </Grid.RowDefinitions>
-                        <TextBlock
+                    <Expander Header="Show..." IsExpanded="False">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" SharedSizeGroup="SettingsCol0" />
+                                <ColumnDefinition Width="Auto" SharedSizeGroup="SettingsCol1" />
+                                <ColumnDefinition Width="Auto" SharedSizeGroup="SettingsCol2" />
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition />
+                                <RowDefinition />
+                                <RowDefinition />
+                                <RowDefinition />
+                                <RowDefinition />
+                                <RowDefinition />
+                            </Grid.RowDefinitions>
+                            <TextBlock
             Grid.Row="0" Grid.Column="0"
             HorizontalAlignment="Left"
             VerticalAlignment="Center"
             Text="Add Sync Points"
             ToolTip="{StaticResource MaxFailedPoints_Tooltip}" />
-                        <CheckBox
+                            <CheckBox
                    Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2"
                    Margin="10,5,0,0"
                    HorizontalAlignment="Left"
@@ -340,13 +343,13 @@
                    ToolTip="Create addtional sychronization points"
                     IsChecked="{Binding UseSync}"></CheckBox>
 
-                        <TextBlock
+                            <TextBlock
                    Grid.Row="1" Grid.Column="0"
                    HorizontalAlignment="Left"
                    VerticalAlignment="Center"
                    Text="Add Sync Point every"
                    ToolTip="Degrees Azimuth" />
-                        <ninactrl:UnitTextBox
+                            <ninactrl:UnitTextBox
                Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"
                MinWidth="80"
                Margin="10,5,0,0"
@@ -355,19 +358,19 @@
                Unit="° Degrees (Azimuth)"
                IsEnabled="True"
                ToolTip="Create a new synch point every x degrees azimuth">
-                            <Binding Path="SyncEveryHA">
-                            </Binding>
-                        </ninactrl:UnitTextBox>
-                        <!-- East Sync Point -->
+                                <Binding Path="SyncEveryHA">
+                                </Binding>
+                            </ninactrl:UnitTextBox>
+                            <!-- East Sync Point -->
 
-                        <TextBlock
+                            <TextBlock
                    Grid.Row="2" Grid.Column="0"
                    HorizontalAlignment="Left"
                    VerticalAlignment="Center"
                    Text="East Sync Point"
                    ToolTip="Hour Angle" />
 
-                        <ninactrl:UnitTextBox
+                            <ninactrl:UnitTextBox
                    Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="1"
                    MinWidth="80"
                    Margin="10,5,0,0"
@@ -376,11 +379,11 @@
                    Unit="↕ Altitude"
                    IsEnabled="True"
                    ToolTip="Altitude">
-                            <Binding Path="SyncEastAltitude">
-                            </Binding>
-                        </ninactrl:UnitTextBox>
+                                <Binding Path="SyncEastAltitude">
+                                </Binding>
+                            </ninactrl:UnitTextBox>
 
-                        <ninactrl:UnitTextBox
+                            <ninactrl:UnitTextBox
                             Grid.Row="2" Grid.Column="2" Grid.ColumnSpan="1"
                             MinWidth="80"
                             Margin="10,5,0,0"
@@ -389,20 +392,20 @@
                             Unit="↔ Azimuth"
                             IsEnabled="True"
                             ToolTip="Azimuth">
-                            <Binding Path="SyncEastAzimuth">
-                            </Binding>
-                        </ninactrl:UnitTextBox>
+                                <Binding Path="SyncEastAzimuth">
+                                </Binding>
+                            </ninactrl:UnitTextBox>
 
-                        <!-- East Ref Point -->
+                            <!-- East Ref Point -->
 
-                        <TextBlock
+                            <TextBlock
                    Grid.Row="3" Grid.Column="0"
                    HorizontalAlignment="Left"
                    VerticalAlignment="Center"
                    Text="East Ref Point"
                    ToolTip="Hour Angle" />
 
-                        <ninactrl:UnitTextBox
+                            <ninactrl:UnitTextBox
                Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="1"
                MinWidth="80"
                Margin="10,5,0,0"
@@ -411,11 +414,11 @@
                Unit="↕ Altitude"
                IsEnabled="True"
                ToolTip="Altitude">
-                            <Binding Path="RefEastAltitude">
-                            </Binding>
-                        </ninactrl:UnitTextBox>
+                                <Binding Path="RefEastAltitude">
+                                </Binding>
+                            </ninactrl:UnitTextBox>
 
-                        <ninactrl:UnitTextBox
+                            <ninactrl:UnitTextBox
                 Grid.Row="3" Grid.Column="2" Grid.ColumnSpan="1"
                 MinWidth="80"
                 Margin="10,5,0,0"
@@ -424,19 +427,19 @@
                 Unit="↔ Azimuth"
                 IsEnabled="True"
                 ToolTip="Azimuth">
-                            <Binding Path="RefEastAzimuth">
-                            </Binding>
-                        </ninactrl:UnitTextBox>
+                                <Binding Path="RefEastAzimuth">
+                                </Binding>
+                            </ninactrl:UnitTextBox>
 
-                        <!-- West Sync Point -->
+                            <!-- West Sync Point -->
 
-                        <TextBlock
+                            <TextBlock
                    Grid.Row="4" Grid.Column="0"
                    HorizontalAlignment="Left"
                    VerticalAlignment="Center"
                    Text="West Sync Point"
                    ToolTip="Hour Angle" />
-                        <ninactrl:UnitTextBox
+                            <ninactrl:UnitTextBox
                    Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="1"
                    MinWidth="80"
                    Margin="10,5,0,0"
@@ -445,10 +448,10 @@
                    Unit="↕ Altitude"
                    IsEnabled="True"
                    ToolTip="Altitude">
-                            <Binding Path="SyncWestAltitude">
-                            </Binding>
-                        </ninactrl:UnitTextBox>
-                        <ninactrl:UnitTextBox
+                                <Binding Path="SyncWestAltitude">
+                                </Binding>
+                            </ninactrl:UnitTextBox>
+                            <ninactrl:UnitTextBox
                 Grid.Row="4" Grid.Column="2" Grid.ColumnSpan="1"
                 MinWidth="80"
                 Margin="10,5,0,0"
@@ -457,20 +460,20 @@
                 Unit="↔ Azimuth"
                 IsEnabled="True"
                 ToolTip="Azimuth">
-                            <Binding Path="SyncWestAzimuth">
-                            </Binding>
-                        </ninactrl:UnitTextBox>
+                                <Binding Path="SyncWestAzimuth">
+                                </Binding>
+                            </ninactrl:UnitTextBox>
 
-                        <!-- West Ref Point -->
+                            <!-- West Ref Point -->
 
-                        <TextBlock
+                            <TextBlock
                    Grid.Row="5" Grid.Column="0"
                    HorizontalAlignment="Left"
                    VerticalAlignment="Center"
                    Text="West Ref Point"
                    ToolTip="Hour Angle" />
 
-                        <ninactrl:UnitTextBox
+                            <ninactrl:UnitTextBox
                    Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="1"
                    MinWidth="80"
                    Margin="10,5,0,0"
@@ -479,11 +482,11 @@
                    Unit="↕ Altitude"
                    IsEnabled="True"
                    ToolTip="Altitude">
-                            <Binding Path="RefWestAltitude">
-                            </Binding>
-                        </ninactrl:UnitTextBox>
+                                <Binding Path="RefWestAltitude">
+                                </Binding>
+                            </ninactrl:UnitTextBox>
 
-                        <ninactrl:UnitTextBox
+                            <ninactrl:UnitTextBox
                             Grid.Row="5" Grid.Column="2" Grid.ColumnSpan="1"
                             MinWidth="80"
                             Margin="10,5,0,0"
@@ -492,10 +495,11 @@
                             Unit="↔ Azimuth"
                             IsEnabled="True"
                             ToolTip="Azimuth">
-                            <Binding Path="RefWestAzimuth">
-                            </Binding>
-                        </ninactrl:UnitTextBox>
-                    </Grid>
+                                <Binding Path="RefWestAzimuth">
+                                </Binding>
+                            </ninactrl:UnitTextBox>
+                        </Grid>
+                    </Expander>
                 </GroupBox>
                 <!-- sync options end -->
                 <GroupBox>

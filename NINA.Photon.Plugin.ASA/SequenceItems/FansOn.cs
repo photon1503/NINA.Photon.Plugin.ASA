@@ -31,7 +31,7 @@ using System.Threading.Tasks;
 namespace NINA.Photon.Plugin.ASA.FansOn
 {
     [ExportMetadata("Name", "Fans On")]
-    [ExportMetadata("Description", "Start the ASA fans")]
+    [ExportMetadata("Description", "Start the ASA fans (via Autoslew, not ACC)")]
     [ExportMetadata("Icon", "ASASVG")]
     [ExportMetadata("Category", "ASA Tools")]
     [Export(typeof(ISequenceItem))]

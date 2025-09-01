@@ -47,7 +47,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
     [ExportMetadata("Name", "MLPT Disable After Time")]
     [ExportMetadata("Description", "Disable MLPT after x Minutes")]
     [ExportMetadata("Icon", "ASAMLPTSVG")]
-    [ExportMetadata("Category", "ASA Tools")]
+    [ExportMetadata("Category", "ASA Tools (MLPT)")]
     [Export(typeof(ISequenceTrigger))]
     [JsonObject(MemberSerialization.OptIn)]
     public class MLPTstopAfterTime : SequenceTrigger, IValidatable

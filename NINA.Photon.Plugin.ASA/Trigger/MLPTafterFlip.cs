@@ -55,7 +55,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
     [ExportMetadata("Name", "MLPT After Flip")]
     [ExportMetadata("Description", "Start MLPT after Meridian Flip")]
     [ExportMetadata("Icon", "ASAMLPTSVG")]
-    [ExportMetadata("Category", "ASA Tools")]
+    [ExportMetadata("Category", "ASA Tools (MLPT)")]
     [Export(typeof(ISequenceTrigger))]
     [JsonObject(MemberSerialization.OptIn)]
     public class MLPTafterFlip : SequenceTrigger, IValidatable, IDSOTargetProxy
@@ -331,7 +331,6 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             }
         }
 
-        [JsonProperty]
         public InputCoordinates Coordinates { get; set; }
 
         private IList<string> issues = new List<string>();
