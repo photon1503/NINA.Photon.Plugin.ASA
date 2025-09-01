@@ -54,7 +54,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
     [ExportMetadata("Name", "MLPT After Time")]
     [ExportMetadata("Description", "Start MLPT after x Minutes")]
     [ExportMetadata("Icon", "ASAMLPTSVG")]
-    [ExportMetadata("Category", "ASA Tools")]
+    [ExportMetadata("Category", "ASA Tools (MLPT)")]
     [Export(typeof(ISequenceTrigger))]
     [JsonObject(MemberSerialization.OptIn)]
     public class MLPTafterTime : SequenceTrigger, IValidatable, IDSOTargetProxy
@@ -312,7 +312,6 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             }
         }
 
-        [JsonProperty]
         public InputCoordinates Coordinates { get; set; }
 
         private IList<string> issues = new List<string>();

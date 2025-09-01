@@ -1,6 +1,13 @@
 
 # Changelog
 
+## 3.2.5.12 (2025-09-01)
+- Fixed crashing NINA when using MLPT Start with invalid coordinates in the sequence
+- Sync options are now collapsed by default in the ASA Model Builder UI
+- Grouped all sequence items and triggers by ASA Tools (MLPT) and others
+- Added info to tooltips for Fans and Covers that these are only for Autoslew, not ACC
+
+
 ## 3.2.5.10 (2025-08-28)
  - MLPT After Flip does not work on all NINA version.
    On system where we do not get an event after a meridian flip, we now use a workaround to manually detect meridan flips.

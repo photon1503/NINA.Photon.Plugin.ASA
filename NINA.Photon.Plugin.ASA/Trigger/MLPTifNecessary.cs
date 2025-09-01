@@ -54,7 +54,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
     [ExportMetadata("Name", "MLPT Restart If Exceeds")]
     [ExportMetadata("Description", "Start MLPT if next expososure exceeds the MLPT time left")]
     [ExportMetadata("Icon", "ASAMLPTSVG")]
-    [ExportMetadata("Category", "ASA Tools")]
+    [ExportMetadata("Category", "ASA Tools (MLPT)")]
     [Export(typeof(ISequenceTrigger))]
     [JsonObject(MemberSerialization.OptIn)]
     public class MLPTifExceeds : SequenceTrigger, IValidatable, IDSOTargetProxy
@@ -293,7 +293,6 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             }
         }
 
-        [JsonProperty]
         public InputCoordinates Coordinates { get; set; }
 
         private IList<string> issues = new List<string>();

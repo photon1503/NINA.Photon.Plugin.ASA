@@ -31,7 +31,7 @@ namespace NINA.Photon.Plugin.ASA.SequenceItems
     [ExportMetadata("Name", "MLPT Stop")]
     [ExportMetadata("Description", "Stop MLPT")]
     [ExportMetadata("Icon", "ASAMLPTSVG")]
-    [ExportMetadata("Category", "ASA Tools")]
+    [ExportMetadata("Category", "ASA Tools (MLPT)")]
     [Export(typeof(ISequenceItem))]
     [JsonObject(MemberSerialization.OptIn)]
     public class MLTPStop : SequenceItem, IValidatable
