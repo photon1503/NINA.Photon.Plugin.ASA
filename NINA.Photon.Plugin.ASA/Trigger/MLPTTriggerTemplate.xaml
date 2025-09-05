@@ -434,6 +434,37 @@
     </WrapPanel>
 
     <WrapPanel
+  x:Key="FlipRotatorTemplate"
+  x:Shared="false"
+  Orientation="Horizontal">
+        <StackPanel Orientation="Vertical">
+
+            <StackPanel Orientation="Vertical">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock VerticalAlignment="Center" Text="Tracking Limit ±" />
+                    <ninactrl:UnitTextBox
+                  MinWidth="50"
+                  Margin="5,0,0,0"
+                  VerticalAlignment="Center"
+                  VerticalContentAlignment="Center"
+                  Text="{Binding TrackingLimit}"
+                  TextAlignment="Right"
+                      ToolTip="Tracking limit in degrees at 180"
+                  Unit="°" />
+
+                    <TextBlock VerticalAlignment="Center" Text="Flip at" />
+                    <ComboBox
+                         Height="30"
+                         Margin="10,0,0,0"
+                         ItemsSource="{Binding FlipAtChoices}"
+                         SelectedItem="{Binding FlipAt}">
+                    </ComboBox>
+                </StackPanel>
+            </StackPanel>
+        </StackPanel>
+    </WrapPanel>
+
+    <WrapPanel
      x:Key="BuildSiderealPathModelDetailsFlip"
      x:Shared="false"
      Orientation="Horizontal">
@@ -470,6 +501,22 @@
                     <TextBlock VerticalAlignment="Center" Text=" min / " />
                     <TextBlock VerticalAlignment="Center" Text="{Binding Amount}" />
                     <TextBlock VerticalAlignment="Center" Text=" min" />
+                </StackPanel>
+            </view:SequenceBlockView.SequenceItemProgressContent>
+        </view:SequenceBlockView>
+    </DataTemplate>
+
+    <DataTemplate DataType="{x:Type local:FlipRotator}">
+        <view:SequenceBlockView DataContext="{Binding}">
+
+            <view:SequenceBlockView.SequenceItemContent>
+                <ContentPresenter Content="{StaticResource FlipRotatorTemplate}" />
+            </view:SequenceBlockView.SequenceItemContent>
+            <view:SequenceBlockView.SequenceItemProgressContent>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock VerticalAlignment="Center" Text="Position " />
+                    <TextBlock VerticalAlignment="Center" Text="{Binding MechanicalPosition}" />
+                    <TextBlock VerticalAlignment="Center" Text="°" />
                 </StackPanel>
             </view:SequenceBlockView.SequenceItemProgressContent>
         </view:SequenceBlockView>
