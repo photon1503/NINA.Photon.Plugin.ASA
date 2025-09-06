@@ -203,9 +203,9 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             {
                 try
                 {
-                    MechanicalPosition = rotatorMediator.GetInfo().MechanicalPosition;
+                    MechanicalPosition = Math.Round(rotatorMediator.GetInfo().MechanicalPosition, 3);
                 }
-                catch
+                catch (Exception ex)
                 {
                     MechanicalPosition = 0;
                 }
@@ -254,6 +254,8 @@ namespace NINA.Photon.Plugin.ASA.MLTP
         public override bool ShouldTrigger(ISequenceItem previousItem, ISequenceItem nextItem)
         {
             bool _shouldTrigger = false;
+
+            Logger.Info($"Checking rotator position. Current: {rotatorMediator.GetInfo().MechanicalPosition}, FlipAt: {FlipAt}, Limit: {TrackingLimit}");
 
             if (rotatorMediator.GetDevice() == null || !rotatorMediator.GetDevice().Connected)
             {
@@ -306,7 +308,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
                 i.Add("Rotator is not connected");
             }
 
-            MechanicalPosition = rotatorMediator.GetInfo().Position;
+            MechanicalPosition = Math.Round(rotatorMediator.GetInfo().MechanicalPosition, 3);
 
             Issues = i;
             return i.Count == 0;

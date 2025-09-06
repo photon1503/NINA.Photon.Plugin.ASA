@@ -1,6 +1,9 @@
 
 # Changelog
 
+## 3.2.6.1 (2025-09-06)
+- Added Triger to flip the ASA rotator by 180° if it is approaching the hardware limits.
+
 ## 3.2.5.12 (2025-09-01)
 - Fixed crashing NINA when using MLPT Start with invalid coordinates in the sequence
 - Sync options are now collapsed by default in the ASA Model Builder UI
