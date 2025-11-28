@@ -704,37 +704,54 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             }
         }
 
+        private double lastValidMLPTMinutes = 0; // remembers last non-zero MLPT time left
+
         public override bool ShouldTrigger(ISequenceItem previousItem, ISequenceItem nextItem)
         {
-            MLPTTimeLeft = Math.Round(mount.MLPTTimeLeft(), 2);
+            // Safely read MLPT time left (minutes); mount API may return 0 after another trigger stops MLPT
+            double reportedMinutes = 0;
+            try
+            {
+                var resp = mount.MLPTTimeLeft(); // Response<double>
+                reportedMinutes = resp != null ? resp.Value : 0;
+            }
+            catch { reportedMinutes = 0; }
+
+            if (reportedMinutes > 0)
+            {
+                lastValidMLPTMinutes = reportedMinutes; // update cache
+            }
+            MLPTTimeLeft = Math.Round(reportedMinutes, 2);
+
+            // Use last non-zero value if current is zero (simple resilience)
+            double effectiveMinutes = reportedMinutes > 0 ? reportedMinutes : lastValidMLPTMinutes;
 
             if (nextItem == null) { return false; }
-            if (!(nextItem is IExposureItem exposureItem)) { return false; }
+            if (nextItem is not IExposureItem exposureItem) { return false; }
             if (exposureItem.ImageType != "LIGHT") { return false; }
-
-            bool shouldTrigger = false;
 
             if (options.LastMLPT == DateTime.MinValue)
             {
-                Logger.Debug("MLPTifExceeds: LastMLPT is not set, skipping trigger check.");
-                options.LastMLPT = DateTime.Now;
+                Logger.Debug("MLPTifExceeds: LastMLPT not set; skipping.");
+                options.LastMLPT = DateTime.Now; // initialize
                 return false;
             }
 
-            if (MLPTTimeLeft == 0)
+            if (effectiveMinutes <= 0)
             {
+                // Still nothing useful; do not trigger
                 return false;
             }
 
-            double exposureTime = exposureItem.ExposureTime;
+            double exposureSeconds = exposureItem.ExposureTime;
 
-            if (MLPTTimeLeft * 60 < exposureTime)
+            if (effectiveMinutes * 60.0 < exposureSeconds)
             {
-                Logger.Debug("MLPTifExceeds: MLPT time left is 0, skipping trigger check.");
+                Logger.Debug($"MLPTifExceeds: Exposure {exposureSeconds:0.##}s > MLPT remaining {effectiveMinutes:0.##} min. Triggering.");
                 return true;
             }
 
-            return shouldTrigger;
+            return false;
         }
 
         private ImmutableList<ModelPoint> ModelPoints = ImmutableList.Create<ModelPoint>();

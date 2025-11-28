@@ -1,6 +1,11 @@
 
 # Changelog
 
+## 3.2.6.3 (2025-11-27)
+
+ - Updated dependencies to NINA 3.2
+ - Fixed *MLPT If Exceeds* Trigger not working properly in some conditions
+
 ## 3.2.6.1 (2025-09-06)
 - Added Triger to flip the ASA rotator by 180° if it is approaching the hardware limits.
 

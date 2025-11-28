@@ -197,6 +197,18 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             }
         }
 
+        private double timeUntilFlip;
+
+        public double TimeUntilFlip
+        {
+            get => timeUntilFlip;
+            set
+            {
+                timeUntilFlip = value;
+                RaisePropertyChanged();
+            }
+        }
+
         public override void Initialize()
         {
             if (!initialized)
@@ -266,6 +278,10 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             double limit1 = FlipAt - TrackingLimit;
             double limit2 = FlipAt + TrackingLimit;
 
+            TimeUntilFlip = Math.Round(CalculateTimeUntilFlip(currentPosition) / 60.0, 1);
+
+            Logger.Info($"Flip will occur in approximately {timeUntilFlip:F1} seconds");
+
             // Normalize all angles to 0-360 range
             currentPosition = NormalizeAngle(currentPosition);
             limit1 = NormalizeAngle(limit1);
@@ -283,6 +299,145 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             }
 
             return _shouldTrigger;
+        }
+
+        private double CalculateTimeUntilFlip(double currentPosition)
+        {
+            try
+            {
+                // Get current mechanical position
+                double currentPos = NormalizeAngle(currentPosition);
+
+                var telescopeInfo = telescopeMediator.GetInfo();
+                if (telescopeInfo == null)
+                    return double.NaN;
+
+                double alt = telescopeInfo.Altitude;
+                double az = telescopeInfo.Azimuth;
+                var lat = profileService.ActiveProfile.AstrometrySettings.Latitude;
+
+                if (alt <= 5) // Increased minimum altitude to avoid numerical issues
+                {
+                    Logger.Warning("Target too low - cannot calculate derotator rate");
+                    return double.NaN;
+                }
+
+                // Use analytical formula for rate of change of parallactic angle
+                // dχ/dt = (cos(φ) * cos(Az)) / sin(Alt) [in radians per sidereal hour]
+                double lat_rad = lat * Math.PI / 180.0;
+                double az_rad = az * Math.PI / 180.0;
+                double alt_rad = alt * Math.PI / 180.0;
+
+                // Calculate rate in radians per sidereal HOUR
+                double dchi_dt_rad_per_hour = (Math.Cos(lat_rad) * Math.Cos(az_rad)) / Math.Sin(alt_rad);
+
+                // Convert to degrees per second:
+                // 1. Convert radians to degrees: * (180/π)
+                // 2. Convert per hour to per second: / 3600
+                double parallacticRate = dchi_dt_rad_per_hour * (180.0 / Math.PI) / 3600.0;
+
+                Logger.Info($"Mechanical: {currentPos}°, Parallactic rate: {parallacticRate:F6}°/s");
+
+                // Determine which trigger boundary we're approaching
+                double upperBoundary = NormalizeAngle(FlipAt + TrackingLimit); // 20°
+                double lowerBoundary = NormalizeAngle(FlipAt - TrackingLimit); // 340°
+
+                double timeToFlip;
+
+                // For Alt-Az mount, the derotator typically moves counter-clockwise (negative rate)
+                if (parallacticRate > 0) // Moving clockwise (unusual)
+                {
+                    if (currentPos < upperBoundary)
+                    {
+                        timeToFlip = (upperBoundary - currentPos) / parallacticRate;
+                    }
+                    else
+                    {
+                        timeToFlip = (upperBoundary + 360 - currentPos) / parallacticRate;
+                    }
+                }
+                else if (parallacticRate < 0) // Moving counter-clockwise (typical)
+                {
+                    if (currentPos > lowerBoundary)
+                    {
+                        timeToFlip = (lowerBoundary - currentPos) / parallacticRate;
+                    }
+                    else
+                    {
+                        timeToFlip = (lowerBoundary - 360 - currentPos) / parallacticRate;
+                    }
+                }
+                else
+                {
+                    return double.PositiveInfinity;
+                }
+
+                Logger.Info($"Time until flip: {timeToFlip:F0} seconds (≈{timeToFlip / 60:F1} minutes)");
+                return timeToFlip;
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Error calculating time until flip: {ex.Message}");
+                return double.NaN;
+            }
+        }
+
+        private (double alt, double az) ConvertRaDecToAltAz(double ra, double dec, double lat, double lon, double height, DateTime time)
+        {
+            // Implement RA/Dec to Alt/Az conversion using your preferred method
+            // This typically involves calculating the Local Sidereal Time first
+            // Here's a simplified placeholder implementation
+
+            double lst = CalculateLocalSiderealTime(lon, time);
+            double ha = lst - ra; // hour angle in degrees
+
+            // Convert to radians for calculations
+            double ha_rad = ha * Math.PI / 180.0;
+            double dec_rad = dec * Math.PI / 180.0;
+            double lat_rad = lat * Math.PI / 180.0;
+
+            // Calculate altitude
+            double sin_alt = Math.Sin(dec_rad) * Math.Sin(lat_rad) +
+                            Math.Cos(dec_rad) * Math.Cos(lat_rad) * Math.Cos(ha_rad);
+            double alt = Math.Asin(sin_alt) * 180.0 / Math.PI;
+
+            // Calculate azimuth
+            double cos_az = (Math.Sin(dec_rad) - Math.Sin(alt * Math.PI / 180.0) * Math.Sin(lat_rad)) /
+                           (Math.Cos(alt * Math.PI / 180.0) * Math.Cos(lat_rad));
+            double az = Math.Acos(cos_az) * 180.0 / Math.PI;
+
+            // Adjust azimuth based on hour angle
+            if (Math.Sin(ha_rad) > 0)
+                az = 360 - az;
+
+            return (alt, az);
+        }
+
+        private double CalculateParallacticAngle(double az, double alt, double lat)
+        {
+            // Convert to radians
+            double az_rad = az * Math.PI / 180.0;
+            double alt_rad = alt * Math.PI / 180.0;
+            double lat_rad = lat * Math.PI / 180.0;
+
+            // Calculate parallactic angle
+            double numerator = Math.Sin(az_rad);
+            double denominator = Math.Cos(az_rad) * Math.Sin(lat_rad) + Math.Tan(alt_rad) * Math.Cos(lat_rad);
+
+            double chi_rad = Math.Atan2(numerator, denominator);
+            return chi_rad * 180.0 / Math.PI;
+        }
+
+        private double CalculateLocalSiderealTime(double longitude, DateTime time)
+        {
+            // Simplified LST calculation - you may want to use a more precise method
+            DateTime j2000 = new DateTime(2000, 1, 1, 12, 0, 0, DateTimeKind.Utc);
+            double daysSinceJ2000 = (time - j2000).TotalDays;
+
+            double gmst = 280.46061837 + 360.98564736629 * daysSinceJ2000;
+            double lst = gmst + longitude;
+
+            return NormalizeAngle(lst);
         }
 
         private double NormalizeAngle(double angle)

@@ -46,7 +46,6 @@ using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
 
-using nom.tam.fits;
 using NINA.Image.Interfaces;
 using NINA.PlateSolving;
 using static System.Windows.Forms.AxHost;
@@ -161,7 +160,6 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             this.CoordsFromScopeCommand = new AsyncRelayCommand(CoordsFromScope);
             this.ImportCommand = new AsyncRelayCommand(ImportPoints);
             this.ExportCommand = new AsyncRelayCommand(ExportPoints);
-            this.SolveCommand = new AsyncRelayCommand(SolveFolder);
 
             this.ModelPointGenerationType = ModelPointGenerationTypeEnum.GoldenSpiral;
 
@@ -1194,49 +1192,6 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 this.ModelPoints = ImmutableList.ToImmutableList(points);
 
                 this.DisplayModelPoints = new AsyncObservableCollection<ModelPoint>(points);
-            }
-
-            return Task.FromResult(true);
-        }
-
-        private Task<bool> SolveFolder(CancellationToken ct)
-        {
-            System.Windows.Forms.FolderBrowserDialog folderBrowserDialog = new System.Windows.Forms.FolderBrowserDialog();
-            System.Windows.Forms.DialogResult result = folderBrowserDialog.ShowDialog();
-            if (result == System.Windows.Forms.DialogResult.OK)
-            {
-                modelBuildCts = new CancellationTokenSource();
-                modelBuildStopCts = new CancellationTokenSource();
-                var cancelTokenSource = CancellationTokenSource.CreateLinkedTokenSource(ct, modelBuildCts.Token);
-
-                var options = new ModelBuilderOptions()
-                {
-                    WestToEastSorting = modelBuilderOptions.WestToEastSorting,
-                    NumRetries = BuilderNumRetries,
-                    MaxPointRMS = MaxPointRMS,
-                    MinimizeDomeMovement = modelBuilderOptions.MinimizeDomeMovementEnabled,
-                    MinimizeMeridianFlips = modelBuilderOptions.MinimizeMeridianFlipsEnabled,
-                    AllowBlindSolves = modelBuilderOptions.AllowBlindSolves,
-                    MaxConcurrency = modelBuilderOptions.MaxConcurrency,
-                    DomeShutterWidth_mm = modelBuilderOptions.DomeShutterWidth_mm,
-                    MaxFailedPoints = MaxFailedPoints,
-                    RemoveHighRMSPointsAfterBuild = modelBuilderOptions.RemoveHighRMSPointsAfterBuild,
-                    PlateSolveSubframePercentage = modelBuilderOptions.PlateSolveSubframePercentage,
-                    UseSync = modelBuilderOptions.UseSync,
-                    SyncEastAltitude = modelBuilderOptions.SyncEastAltitude,
-                    SyncWestAltitude = modelBuilderOptions.SyncWestAltitude,
-                    SyncEastAzimuth = modelBuilderOptions.SyncEastAzimuth,
-                    SyncWestAzimuth = modelBuilderOptions.SyncWestAzimuth,
-                    SyncEveryHA = modelBuilderOptions.SyncEveryHA,
-                    RefEastAltitude = modelBuilderOptions.RefEastAltitude,
-                    RefWestAltitude = modelBuilderOptions.RefWestAltitude,
-                    RefEastAzimuth = modelBuilderOptions.RefEastAzimuth,
-                    RefWestAzimuth = modelBuilderOptions.RefWestAzimuth
-                };
-
-                Notification.ShowInformation($"ASA model solver started");
-
-                var sol = modelBuilder.SolveFolder(folderBrowserDialog.SelectedPath, options, ct, modelBuildStopCts.Token, progress, stepProgress);
             }
 
             return Task.FromResult(true);

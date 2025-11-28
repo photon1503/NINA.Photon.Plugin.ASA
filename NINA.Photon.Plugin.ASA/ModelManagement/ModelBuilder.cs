@@ -32,7 +32,7 @@ using NINA.PlateSolving.Interfaces;
 using NINA.Profile.Interfaces;
 using NINA.Sequencer.SequenceItem.Platesolving;
 using NINA.WPF.Base.Mediator;
-using nom.tam.fits;
+
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -230,132 +230,6 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                         (mp1, mp2) => !westToEast ? DOUBLE_COMPARER.Compare(mp1.Azimuth, mp2.Azimuth) : DOUBLE_COMPARER.Compare(mp2.Azimuth, mp1.Azimuth));
                 }
             }
-        }
-
-        public async Task<bool> SolveFolder(string folder,
-                                                    ModelBuilderOptions options,
-                                                    CancellationToken ct = default,
-                                                    CancellationToken stopToken = default,
-                                                    IProgress<ApplicationStatus> overallProgress = null,
-                                                    IProgress<ApplicationStatus> stepProgress = null)
-        {
-            // open and create new POX file
-            string programDataPath = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
-            string poxFileName = System.IO.Path.Combine(folder, @"PointingErrors-NINA.pox");
-
-            /* Read all FITS files in the folder */
-            string[] files = Directory.GetFiles(folder, "*.fits");
-
-            Logger.Info($"Start Platesolve for {files.Count()} files in folder {folder}");
-
-            var plateSolver = plateSolverFactory.GetPlateSolver(profileService.ActiveProfile.PlateSolveSettings);
-            var blindSolver = options.AllowBlindSolves ? plateSolverFactory.GetBlindSolver(profileService.ActiveProfile.PlateSolveSettings) : null;
-            var solver = plateSolverFactory.GetImageSolver(plateSolver, blindSolver);
-            var parameter = new PlateSolveParameter()
-            {
-                Binning = profileService.ActiveProfile.PlateSolveSettings.Binning,
-                Coordinates = telescopeMediator.GetCurrentPosition(),
-                DownSampleFactor = profileService.ActiveProfile.PlateSolveSettings.DownSampleFactor,
-                FocalLength = profileService.ActiveProfile.TelescopeSettings.FocalLength,
-                MaxObjects = profileService.ActiveProfile.PlateSolveSettings.MaxObjects,
-                PixelSize = profileService.ActiveProfile.CameraSettings.PixelSize,
-                Regions = profileService.ActiveProfile.PlateSolveSettings.Regions,
-                SearchRadius = profileService.ActiveProfile.PlateSolveSettings.SearchRadius,
-                DisableNotifications = true
-            };
-
-            POXlist poxList = new POXlist();
-            //var tasks = new List<Task>();
-
-            int cnt = 1;
-            foreach (string file in files)
-            {
-                if (File.Exists(file))
-                {
-                    try
-                    {
-                        // Read FITS header
-                        nom.tam.fits.Fits fits = new nom.tam.fits.Fits(file);
-                        BasicHDU hdu = fits.ReadHDU();
-                        if (hdu != null)
-                        {
-                            // Get the header from the HDU
-                            Header header = hdu.Header;
-
-                            // Retrieve specific header values using their keywords
-                            string objectName = header.GetStringValue("OBJECT");
-                            double objctra = header.GetDoubleValue("OBJCTRA");
-                            double objctdec = header.GetDoubleValue("OBJCTDEC");
-                            string dateobs = header.GetStringValue("DATE-OBS");
-                            string pierSide = header.GetStringValue("NOTES");
-                            double expTime = header.GetDoubleValue("EXPOSURE");
-
-                            fits.Close();
-
-                            // Plate solve
-                            Logger.Info($"Start Platesolve for {file}");
-
-                            overallProgress?.Report(new ApplicationStatus()
-                            {
-                                Status = $"Solving",
-                                ProgressType = ApplicationStatus.StatusProgressType.ValueOfMaxValue,
-                                Progress = cnt,
-                                MaxProgress = files.Length,
-                            });
-
-                            stepProgress?.Report(new ApplicationStatus() { });
-
-                            IImageData image;
-                            try
-                            {
-                                string fullFileName = System.IO.Path.Combine(folder, file);
-                                image = await imageDataFactory.CreateFromFile(fullFileName, (int)profileService.ActiveProfile.CameraSettings.BitDepth, false, profileService.ActiveProfile.CameraSettings.RawConverter);
-                                Logger.Info($"{file} loaded with {image.Properties.Width}x{image.Properties.Height} pixels");
-                            }
-                            catch (Exception ex)
-                            {
-                                Logger.Error($"Failed to load image {file}: {ex.Message}");
-                                continue;
-                            }
-
-                            parameter.Coordinates = new Coordinates(Angle.ByHours(objctra), Angle.ByDegree(objctdec), Epoch.J2000);
-
-                            PlateSolveResult solved = null;
-                            try
-                            {
-                                solved = await solver.Solve(image, parameter, stepProgress, ct);
-                                if (solved?.Success != true)
-                                {
-                                    Logger.Error($"Failed to plate solve (2) {file}");
-                                    continue;
-                                }
-                                Logger.Info($"Plate solve successful for {file} at RA={solved.Coordinates.RA} DEC={solved.Coordinates.Dec}");
-                                poxList.Add(new POX(cnt++, dateobs, expTime, objctra, solved.Coordinates.RA, objctdec, solved.Coordinates.Dec, int.Parse(pierSide)));
-                            }
-                            catch (Exception ex)
-                            {
-                                Logger.Error($"Failed to plate solve (1) {file}: {ex.Message}");
-                                continue;
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.Error($"Error processing file {file}: {ex.Message}");
-                    }
-                }
-            }
-
-            //await Task.WhenAll(tasks);
-
-            poxList.WritePOX(poxFileName);
-            poxList.Clear();
-
-            Logger.Info("ASA Platesolve finished");
-            Notification.ShowSuccess("ASA Folder solve finished");
-
-            overallProgress?.Report(new ApplicationStatus() { });
-            return true;
         }
 
         public async Task<LoadedAlignmentModel> Build(IList<ModelPoint> modelPoints, ModelBuilderOptions options, CancellationToken ct = default, CancellationToken stopToken = default, IProgress<ApplicationStatus> overallProgress = null, IProgress<ApplicationStatus> stepProgress = null)
@@ -1173,7 +1047,6 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                                     Notification.ShowWarning("Dome is still slewing after we expected it to be complete. Check that other systems aren't interfering with the dome");
                                     Logger.Warning("Dome is still slewing after we expected it to be complete");
                                 }
-
                             }
 
                             // Successfully slewed to point. Take an exposure
