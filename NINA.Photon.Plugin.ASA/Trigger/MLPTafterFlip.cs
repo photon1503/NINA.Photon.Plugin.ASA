@@ -175,18 +175,6 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             Amount = 90;
             SiderealTrackEndOffsetMinutes = 90;
             OldPierside = PierSide.pierUnknown;
-
-            try
-            {
-                telescopeMediator.AfterMeridianFlip += OnAfterMeridianFlip;
-                subscribed = true;
-                Logger.Info("Subscribed to AfterMeridianFlip event");
-            }
-            catch (Exception ex)
-            {
-                Logger.Error($"Error subscribing to AfterMeridianFlip event: {ex.Message}");
-                Logger.Info("Falling back to manual flip detection");
-            }
         }
 
         private Task OnAfterMeridianFlip(object sender, AfterMeridianFlipEventArgs args)
@@ -253,6 +241,17 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             initialized = false;
             initialTime = DateTime.MinValue;
             options.LastMLPT = DateTime.MinValue;
+
+            try
+            {
+                telescopeMediator.AfterMeridianFlip -= OnAfterMeridianFlip;
+                subscribed = false;
+                Logger.Info("Unsubscribed from AfterMeridianFlip event");
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Error unsubscribing from AfterMeridianFlip event: {ex.Message}");
+            }
             base.SequenceBlockTeardown();
         }
 
@@ -739,6 +738,19 @@ namespace NINA.Photon.Plugin.ASA.MLTP
                 initialTime = DateTime.Now;
                 initialized = true;
             }
+
+            try
+            {
+                telescopeMediator.AfterMeridianFlip += OnAfterMeridianFlip;
+                subscribed = true;
+                Logger.Info("Subscribed to AfterMeridianFlip event");
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Error subscribing to AfterMeridianFlip event: {ex.Message}");
+                Logger.Info("Falling back to manual flip detection");
+            }
+            base.SequenceBlockInitialize();
         }
 
         public override bool ShouldTrigger(ISequenceItem previousItem, ISequenceItem nextItem)

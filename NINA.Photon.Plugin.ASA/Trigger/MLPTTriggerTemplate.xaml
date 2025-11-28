@@ -517,6 +517,10 @@
                     <TextBlock VerticalAlignment="Center" Text="Position " />
                     <TextBlock VerticalAlignment="Center" Text="{Binding MechanicalPosition}" />
                     <TextBlock VerticalAlignment="Center" Text="°" />
+
+                    <TextBlock VerticalAlignment="Center" Text="| Limit in " Margin="5,0,0,0" />
+                    <TextBlock VerticalAlignment="Center" Text="{Binding TimeUntilFlip}" />
+                    <TextBlock VerticalAlignment="Center" Text=" min" />
                 </StackPanel>
             </view:SequenceBlockView.SequenceItemProgressContent>
         </view:SequenceBlockView>
