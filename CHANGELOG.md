@@ -5,6 +5,7 @@
 
  - Updated dependencies to NINA 3.2
  - Fixed *MLPT If Exceeds* Trigger not working properly in some conditions
+- Removed *Solve Folder*
 
 ## 3.2.6.1 (2025-09-06)
 - Added Triger to flip the ASA rotator by 180° if it is approaching the hardware limits.
