@@ -46,7 +46,7 @@
     <Compile Update="SequenceItems\MLPTTemplate.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Update="Trigger\MLPTTriggerTemplate.xaml.cs">
+    <Compile Update="Trigger\TriggerTemplate.xaml.cs">
       <SubType>Code</SubType>
     </Compile>
   </ItemGroup>
