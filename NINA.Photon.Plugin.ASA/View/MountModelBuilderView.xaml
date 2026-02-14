@@ -948,11 +948,23 @@
             </StackPanel>
             <Separator Grid.Column="1" Margin="10,5,5,10" Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" />
             <Grid Grid.Column="2" Grid.Row="0" Grid.RowSpan="2">
+                <Grid.Resources>
+                    <Style x:Key="HideMlptChartsRowOnGoldenSpiral" TargetType="{x:Type RowDefinition}">
+                        <Setter Property="Height" Value="Auto" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding ElementName=PART_ModelPointGenerationTypeList, Path=SelectedItem}" Value="0">
+                                <Setter Property="Height" Value="0" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Grid.Resources>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" MinWidth="200" />
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="1*" />
+                    <RowDefinition Style="{StaticResource HideMlptChartsRowOnGoldenSpiral}" />
+                    <RowDefinition Style="{StaticResource HideMlptChartsRowOnGoldenSpiral}" />
                     <RowDefinition Height="1*" />
                 </Grid.RowDefinitions>
                 <oxy:Plot
@@ -1110,8 +1122,164 @@
                     </oxy:Plot.Annotations>
                 </oxy:Plot>
 
-                <oxy:Plot
+                <Grid Grid.Row="1" Grid.Column="0" Margin="8,0,8,8">
+                    <Grid.Style>
+                        <Style TargetType="{x:Type Grid}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding ElementName=PART_ModelPointGenerationTypeList, Path=SelectedItem}" Value="0">
+                                    <Setter Property="FrameworkElement.Visibility" Value="Collapsed" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Grid.Style>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <TextBlock
+                        Grid.Row="0"
+                        HorizontalAlignment="Center"
+                        Margin="0,0,0,4"
+                        Text="{Binding MaxMlptRaErrorArcsec, StringFormat=max RA Error {0:0.0} arcsec}" />
+                    <oxy:Plot
                         Grid.Row="1"
+                        MinWidth="300"
+                        MinHeight="120"
+                        Height="120"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Top"
+                        Background="{StaticResource BackgroundBrush}"
+                        PlotAreaBackground="{StaticResource BackgroundBrush}"
+                        PlotAreaBorderColor="Transparent">
+                        <oxy:Plot.Axes>
+                            <oxy:LinearAxis
+                                Position="Bottom"
+                                Minimum="1"
+                                Maximum="{Binding MlptPlannedImageCount}"
+                                MajorStep="1"
+                                MinorStep="1"
+                                StringFormat="0"
+                                IsPanEnabled="False"
+                                IsZoomEnabled="False"
+                                MajorGridlineStyle="LongDash"
+                                MinorGridlineStyle="None"
+                                TextColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}"
+                                TicklineColor="{Binding Path=Color, Source={StaticResource SecondaryBrush}}"
+                                AxislineColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}"
+                                Title="Image #" />
+                            <oxy:LinearAxis
+                                Position="Left"
+                                Minimum="{Binding MlptRaErrorAxisMinimumArcsec}"
+                                Maximum="{Binding MlptRaErrorAxisLimitArcsec}"
+                                IsPanEnabled="False"
+                                IsZoomEnabled="False"
+                                MajorGridlineStyle="LongDash"
+                                MinorGridlineStyle="None"
+                                TextColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}"
+                                TicklineColor="{Binding Path=Color, Source={StaticResource SecondaryBrush}}"
+                                AxislineColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}"
+                                Title="arcsec" />
+                        </oxy:Plot.Axes>
+                        <oxy:Plot.Series>
+                            <oxy:LineSeries
+                                ItemsSource="{Binding MlptRaErrorPoints}"
+                                DataFieldX="X"
+                                DataFieldY="Y"
+                                MarkerType="Circle"
+                                MarkerSize="3"
+                                TrackerFormatString="{}Image #{X:0}&#x0a;RA Error: {Y:0.##} arcsec" />
+                        </oxy:Plot.Series>
+                        <oxy:Plot.Annotations>
+                            <oxy:LineAnnotation
+                                Type="Horizontal"
+                                Y="0"
+                                LineStyle="Solid"
+                                StrokeThickness="1"
+                                Color="{Binding Path=Color, Source={StaticResource PrimaryBrush}, Converter={StaticResource SetAlphaToColorConverter}, ConverterParameter=70}" />
+                        </oxy:Plot.Annotations>
+                    </oxy:Plot>
+                </Grid>
+
+                <Grid Grid.Row="2" Grid.Column="0" Margin="8,0,8,8">
+                    <Grid.Style>
+                        <Style TargetType="{x:Type Grid}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding ElementName=PART_ModelPointGenerationTypeList, Path=SelectedItem}" Value="0">
+                                    <Setter Property="FrameworkElement.Visibility" Value="Collapsed" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Grid.Style>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <TextBlock
+                        Grid.Row="0"
+                        HorizontalAlignment="Center"
+                        Margin="0,0,0,4"
+                        Text="{Binding MaxMlptDeErrorArcsec, StringFormat=max DE Error {0:0.0} arcsec}" />
+                    <oxy:Plot
+                        Grid.Row="1"
+                        MinWidth="300"
+                        MinHeight="120"
+                        Height="120"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Top"
+                        Background="{StaticResource BackgroundBrush}"
+                        PlotAreaBackground="{StaticResource BackgroundBrush}"
+                        PlotAreaBorderColor="Transparent">
+                        <oxy:Plot.Axes>
+                            <oxy:LinearAxis
+                                Position="Bottom"
+                                Minimum="1"
+                                Maximum="{Binding MlptPlannedImageCount}"
+                                MajorStep="1"
+                                MinorStep="1"
+                                StringFormat="0"
+                                IsPanEnabled="False"
+                                IsZoomEnabled="False"
+                                MajorGridlineStyle="LongDash"
+                                MinorGridlineStyle="None"
+                                TextColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}"
+                                TicklineColor="{Binding Path=Color, Source={StaticResource SecondaryBrush}}"
+                                AxislineColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}"
+                                Title="Image #" />
+                            <oxy:LinearAxis
+                                Position="Left"
+                                Minimum="{Binding MlptDeErrorAxisMinimumArcsec}"
+                                Maximum="{Binding MlptDeErrorAxisLimitArcsec}"
+                                IsPanEnabled="False"
+                                IsZoomEnabled="False"
+                                MajorGridlineStyle="LongDash"
+                                MinorGridlineStyle="None"
+                                TextColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}"
+                                TicklineColor="{Binding Path=Color, Source={StaticResource SecondaryBrush}}"
+                                AxislineColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}"
+                                Title="arcsec" />
+                        </oxy:Plot.Axes>
+                        <oxy:Plot.Series>
+                            <oxy:LineSeries
+                                ItemsSource="{Binding MlptDeErrorPoints}"
+                                DataFieldX="X"
+                                DataFieldY="Y"
+                                MarkerType="Circle"
+                                MarkerSize="3"
+                                TrackerFormatString="{}Image #{X:0}&#x0a;DE Error: {Y:0.##} arcsec" />
+                        </oxy:Plot.Series>
+                        <oxy:Plot.Annotations>
+                            <oxy:LineAnnotation
+                                Type="Horizontal"
+                                Y="0"
+                                LineStyle="Solid"
+                                StrokeThickness="1"
+                                Color="{Binding Path=Color, Source={StaticResource PrimaryBrush}, Converter={StaticResource SetAlphaToColorConverter}, ConverterParameter=70}" />
+                        </oxy:Plot.Annotations>
+                    </oxy:Plot>
+                </Grid>
+
+                <oxy:Plot
+                        Grid.Row="3"
                         Grid.Column="0"
                         Width="Auto"
                         MinWidth="300"

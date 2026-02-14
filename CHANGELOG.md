@@ -1,6 +1,10 @@
 
 # Changelog
 
+## 3.2.6.4 (2025-11-29)
+
+  Added new trigger Mount Dither.
+
 ## 3.2.6.3 (2025-11-27)
 
  - Updated dependencies to NINA 3.2

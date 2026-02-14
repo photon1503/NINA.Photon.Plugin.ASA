@@ -35,6 +35,7 @@ using OxyPlot;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Collections.Specialized;
 using System.ComponentModel;
 using System.ComponentModel.Composition;
 using System.IO;
@@ -184,6 +185,144 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                     });
                 }, null);
             }
+
+            SubscribeDisplayModelPoints(displayModelPoints);
+            RefreshMlptErrorCharts();
+        }
+
+        private void SubscribeDisplayModelPoints(AsyncObservableCollection<ModelPoint> points)
+        {
+            if (points == null)
+            {
+                return;
+            }
+
+            points.CollectionChanged += DisplayModelPoints_CollectionChanged;
+            foreach (var point in points)
+            {
+                point.PropertyChanged += DisplayModelPoint_PropertyChanged;
+            }
+        }
+
+        private void UnsubscribeDisplayModelPoints(AsyncObservableCollection<ModelPoint> points)
+        {
+            if (points == null)
+            {
+                return;
+            }
+
+            points.CollectionChanged -= DisplayModelPoints_CollectionChanged;
+            foreach (var point in points)
+            {
+                point.PropertyChanged -= DisplayModelPoint_PropertyChanged;
+            }
+        }
+
+        private void DisplayModelPoints_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            if (e.OldItems != null)
+            {
+                foreach (ModelPoint oldPoint in e.OldItems)
+                {
+                    oldPoint.PropertyChanged -= DisplayModelPoint_PropertyChanged;
+                }
+            }
+
+            if (e.NewItems != null)
+            {
+                foreach (ModelPoint newPoint in e.NewItems)
+                {
+                    newPoint.PropertyChanged += DisplayModelPoint_PropertyChanged;
+                }
+            }
+
+            RefreshMlptPlannedImageCount();
+            RefreshMlptErrorCharts();
+        }
+
+        private void DisplayModelPoint_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        {
+            if (string.IsNullOrWhiteSpace(e.PropertyName)
+                || e.PropertyName == nameof(ModelPoint.MountReportedRightAscension)
+                || e.PropertyName == nameof(ModelPoint.PlateSolvedRightAscension)
+                || e.PropertyName == nameof(ModelPoint.MountReportedDeclination)
+                || e.PropertyName == nameof(ModelPoint.PlateSolvedDeclination)
+                || e.PropertyName == nameof(ModelPoint.CaptureTime)
+                || e.PropertyName == nameof(ModelPoint.ModelIndex)
+                || e.PropertyName == nameof(ModelPoint.ModelPointState))
+            {
+                RefreshMlptErrorCharts();
+            }
+        }
+
+        private static double NormalizeSignedDifference(double value, double period)
+        {
+            var normalized = value % period;
+            if (normalized > period / 2.0)
+            {
+                normalized -= period;
+            }
+            else if (normalized < -period / 2.0)
+            {
+                normalized += period;
+            }
+
+            return normalized;
+        }
+
+        private void RefreshMlptErrorCharts()
+        {
+            var pointsWithSolveData = DisplayModelPoints
+                .Where(point => !double.IsNaN(point.MountReportedRightAscension)
+                             && !double.IsNaN(point.PlateSolvedRightAscension)
+                             && !double.IsNaN(point.MountReportedDeclination)
+                             && !double.IsNaN(point.PlateSolvedDeclination)
+                             && point.ModelPointState == ModelPointStateEnum.AddedToModel)
+                .OrderBy(point => point.CaptureTime == DateTime.MinValue ? DateTime.MaxValue : point.CaptureTime)
+                .ThenBy(point => point.ModelIndex)
+                .ToList();
+
+            var raPoints = new List<DataPoint>();
+            var dePoints = new List<DataPoint>();
+            double maxRaErrorArcsec = 0.0;
+            double maxDeErrorArcsec = 0.0;
+
+            for (int pointIndex = 0; pointIndex < pointsWithSolveData.Count; pointIndex++)
+            {
+                var point = pointsWithSolveData[pointIndex];
+
+                var raDifferenceHours = NormalizeSignedDifference(
+                    point.PlateSolvedRightAscension - point.MountReportedRightAscension,
+                    24.0);
+                var raErrorArcsec = raDifferenceHours * 15.0 * 3600.0;
+
+                var deDifferenceDegrees = NormalizeSignedDifference(
+                    point.PlateSolvedDeclination - point.MountReportedDeclination,
+                    360.0);
+                var deErrorArcsec = deDifferenceDegrees * 3600.0;
+
+                var imageNumber = pointIndex + 1;
+                raPoints.Add(new DataPoint(imageNumber, raErrorArcsec));
+                dePoints.Add(new DataPoint(imageNumber, deErrorArcsec));
+
+                maxRaErrorArcsec = Math.Max(maxRaErrorArcsec, Math.Abs(raErrorArcsec));
+                maxDeErrorArcsec = Math.Max(maxDeErrorArcsec, Math.Abs(deErrorArcsec));
+            }
+
+            MlptRaErrorPoints = new AsyncObservableCollection<DataPoint>(raPoints);
+            MlptDeErrorPoints = new AsyncObservableCollection<DataPoint>(dePoints);
+
+            MaxMlptRaErrorArcsec = maxRaErrorArcsec;
+            MaxMlptDeErrorArcsec = maxDeErrorArcsec;
+
+            MlptRaErrorAxisLimitArcsec = Math.Max(1.0, Math.Ceiling(maxRaErrorArcsec));
+            MlptDeErrorAxisLimitArcsec = Math.Max(1.0, Math.Ceiling(maxDeErrorArcsec));
+        }
+
+        private void RefreshMlptPlannedImageCount()
+        {
+            var currentCount = DisplayModelPoints?.Count ?? 0;
+            MlptPlannedImageCount = Math.Max(1, currentCount);
         }
 
         private void ModelBuilderOptions_PropertyChanged(object sender, PropertyChangedEventArgs e)
@@ -1611,10 +1750,119 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             get => displayModelPoints;
             set
             {
+                UnsubscribeDisplayModelPoints(displayModelPoints);
                 displayModelPoints = value;
+                SubscribeDisplayModelPoints(displayModelPoints);
+                RaisePropertyChanged();
+                RefreshMlptPlannedImageCount();
+                RefreshMlptErrorCharts();
+            }
+        }
+
+        private int mlptPlannedImageCount = 1;
+
+        public int MlptPlannedImageCount
+        {
+            get => mlptPlannedImageCount;
+            private set
+            {
+                if (mlptPlannedImageCount != value)
+                {
+                    mlptPlannedImageCount = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private AsyncObservableCollection<DataPoint> mlptRaErrorPoints = new AsyncObservableCollection<DataPoint>();
+
+        public AsyncObservableCollection<DataPoint> MlptRaErrorPoints
+        {
+            get => mlptRaErrorPoints;
+            private set
+            {
+                mlptRaErrorPoints = value;
                 RaisePropertyChanged();
             }
         }
+
+        private AsyncObservableCollection<DataPoint> mlptDeErrorPoints = new AsyncObservableCollection<DataPoint>();
+
+        public AsyncObservableCollection<DataPoint> MlptDeErrorPoints
+        {
+            get => mlptDeErrorPoints;
+            private set
+            {
+                mlptDeErrorPoints = value;
+                RaisePropertyChanged();
+            }
+        }
+
+        private double maxMlptRaErrorArcsec;
+
+        public double MaxMlptRaErrorArcsec
+        {
+            get => maxMlptRaErrorArcsec;
+            private set
+            {
+                if (Math.Abs(maxMlptRaErrorArcsec - value) > double.Epsilon)
+                {
+                    maxMlptRaErrorArcsec = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private double maxMlptDeErrorArcsec;
+
+        public double MaxMlptDeErrorArcsec
+        {
+            get => maxMlptDeErrorArcsec;
+            private set
+            {
+                if (Math.Abs(maxMlptDeErrorArcsec - value) > double.Epsilon)
+                {
+                    maxMlptDeErrorArcsec = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private double mlptRaErrorAxisLimitArcsec = 1.0;
+
+        public double MlptRaErrorAxisLimitArcsec
+        {
+            get => mlptRaErrorAxisLimitArcsec;
+            private set
+            {
+                if (Math.Abs(mlptRaErrorAxisLimitArcsec - value) > double.Epsilon)
+                {
+                    mlptRaErrorAxisLimitArcsec = value;
+                    RaisePropertyChanged();
+                    RaisePropertyChanged(nameof(MlptRaErrorAxisMinimumArcsec));
+                }
+            }
+        }
+
+        public double MlptRaErrorAxisMinimumArcsec => -MlptRaErrorAxisLimitArcsec;
+
+        private double mlptDeErrorAxisLimitArcsec = 1.0;
+
+        public double MlptDeErrorAxisLimitArcsec
+        {
+            get => mlptDeErrorAxisLimitArcsec;
+            private set
+            {
+                if (Math.Abs(mlptDeErrorAxisLimitArcsec - value) > double.Epsilon)
+                {
+                    mlptDeErrorAxisLimitArcsec = value;
+                    RaisePropertyChanged();
+                    RaisePropertyChanged(nameof(MlptDeErrorAxisMinimumArcsec));
+                }
+            }
+        }
+
+        public double MlptDeErrorAxisMinimumArcsec => -MlptDeErrorAxisLimitArcsec;
 
         public int BuilderNumRetries
         {
