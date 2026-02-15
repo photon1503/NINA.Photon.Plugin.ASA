@@ -226,67 +226,162 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             var guessSpacing = Math.Sqrt(HEMISPHERE_SURFACE_DEGREES2 / desiredPointCount);
             guessSpacing = Math.Max(0.5d, Math.Min(90.0d, guessSpacing));
 
-            double bestRaSpacing = guessSpacing;
-            double bestDecSpacing = guessSpacing;
-            int bestDifference = int.MaxValue;
-            int maxGenerated = 0;
+            var bestSpacing = guessSpacing;
+            var maxGenerated = 0;
+            var candidates = new List<(double spacing, int generated, int difference, int stabilityPenalty)>();
 
-            void Evaluate(double raSpacing, double decSpacing)
+            void EvaluateScalar(double spacing)
             {
-                if (raSpacing <= 0.0d || decSpacing <= 0.0d || raSpacing > 90.0d || decSpacing > 90.0d)
+                if (spacing <= 0.0d || spacing > 90.0d)
                 {
                     return;
                 }
 
-                var generatedCount = EstimateGeneratedAutoGridCount(raSpacing, decSpacing, horizon);
+                var generatedCount = EstimateGeneratedAutoGridCount(spacing, spacing, horizon);
                 if (generatedCount <= 0)
                 {
                     return;
                 }
 
                 maxGenerated = Math.Max(maxGenerated, generatedCount);
+
                 var difference = Math.Abs(generatedCount - desiredPointCount);
-
-                if (difference < bestDifference ||
-                    (difference == bestDifference && generatedCount > desiredPointCount))
-                {
-                    bestDifference = difference;
-                    bestRaSpacing = raSpacing;
-                    bestDecSpacing = decSpacing;
-                }
+                var stabilityPenalty = EstimateAutoGridCountStabilityPenalty(spacing, spacing, horizon, generatedCount);
+                candidates.Add((spacing, generatedCount, difference, stabilityPenalty));
             }
 
-            for (var decSpacing = 3.0d; decSpacing <= 35.0d; decSpacing += 0.5d)
+            for (var spacing = 0.5d; spacing <= 90.0d; spacing += 0.25d)
             {
-                var baseline = EstimateGeneratedAutoGridCount(decSpacing, decSpacing, horizon);
-                if (baseline <= 0)
-                {
-                    continue;
-                }
-
-                Evaluate(decSpacing, decSpacing);
-
-                var raGuess = decSpacing * ((double)baseline / desiredPointCount);
-                Evaluate(raGuess, decSpacing);
-                Evaluate(raGuess * 0.85d, decSpacing);
-                Evaluate(raGuess * 1.15d, decSpacing);
+                EvaluateScalar(spacing);
             }
 
-            for (var decSpacing = Math.Max(0.5d, bestDecSpacing - 3.0d); decSpacing <= bestDecSpacing + 3.0d; decSpacing += 0.25d)
+            for (var spacing = Math.Max(0.5d, bestSpacing - 2.0d); spacing <= Math.Min(90.0d, bestSpacing + 2.0d); spacing += 0.05d)
             {
-                for (var raSpacing = Math.Max(0.5d, bestRaSpacing - 3.0d); raSpacing <= bestRaSpacing + 3.0d; raSpacing += 0.25d)
-                {
-                    Evaluate(raSpacing, decSpacing);
-                }
+                EvaluateScalar(spacing);
             }
 
-            var points = GenerateAutoGrid(bestRaSpacing, bestDecSpacing, horizon);
+            if (candidates.Count == 0)
+            {
+                return GenerateAutoGrid(guessSpacing, guessSpacing, horizon);
+            }
+
+            var minDifference = candidates.Min(c => c.difference);
+            var proximityWindow = Math.Max(4, (int)Math.Round(desiredPointCount * 0.12d));
+            var allowedDifference = Math.Max(minDifference, proximityWindow);
+            var minimumReasonableGenerated = maxGenerated >= desiredPointCount
+                ? Math.Max(3, (int)Math.Round(desiredPointCount * 0.75d))
+                : 0;
+
+            var shortlist = candidates
+                .Where(c => c.difference <= allowedDifference && c.generated >= minimumReasonableGenerated)
+                .ToList();
+
+            if (shortlist.Count == 0)
+            {
+                shortlist = candidates
+                    .Where(c => c.difference == minDifference)
+                    .ToList();
+            }
+
+            var bestCandidate = shortlist
+                .OrderBy(c => c.stabilityPenalty)
+                .ThenBy(c => c.difference)
+                .ThenBy(c => c.generated > desiredPointCount ? 1 : 0)
+                .ThenBy(c => c.spacing)
+                .First();
+
+            bestSpacing = bestCandidate.spacing;
+
+            var points = GenerateAutoGrid(bestSpacing, bestSpacing, horizon);
             var generated = points.Count(p => p.ModelPointState == ModelPointStateEnum.Generated);
-            if (generated < desiredPointCount)
+            if (generated != desiredPointCount)
             {
-                Logger.Warning($"AutoGrid requested {desiredPointCount} points but only {generated} satisfy current horizon/altitude constraints. Max found during search: {maxGenerated}.");
+                Logger.Info($"AutoGrid requested {desiredPointCount} points; selected equidistant spacing {bestSpacing:F2}° with {generated} points (±{Math.Abs(generated - desiredPointCount)}). Max found during search: {maxGenerated}.");
             }
             return points;
+        }
+
+        private (double raSpacingDegrees, double decSpacingDegrees, int generatedCount)? FindBestQuantizedAutoGridCandidate(int desiredPointCount, CustomHorizon horizon)
+        {
+            (double raSpacingDegrees, double decSpacingDegrees, int generatedCount)? best = null;
+            double bestScore = double.MaxValue;
+            var maxDifference = Math.Max(12, (int)Math.Round(desiredPointCount * 0.20d));
+
+            var preferredVisibleRingCount = Math.Max(6, (int)Math.Round(Math.Sqrt(desiredPointCount)) - 1);
+            var preferredDecSpacing = 90.0d / Math.Max(1, preferredVisibleRingCount - 1);
+
+            for (var ringSegments = 8; ringSegments <= 36; ringSegments++)
+            {
+                var decSpacing = 180.0d / ringSegments;
+                for (var baseCount = 8; baseCount <= 144; baseCount++)
+                {
+                    var raSpacing = 360.0d / baseCount;
+                    var generatedCount = EstimateGeneratedAutoGridCount(raSpacing, decSpacing, horizon);
+                    if (generatedCount <= 0)
+                    {
+                        continue;
+                    }
+
+                    var difference = Math.Abs(generatedCount - desiredPointCount);
+                    if (difference > maxDifference)
+                    {
+                        continue;
+                    }
+
+                    var stabilityPenalty = EstimateAutoGridCountStabilityPenalty(raSpacing, decSpacing, horizon, generatedCount);
+                    var ringFamilyPenalty = Math.Abs(decSpacing - preferredDecSpacing);
+                    var overTargetPenalty = generatedCount > desiredPointCount ? 1.0d : 0.0d;
+                    var score =
+                        (stabilityPenalty * 100.0d) +
+                        (ringFamilyPenalty * 5.0d) +
+                        (difference * 1.0d) +
+                        (overTargetPenalty * 0.5d);
+
+                    if (score < bestScore ||
+                        (Math.Abs(score - bestScore) < 1e-9d && best.HasValue && generatedCount <= desiredPointCount && best.Value.generatedCount > desiredPointCount) ||
+                        (Math.Abs(score - bestScore) < 1e-9d && !best.HasValue))
+                    {
+                        best = (raSpacing, decSpacing, generatedCount);
+                        bestScore = score;
+                    }
+                }
+            }
+
+            return best;
+        }
+
+        private int EstimateAutoGridCountStabilityPenalty(double raSpacingDegrees, double decSpacingDegrees, CustomHorizon horizon, int centerCount)
+        {
+            if (centerCount <= 0)
+            {
+                return int.MaxValue;
+            }
+
+            var penalty = 0;
+            var offsets = new (double raOffset, double decOffset)[]
+            {
+                (-0.5d, 0.0d),
+                (0.5d, 0.0d),
+                (0.0d, -0.5d),
+                (0.0d, 0.5d)
+            };
+
+            foreach (var (raOffset, decOffset) in offsets)
+            {
+                var candidateRaSpacing = Math.Max(0.5d, Math.Min(90.0d, raSpacingDegrees + raOffset));
+                var candidateDecSpacing = Math.Max(0.5d, Math.Min(90.0d, decSpacingDegrees + decOffset));
+                var candidateCount = EstimateGeneratedAutoGridCount(candidateRaSpacing, candidateDecSpacing, horizon);
+                if (candidateCount <= 0)
+                {
+                    penalty += centerCount;
+                }
+                else
+                {
+                    penalty += Math.Abs(candidateCount - centerCount);
+                }
+            }
+
+            return penalty;
         }
 
         private int EstimateGeneratedAutoGridCount(double raSpacingDegrees, double decSpacingDegrees, CustomHorizon horizon)

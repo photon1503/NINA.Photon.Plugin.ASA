@@ -38,6 +38,7 @@ using System.Collections.Immutable;
 using System.Collections.Specialized;
 using System.ComponentModel;
 using System.ComponentModel.Composition;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -1345,24 +1346,22 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                     1                           PierSide
                 */
                 string[] lines = File.ReadAllLines(selectedFileName);
-                int numberOfPoints = int.Parse(lines[0]);
+                int numberOfPoints = int.Parse(lines[0], CultureInfo.InvariantCulture);
 
                 var points = new List<ModelPoint>();
 
                 for (int lineNo = 1; lineNo <= numberOfPoints * 5; lineNo += 5)
                 {
-                    double azimuth = double.Parse(lines[lineNo]);
-                    double altitude = double.Parse(lines[lineNo + 1]);
-                    bool isMousePoint;
-                    bool.TryParse(lines[lineNo + 2].Trim('"'), out isMousePoint);
+                    double azimuth = double.Parse(lines[lineNo], CultureInfo.InvariantCulture);
+                    double altitude = double.Parse(lines[lineNo + 1], CultureInfo.InvariantCulture);
                     bool onlySlew;
                     bool.TryParse(lines[lineNo + 3].Trim('"'), out onlySlew);
 
-                    int pierSide = int.Parse(lines[lineNo + 4]);
-
-                    double pointAzimuth = azimuth * ((double)180 / Math.PI);
-                    if (isMousePoint)
-                        pointAzimuth = 180 - pointAzimuth;
+                    double pointAzimuth = (azimuth * (180.0 / Math.PI)) % 360.0;
+                    if (pointAzimuth < 0)
+                    {
+                        pointAzimuth += 360.0;
+                    }
 
                     double pointAltitude = altitude * ((double)180 / Math.PI);
 
