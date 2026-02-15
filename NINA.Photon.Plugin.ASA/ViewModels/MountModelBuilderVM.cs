@@ -239,10 +239,19 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
 
             RefreshMlptPlannedImageCount();
             RefreshMlptErrorCharts();
+            RefreshDisplayPathPoints();
         }
 
         private void DisplayModelPoint_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
+            if (string.IsNullOrWhiteSpace(e.PropertyName)
+                || e.PropertyName == nameof(ModelPoint.Azimuth)
+                || e.PropertyName == nameof(ModelPoint.Altitude)
+                || e.PropertyName == nameof(ModelPoint.ModelPointState))
+            {
+                RefreshDisplayPathPoints();
+            }
+
             if (string.IsNullOrWhiteSpace(e.PropertyName)
                 || e.PropertyName == nameof(ModelPoint.MountReportedRightAscension)
                 || e.PropertyName == nameof(ModelPoint.PlateSolvedRightAscension)
@@ -345,6 +354,56 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             {
                 this.DisplayModelPoints = new AsyncObservableCollection<ModelPoint>(this.ModelPoints);
             }
+        }
+
+        private void RefreshDisplayPathPoints()
+        {
+            if (!ShowDisplayPath || DisplayModelPoints == null || DisplayModelPoints.Count == 0)
+            {
+                DisplayPathPoints = new AsyncObservableCollection<DataPoint>();
+                DisplayPathPointsPolar = new AsyncObservableCollection<DataPoint>();
+                return;
+            }
+
+            var previewOptions = new ModelBuilderOptions()
+            {
+                WestToEastSorting = modelBuilderOptions.WestToEastSorting,
+                NumRetries = BuilderNumRetries,
+                MaxPointRMS = MaxPointRMS,
+                MinimizeDomeMovement = modelBuilderOptions.MinimizeDomeMovementEnabled,
+                MinimizeMeridianFlips = modelBuilderOptions.MinimizeMeridianFlipsEnabled,
+                AllowBlindSolves = modelBuilderOptions.AllowBlindSolves,
+                MaxConcurrency = modelBuilderOptions.MaxConcurrency,
+                DomeShutterWidth_mm = modelBuilderOptions.DomeShutterWidth_mm,
+                MaxFailedPoints = MaxFailedPoints,
+                RemoveHighRMSPointsAfterBuild = modelBuilderOptions.RemoveHighRMSPointsAfterBuild,
+                PlateSolveSubframePercentage = modelBuilderOptions.PlateSolveSubframePercentage,
+                UseSync = modelBuilderOptions.UseSync,
+                SyncEastAltitude = modelBuilderOptions.SyncEastAltitude,
+                SyncWestAltitude = modelBuilderOptions.SyncWestAltitude,
+                SyncEastAzimuth = modelBuilderOptions.SyncEastAzimuth,
+                SyncWestAzimuth = modelBuilderOptions.SyncWestAzimuth,
+                SyncEveryHA = modelBuilderOptions.SyncEveryHA,
+                RefEastAltitude = modelBuilderOptions.RefEastAltitude,
+                RefWestAltitude = modelBuilderOptions.RefWestAltitude,
+                RefEastAzimuth = modelBuilderOptions.RefEastAzimuth,
+                RefWestAzimuth = modelBuilderOptions.RefWestAzimuth,
+                ModelPointGenerationType = modelBuilderOptions.ModelPointGenerationType,
+                AutoGridPathOrderingMode = modelBuilderOptions.AutoGridPathOrderingMode,
+                DomeControlNINA = modelBuilderOptions.DomeControlNINA,
+            };
+
+            var orderedPoints = modelBuilder.GetPreviewOrder(ModelPoints.ToList(), previewOptions);
+            var points = orderedPoints
+                .Where(p => !double.IsNaN(p.Azimuth) && !double.IsNaN(p.Altitude))
+                .Select(p => new DataPoint(p.Azimuth, p.Altitude));
+
+            var pointsPolar = orderedPoints
+                .Where(p => !double.IsNaN(p.Azimuth) && !double.IsNaN(p.Altitude))
+                .Select(p => new DataPoint(p.InvertedAltitude, p.Azimuth));
+
+            DisplayPathPoints = new AsyncObservableCollection<DataPoint>(points);
+            DisplayPathPointsPolar = new AsyncObservableCollection<DataPoint>(pointsPolar);
         }
 
         private void ModelBuilder_PointNextUp(object sender, PointNextUpEventArgs e)
@@ -878,6 +937,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             modelBuilderOptions.RefEastAzimuth = options.RefEastAzimuth;
             modelBuilderOptions.RefWestAzimuth = options.RefWestAzimuth;
             modelBuilderOptions.SyncEveryHA = options.SyncEveryHA;
+            modelBuilderOptions.AutoGridPathOrderingMode = options.AutoGridPathOrderingMode;
             return DoBuildModel(modelPoints, options, ct);
         }
 
@@ -955,6 +1015,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 RefEastAzimuth = modelBuilderOptions.RefEastAzimuth,
                 RefWestAzimuth = modelBuilderOptions.RefWestAzimuth,
                 ModelPointGenerationType = modelBuilderOptions.ModelPointGenerationType,
+                AutoGridPathOrderingMode = modelBuilderOptions.AutoGridPathOrderingMode,
             };
             var modelPoints = ModelPoints.ToList();
             return DoBuildModel(modelPoints, options, CancellationToken.None);
@@ -1490,6 +1551,35 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             }
         }
 
+        public AutoGridPathOrderingModeEnum AutoGridPathOrderingMode
+        {
+            get => this.modelBuilderOptions.AutoGridPathOrderingMode;
+            set
+            {
+                if (this.modelBuilderOptions.AutoGridPathOrderingMode != value)
+                {
+                    this.modelBuilderOptions.AutoGridPathOrderingMode = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private bool showDisplayPath = false;
+
+        public bool ShowDisplayPath
+        {
+            get => showDisplayPath;
+            set
+            {
+                if (showDisplayPath != value)
+                {
+                    showDisplayPath = value;
+                    RaisePropertyChanged();
+                    RefreshDisplayPathPoints();
+                }
+            }
+        }
+
         public int AutoGridDesiredPointCount
         {
             get => this.modelBuilderOptions.AutoGridDesiredPointCount;
@@ -1863,6 +1953,31 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 RaisePropertyChanged();
                 RefreshMlptPlannedImageCount();
                 RefreshMlptErrorCharts();
+                RefreshDisplayPathPoints();
+            }
+        }
+
+        private AsyncObservableCollection<DataPoint> displayPathPoints = new AsyncObservableCollection<DataPoint>();
+
+        public AsyncObservableCollection<DataPoint> DisplayPathPoints
+        {
+            get => displayPathPoints;
+            private set
+            {
+                displayPathPoints = value;
+                RaisePropertyChanged();
+            }
+        }
+
+        private AsyncObservableCollection<DataPoint> displayPathPointsPolar = new AsyncObservableCollection<DataPoint>();
+
+        public AsyncObservableCollection<DataPoint> DisplayPathPointsPolar
+        {
+            get => displayPathPointsPolar;
+            private set
+            {
+                displayPathPointsPolar = value;
+                RaisePropertyChanged();
             }
         }
 

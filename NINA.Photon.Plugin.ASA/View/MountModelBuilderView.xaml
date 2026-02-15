@@ -137,6 +137,7 @@
                             <RowDefinition />
                             <RowDefinition />
                             <RowDefinition />
+                            <RowDefinition />
                         </Grid.RowDefinitions>
                         <TextBlock
                               Grid.Row="1" Grid.Column="0"
@@ -197,6 +198,8 @@
                             <RowDefinition />
                             <RowDefinition />
                             <RowDefinition />
+                            <RowDefinition />
+                            <RowDefinition />
                         </Grid.RowDefinitions>
                         <TextBlock
                               Grid.Row="0" Grid.Column="0"
@@ -218,7 +221,39 @@
                         </ComboBox>
 
                         <TextBlock
-                              Grid.Row="1" Grid.Column="0"
+                            Grid.Row="1" Grid.Column="0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Text="Path order"
+                            ToolTip="Choose point traversal order for AutoGrid builds" />
+                        <ComboBox
+                            Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"
+                            Margin="10,5,0,0"
+                            MinWidth="120"
+                            ItemsSource="{Binding Source={util:EnumBindingSource {x:Type tmmodel:AutoGridPathOrderingModeEnum}}}"
+                            SelectedItem="{Binding AutoGridPathOrderingMode}">
+                            <ComboBox.ItemTemplate>
+                              <DataTemplate>
+                                <TextBlock Text="{Binding Converter={StaticResource TM_EnumStaticDescriptionValueConverter}}" />
+                              </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+
+                                                <TextBlock
+                                                        Grid.Row="2" Grid.Column="0"
+                                                        HorizontalAlignment="Left"
+                                                        VerticalAlignment="Center"
+                                                        Text="Show path"
+                                                        ToolTip="Connect generated points using a dotted preview line" />
+                                                <CheckBox
+                                                        Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2"
+                                                        Margin="10,5,0,0"
+                                                        HorizontalAlignment="Left"
+                                                        VerticalAlignment="Center"
+                                                        IsChecked="{Binding ShowDisplayPath}" />
+
+                        <TextBlock
+                                                        Grid.Row="3" Grid.Column="0"
                               HorizontalAlignment="Left"
                               VerticalAlignment="Center"
                               Text="Desired points"
@@ -235,7 +270,7 @@
                             </TextBlock.Style>
                         </TextBlock>
                         <ninactrl:UnitTextBox
-                              Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"
+                                                        Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2"
                               MinWidth="80"
                               Margin="10,5,0,0"
                               HorizontalAlignment="Left"
@@ -263,7 +298,7 @@
                         </ninactrl:UnitTextBox>
 
                         <TextBlock
-                              Grid.Row="2" Grid.Column="0"
+                                                        Grid.Row="4" Grid.Column="0"
                               HorizontalAlignment="Left"
                               VerticalAlignment="Center"
                               Text="RA spacing"
@@ -280,7 +315,7 @@
                             </TextBlock.Style>
                         </TextBlock>
                         <ninactrl:UnitTextBox
-                              Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2"
+                                                        Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2"
                               MinWidth="80"
                               Margin="10,5,0,0"
                               HorizontalAlignment="Left"
@@ -305,7 +340,7 @@
                         </ninactrl:UnitTextBox>
 
                         <TextBlock
-                              Grid.Row="3" Grid.Column="0"
+                                                        Grid.Row="5" Grid.Column="0"
                               HorizontalAlignment="Left"
                               VerticalAlignment="Center"
                               Text="Dec spacing"
@@ -322,7 +357,7 @@
                             </TextBlock.Style>
                         </TextBlock>
                         <ninactrl:UnitTextBox
-                              Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2"
+                                                        Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="2"
                               MinWidth="80"
                               Margin="10,5,0,0"
                               HorizontalAlignment="Left"
@@ -1258,6 +1293,13 @@
                             MarkerSize="4"
                             DataFieldValue="ModelPointState"
                             TrackerFormatString="{}Altitude: {Altitude:##0.00}&#176;&#x0a;Azimuth: {Azimuth:##0.00}&#176;&#x0a;State: {ModelPointStateString}&#x0a;RMS Error: {RMSErrorString}" />
+                        <oxy:LineSeries
+                            ItemsSource="{Binding DisplayPathPoints, UpdateSourceTrigger=PropertyChanged}"
+                            DataFieldX="X"
+                            DataFieldY="Y"
+                            LineStyle="Dot"
+                            StrokeThickness="1.5"
+                            TrackerFormatString="" />
                     </oxy:Plot.Series>
                     <oxy:Plot.Annotations>
                         <oxy:PointAnnotation
@@ -1559,6 +1601,15 @@
                                 TrackerFormatString="{}Altitude: {Altitude:###.####}&#176;&#x0a;Azimuth: {Azimuth:###.####}&#176;&#x0a;RMS Error: {ErrorArcsec:###.##} arcsec"
                                 XAxisKey="AltitudeAxis"
                                 YAxisKey="AzimuthAxis" />
+                            <oxy:LineSeries
+                                ItemsSource="{Binding DisplayPathPointsPolar, UpdateSourceTrigger=PropertyChanged}"
+                                DataFieldX="X"
+                                DataFieldY="Y"
+                                XAxisKey="AltitudeAxis"
+                                YAxisKey="AzimuthAxis"
+                                LineStyle="Dot"
+                                StrokeThickness="1.5"
+                                TrackerFormatString="" />
                     </oxy:Plot.Series>
                     <oxy:Plot.Annotations>
                         <oxy:PointAnnotation

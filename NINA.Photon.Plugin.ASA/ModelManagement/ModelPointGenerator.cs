@@ -110,6 +110,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                     points.Add(
                         new ModelPoint(telescopeMediator)
                         {
+                            AutoGridBandIndex = i,
                             Altitude = altitudeDegrees,
                             Azimuth = azimuthDegrees,
                             ModelPointState = creationState
@@ -189,8 +190,11 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                     : -90.0d + ringDistanceDegrees;
 
                 var localHourAngles = GetAutoGridRaValuesForRing(ringDistanceDegrees, raSpacingDegrees, i);
-                foreach (var hourAngleDegrees in localHourAngles)
+                var ringPoints = new List<ModelPoint>(localHourAngles.Count);
+                var ringPointCount = localHourAngles.Count;
+                for (var sequenceIndex = 0; sequenceIndex < localHourAngles.Count; sequenceIndex++)
                 {
+                    var hourAngleDegrees = localHourAngles[sequenceIndex];
                     var destination = ToHorizontalFromDeclinationHourAngle(latitudeDegrees, declinationDegrees, hourAngleDegrees);
                     var azimuthDegrees = AstroUtil.EuclidianModulus(540.0d - destination.azimuthDegrees, 360.0d);
                     var altitudeDegrees = destination.altitudeDegrees;
@@ -198,13 +202,49 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                     var horizonAltitude = horizon.GetAltitude(azimuthDegrees);
                     var creationState = DeterminePointState(altitudeDegrees, azimuthDegrees, horizonAltitude, applyAzimuthBounds: false);
 
-                    points.Add(
+                    ringPoints.Add(
                         new ModelPoint(telescopeMediator)
                         {
+                            AutoGridBandIndex = i,
+                            AutoGridBandSequence = sequenceIndex,
+                            AutoGridBandPointCount = ringPointCount,
                             Altitude = altitudeDegrees,
                             Azimuth = azimuthDegrees,
                             ModelPointState = creationState
                         });
+                }
+
+                var eastToWestOrdered = ringPoints
+                    .OrderBy(p => ClockwiseDistanceDegrees(90.0d, p.Azimuth))
+                    .ThenByDescending(p => p.Altitude)
+                    .ToList();
+
+                for (var eastToWestIndex = 0; eastToWestIndex < eastToWestOrdered.Count; eastToWestIndex++)
+                {
+                    eastToWestOrdered[eastToWestIndex].AutoGridBandEastToWestOrder = eastToWestIndex;
+                }
+
+                points.AddRange(ringPoints);
+            }
+
+            var radialBandWidthDegrees = Math.Max(1.0d, decSpacingDegrees);
+            var radialBands = points
+                .GroupBy(p => (int)Math.Floor((90.0d - p.Altitude) / radialBandWidthDegrees + 1e-9d))
+                .ToList();
+
+            foreach (var radialBand in radialBands)
+            {
+                var radialBandIndex = radialBand.Key;
+                var orderedEastToWest = radialBand
+                    .OrderBy(p => CounterClockwiseDistanceDegrees(90.0d, p.Azimuth))
+                    .ThenByDescending(p => p.Altitude)
+                    .ToList();
+
+                for (var eastToWestIndex = 0; eastToWestIndex < orderedEastToWest.Count; eastToWestIndex++)
+                {
+                    var point = orderedEastToWest[eastToWestIndex];
+                    point.AutoGridRadialBandIndex = radialBandIndex;
+                    point.AutoGridRadialBandEastToWestOrder = eastToWestIndex;
                 }
             }
 
@@ -411,6 +451,16 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             }
 
             return ringDistances;
+        }
+
+        private static double CounterClockwiseDistanceDegrees(double fromAzimuth, double toAzimuth)
+        {
+            return AstroUtil.EuclidianModulus(fromAzimuth - toAzimuth, 360.0d);
+        }
+
+        private static double ClockwiseDistanceDegrees(double fromAzimuth, double toAzimuth)
+        {
+            return AstroUtil.EuclidianModulus(toAzimuth - fromAzimuth, 360.0d);
         }
 
         private List<double> GetAutoGridRaValuesForRing(double ringDistanceDegrees, double raSpacingDegrees, int ringIndex)

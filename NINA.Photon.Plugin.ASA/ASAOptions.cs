@@ -48,6 +48,7 @@ namespace NINA.Photon.Plugin.ASA
             autoGridRASpacingDegrees = optionsAccessor.GetValueDouble("AutoGridRASpacingDegrees", 10.0d);
             autoGridDecSpacingDegrees = optionsAccessor.GetValueDouble("AutoGridDecSpacingDegrees", 10.0d);
             autoGridInputMode = optionsAccessor.GetValueEnum("AutoGridInputMode", AutoGridInputModeEnum.Spacing);
+            autoGridPathOrderingMode = optionsAccessor.GetValueEnum("AutoGridPathOrderingMode", AutoGridPathOrderingModeEnum.LegacyAzimuthSweep);
             autoGridDesiredPointCount = optionsAccessor.GetValueInt32("AutoGridDesiredPointCount", 195);
             siderealTrackStartOffsetMinutes = optionsAccessor.GetValueInt32("SiderealTrackStartOffsetMinutes", 0);
             siderealTrackEndOffsetMinutes = optionsAccessor.GetValueInt32("SiderealTrackEndOffsetMinutes", 0);
@@ -105,6 +106,7 @@ namespace NINA.Photon.Plugin.ASA
             AutoGridRASpacingDegrees = 10.0d;
             AutoGridDecSpacingDegrees = 10.0d;
             AutoGridInputMode = AutoGridInputModeEnum.Spacing;
+            AutoGridPathOrderingMode = AutoGridPathOrderingModeEnum.LegacyAzimuthSweep;
             AutoGridDesiredPointCount = 195;
             SiderealTrackStartOffsetMinutes = 0;
             SiderealTrackEndOffsetMinutes = 0;
@@ -278,6 +280,22 @@ namespace NINA.Photon.Plugin.ASA
                 {
                     autoGridInputMode = value;
                     optionsAccessor.SetValueEnum("AutoGridInputMode", autoGridInputMode);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private AutoGridPathOrderingModeEnum autoGridPathOrderingMode;
+
+        public AutoGridPathOrderingModeEnum AutoGridPathOrderingMode
+        {
+            get => autoGridPathOrderingMode;
+            set
+            {
+                if (autoGridPathOrderingMode != value)
+                {
+                    autoGridPathOrderingMode = value;
+                    optionsAccessor.SetValueEnum("AutoGridPathOrderingMode", autoGridPathOrderingMode);
                     RaisePropertyChanged();
                 }
             }

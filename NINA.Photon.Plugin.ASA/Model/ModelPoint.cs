@@ -81,6 +81,96 @@ namespace NINA.Photon.Plugin.ASA.Model
             }
         }
 
+        private int autoGridBandIndex = -1;
+
+        public int AutoGridBandIndex
+        {
+            get => autoGridBandIndex;
+            set
+            {
+                if (autoGridBandIndex != value)
+                {
+                    autoGridBandIndex = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private int autoGridBandSequence = -1;
+
+        public int AutoGridBandSequence
+        {
+            get => autoGridBandSequence;
+            set
+            {
+                if (autoGridBandSequence != value)
+                {
+                    autoGridBandSequence = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private int autoGridBandPointCount = -1;
+
+        public int AutoGridBandPointCount
+        {
+            get => autoGridBandPointCount;
+            set
+            {
+                if (autoGridBandPointCount != value)
+                {
+                    autoGridBandPointCount = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private int autoGridBandEastToWestOrder = -1;
+
+        public int AutoGridBandEastToWestOrder
+        {
+            get => autoGridBandEastToWestOrder;
+            set
+            {
+                if (autoGridBandEastToWestOrder != value)
+                {
+                    autoGridBandEastToWestOrder = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private int autoGridRadialBandIndex = -1;
+
+        public int AutoGridRadialBandIndex
+        {
+            get => autoGridRadialBandIndex;
+            set
+            {
+                if (autoGridRadialBandIndex != value)
+                {
+                    autoGridRadialBandIndex = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private int autoGridRadialBandEastToWestOrder = -1;
+
+        public int AutoGridRadialBandEastToWestOrder
+        {
+            get => autoGridRadialBandEastToWestOrder;
+            set
+            {
+                if (autoGridRadialBandEastToWestOrder != value)
+                {
+                    autoGridRadialBandEastToWestOrder = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
         private bool isSyncPoint = false;
 
         public bool IsSyncPoint
@@ -378,7 +468,7 @@ namespace NINA.Photon.Plugin.ASA.Model
 
         public override string ToString()
         {
-            return $"Alt={Altitude}, Az={Azimuth}, State={ModelPointState}, RMSError={RMSError}, ModelIndex={ModelIndex}, MountRA={MountReportedRightAscension}, MountDEC={MountReportedDeclination}, MountLST={MountReportedLocalSiderealTime}, MountPier={MountReportedSideOfPier}, SolvedCoordinates={PlateSolvedCoordinates}, CaptureTime={CaptureTime}, ExpectedDomeSideOfPier={ExpectedDomeSideOfPier}";
+            return $"Alt={Altitude}, Az={Azimuth}, State={ModelPointState}, RMSError={RMSError}, ModelIndex={ModelIndex}, AutoGridBandIndex={AutoGridBandIndex}, AutoGridBandSequence={AutoGridBandSequence}, AutoGridBandPointCount={AutoGridBandPointCount}, AutoGridBandEastToWestOrder={AutoGridBandEastToWestOrder}, AutoGridRadialBandIndex={AutoGridRadialBandIndex}, AutoGridRadialBandEastToWestOrder={AutoGridRadialBandEastToWestOrder}, MountRA={MountReportedRightAscension}, MountDEC={MountReportedDeclination}, MountLST={MountReportedLocalSiderealTime}, MountPier={MountReportedSideOfPier}, SolvedCoordinates={PlateSolvedCoordinates}, CaptureTime={CaptureTime}, ExpectedDomeSideOfPier={ExpectedDomeSideOfPier}";
         }
 
         public ModelPoint Clone()
@@ -386,6 +476,12 @@ namespace NINA.Photon.Plugin.ASA.Model
             return new ModelPoint(telescopeMediator)
             {
                 ModelIndex = ModelIndex,
+                AutoGridBandIndex = AutoGridBandIndex,
+                AutoGridBandSequence = AutoGridBandSequence,
+                AutoGridBandPointCount = AutoGridBandPointCount,
+                AutoGridBandEastToWestOrder = AutoGridBandEastToWestOrder,
+                AutoGridRadialBandIndex = AutoGridRadialBandIndex,
+                AutoGridRadialBandEastToWestOrder = AutoGridRadialBandEastToWestOrder,
                 ExpectedDomeSideOfPier = ExpectedDomeSideOfPier,
                 Altitude = Altitude,
                 Azimuth = Azimuth,
@@ -410,6 +506,12 @@ namespace NINA.Photon.Plugin.ASA.Model
         public void CopyFrom(ModelPoint p)
         {
             ModelIndex = p.ModelIndex;
+            AutoGridBandIndex = p.AutoGridBandIndex;
+            AutoGridBandSequence = p.AutoGridBandSequence;
+            AutoGridBandPointCount = p.AutoGridBandPointCount;
+            AutoGridBandEastToWestOrder = p.AutoGridBandEastToWestOrder;
+            AutoGridRadialBandIndex = p.AutoGridRadialBandIndex;
+            AutoGridRadialBandEastToWestOrder = p.AutoGridRadialBandEastToWestOrder;
             ExpectedDomeSideOfPier = p.ExpectedDomeSideOfPier;
             Altitude = p.Altitude;
             Azimuth = p.Azimuth;
