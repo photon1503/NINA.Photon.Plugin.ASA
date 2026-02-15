@@ -196,24 +196,68 @@
                             <RowDefinition />
                             <RowDefinition />
                             <RowDefinition />
+                            <RowDefinition />
                         </Grid.RowDefinitions>
+                        <TextBlock
+                              Grid.Row="0" Grid.Column="0"
+                              HorizontalAlignment="Left"
+                              VerticalAlignment="Center"
+                              Text="Input mode"
+                              ToolTip="Choose AutoGrid input mode" />
+                        <ComboBox
+                              Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2"
+                              Margin="10,5,0,0"
+                              MinWidth="120"
+                              ItemsSource="{Binding Source={util:EnumBindingSource {x:Type tmmodel:AutoGridInputModeEnum}}}"
+                              SelectedItem="{Binding AutoGridInputMode}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Converter={StaticResource TM_EnumStaticDescriptionValueConverter}}" />
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+
                         <TextBlock
                               Grid.Row="1" Grid.Column="0"
                               HorizontalAlignment="Left"
                               VerticalAlignment="Center"
-                              Text="RA spacing"
-                              ToolTip="Fixed RA spacing in degrees" />
+                              Text="Desired points"
+                              ToolTip="Target number of generated AutoGrid points">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding AutoGridInputMode}" Value="{x:Static tmmodel:AutoGridInputModeEnum.DesiredPoints}">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
                         <ninactrl:UnitTextBox
                               Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"
                               MinWidth="80"
                               Margin="10,5,0,0"
                               HorizontalAlignment="Left"
                               VerticalAlignment="Center"
-                              Unit="°"
-                              ToolTip="Fixed RA spacing in degrees">
-                            <Binding Path="AutoGridRASpacingDegrees" UpdateSourceTrigger="LostFocus">
+                              ToolTip="Target number of generated AutoGrid points">
+                            <ninactrl:UnitTextBox.Style>
+                                <Style TargetType="ninactrl:UnitTextBox">
+                                    <Setter Property="Visibility" Value="Collapsed" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding AutoGridInputMode}" Value="{x:Static tmmodel:AutoGridInputModeEnum.DesiredPoints}">
+                                            <Setter Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ninactrl:UnitTextBox.Style>
+                            <Binding Path="AutoGridDesiredPointCount" UpdateSourceTrigger="LostFocus">
                                 <Binding.ValidationRules>
-                                    <rules:GreaterThanZeroRule />
+                                    <rules:IntRangeRule>
+                                        <rules:IntRangeRule.ValidRange>
+                                            <rules:IntRangeChecker Maximum="1000" Minimum="3" />
+                                        </rules:IntRangeRule.ValidRange>
+                                    </rules:IntRangeRule>
                                 </Binding.ValidationRules>
                             </Binding>
                         </ninactrl:UnitTextBox>
@@ -222,8 +266,19 @@
                               Grid.Row="2" Grid.Column="0"
                               HorizontalAlignment="Left"
                               VerticalAlignment="Center"
-                              Text="Dec spacing"
-                              ToolTip="Fixed Dec spacing in degrees" />
+                              Text="RA spacing"
+                              ToolTip="Fixed RA spacing in degrees">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding AutoGridInputMode}" Value="{x:Static tmmodel:AutoGridInputModeEnum.DesiredPoints}">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
                         <ninactrl:UnitTextBox
                               Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2"
                               MinWidth="80"
@@ -231,7 +286,59 @@
                               HorizontalAlignment="Left"
                               VerticalAlignment="Center"
                               Unit="°"
+                              ToolTip="Fixed RA spacing in degrees">
+                            <ninactrl:UnitTextBox.Style>
+                                <Style TargetType="ninactrl:UnitTextBox">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding AutoGridInputMode}" Value="{x:Static tmmodel:AutoGridInputModeEnum.DesiredPoints}">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ninactrl:UnitTextBox.Style>
+                            <Binding Path="AutoGridRASpacingDegrees" UpdateSourceTrigger="LostFocus">
+                                <Binding.ValidationRules>
+                                    <rules:GreaterThanZeroRule />
+                                </Binding.ValidationRules>
+                            </Binding>
+                        </ninactrl:UnitTextBox>
+
+                        <TextBlock
+                              Grid.Row="3" Grid.Column="0"
+                              HorizontalAlignment="Left"
+                              VerticalAlignment="Center"
+                              Text="Dec spacing"
                               ToolTip="Fixed Dec spacing in degrees">
+                            <TextBlock.Style>
+                                <Style TargetType="TextBlock">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding AutoGridInputMode}" Value="{x:Static tmmodel:AutoGridInputModeEnum.DesiredPoints}">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </TextBlock.Style>
+                        </TextBlock>
+                        <ninactrl:UnitTextBox
+                              Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2"
+                              MinWidth="80"
+                              Margin="10,5,0,0"
+                              HorizontalAlignment="Left"
+                              VerticalAlignment="Center"
+                              Unit="°"
+                              ToolTip="Fixed Dec spacing in degrees">
+                            <ninactrl:UnitTextBox.Style>
+                                <Style TargetType="ninactrl:UnitTextBox">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding AutoGridInputMode}" Value="{x:Static tmmodel:AutoGridInputModeEnum.DesiredPoints}">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ninactrl:UnitTextBox.Style>
                             <Binding Path="AutoGridDecSpacingDegrees" UpdateSourceTrigger="LostFocus">
                                 <Binding.ValidationRules>
                                     <rules:GreaterThanZeroRule />

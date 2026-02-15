@@ -39,6 +39,10 @@ namespace NINA.Photon.Plugin.ASA.Interfaces
 
         double AutoGridDecSpacingDegrees { get; set; }
 
+        AutoGridInputModeEnum AutoGridInputMode { get; set; }
+
+        int AutoGridDesiredPointCount { get; set; }
+
         string SiderealTrackStartTimeProvider { get; set; }
 
         string SiderealTrackEndTimeProvider { get; set; }

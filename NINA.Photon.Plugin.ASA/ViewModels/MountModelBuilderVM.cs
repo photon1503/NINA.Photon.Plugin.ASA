@@ -700,7 +700,16 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
 
         private bool GenerateAutoGrid(bool showNotifications)
         {
-            var localModelPoints = this.modelPointGenerator.GenerateAutoGrid(this.AutoGridRASpacingDegrees, this.AutoGridDecSpacingDegrees, this.CustomHorizon);
+            List<ModelPoint> localModelPoints;
+            if (this.AutoGridInputMode == AutoGridInputModeEnum.DesiredPoints)
+            {
+                localModelPoints = this.modelPointGenerator.GenerateAutoGridByPointCount(this.AutoGridDesiredPointCount, this.CustomHorizon);
+            }
+            else
+            {
+                localModelPoints = this.modelPointGenerator.GenerateAutoGrid(this.AutoGridRASpacingDegrees, this.AutoGridDecSpacingDegrees, this.CustomHorizon);
+            }
+
             this.ModelPoints = ImmutableList.ToImmutableList(localModelPoints);
             if (!this.modelBuilderOptions.ShowRemovedPoints)
             {
@@ -719,6 +728,19 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
         {
             AutoGridRASpacingDegrees = raSpacingDegrees;
             AutoGridDecSpacingDegrees = decSpacingDegrees;
+            AutoGridInputMode = AutoGridInputModeEnum.Spacing;
+            ModelPointGenerationType = ModelPointGenerationTypeEnum.AutoGrid;
+            if (!GenerateAutoGrid(false))
+            {
+                throw new Exception("Failed to generate auto grid");
+            }
+            return this.ModelPoints;
+        }
+
+        public ImmutableList<ModelPoint> GenerateAutoGrid(int desiredPointCount)
+        {
+            AutoGridDesiredPointCount = desiredPointCount;
+            AutoGridInputMode = AutoGridInputModeEnum.DesiredPoints;
             ModelPointGenerationType = ModelPointGenerationTypeEnum.AutoGrid;
             if (!GenerateAutoGrid(false))
             {
@@ -1386,11 +1408,12 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             {
                 // The user selected a file
                 string selectedFileName = openFileDialog.FileName;
+                var exportedPoints = this.ModelPoints.Where(mp => mp.ModelPointState == ModelPointStateEnum.Generated).ToList();
                 using (StreamWriter writer = new StreamWriter(selectedFileName))
                 {
-                    writer.WriteLine(this.DisplayModelPoints.Count);
+                    writer.WriteLine(exportedPoints.Count);
 
-                    foreach (ModelPoint p in this.DisplayModelPoints)
+                    foreach (ModelPoint p in exportedPoints)
                     {
                         writer.WriteLine(p.Azimuth * (Math.PI / 180));
                         writer.WriteLine(p.Altitude * (Math.PI / 180));
@@ -1450,6 +1473,32 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 if (Math.Abs(this.modelBuilderOptions.AutoGridDecSpacingDegrees - value) > double.Epsilon)
                 {
                     this.modelBuilderOptions.AutoGridDecSpacingDegrees = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        public AutoGridInputModeEnum AutoGridInputMode
+        {
+            get => this.modelBuilderOptions.AutoGridInputMode;
+            set
+            {
+                if (this.modelBuilderOptions.AutoGridInputMode != value)
+                {
+                    this.modelBuilderOptions.AutoGridInputMode = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        public int AutoGridDesiredPointCount
+        {
+            get => this.modelBuilderOptions.AutoGridDesiredPointCount;
+            set
+            {
+                if (this.modelBuilderOptions.AutoGridDesiredPointCount != value)
+                {
+                    this.modelBuilderOptions.AutoGridDesiredPointCount = value;
                     RaisePropertyChanged();
                 }
             }

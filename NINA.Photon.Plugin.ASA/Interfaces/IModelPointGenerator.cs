@@ -24,6 +24,8 @@ namespace NINA.Photon.Plugin.ASA.Interfaces {
 
         List<ModelPoint> GenerateAutoGrid(double raSpacingDegrees, double decSpacingDegrees, CustomHorizon horizon);
 
+        List<ModelPoint> GenerateAutoGridByPointCount(int desiredPointCount, CustomHorizon horizon);
+
         List<ModelPoint> GenerateSiderealPath(Coordinates coordinates, Angle raDelta, DateTime startTime, DateTime endTime, CustomHorizon horizon);
     }
 }
