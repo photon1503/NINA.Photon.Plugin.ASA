@@ -99,23 +99,10 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                     }
 
                     var horizonAltitude = horizon.GetAltitude(azimuthDegrees);
-                    ModelPointStateEnum creationState;
-                    if (altitudeDegrees < options.MinPointAltitude || altitudeDegrees > options.MaxPointAltitude)
-                    {
-                        creationState = ModelPointStateEnum.OutsideAltitudeBounds;
-                    }
-                    else if (azimuthDegrees < options.MinPointAzimuth || azimuthDegrees >= options.MaxPointAzimuth)
-                    {
-                        creationState = ModelPointStateEnum.OutsideAzimuthBounds;
-                    }
-                    else if (altitudeDegrees >= horizonAltitude)
+                    var creationState = DeterminePointState(altitudeDegrees, azimuthDegrees, horizonAltitude, applyAzimuthBounds: true);
+                    if (creationState == ModelPointStateEnum.Generated)
                     {
                         ++validPoints;
-                        creationState = ModelPointStateEnum.Generated;
-                    }
-                    else
-                    {
-                        creationState = ModelPointStateEnum.BelowHorizon;
                     }
                     points.Add(
                         new ModelPoint(telescopeMediator)
@@ -165,6 +152,74 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             }
         }
 
+        public List<ModelPoint> GenerateAutoGrid(double raSpacingDegrees, double decSpacingDegrees, CustomHorizon horizon)
+        {
+            if (raSpacingDegrees <= 0.0d || raSpacingDegrees > 360.0d)
+            {
+                throw new Exception("RA spacing must be between 0 and 360 degrees");
+            }
+            if (decSpacingDegrees <= 0.0d || decSpacingDegrees > 180.0d)
+            {
+                throw new Exception("Dec spacing must be between 0 and 180 degrees");
+            }
+
+            var raValues = new List<double>();
+            for (var raDegrees = 0.0d; raDegrees < 360.0d; raDegrees += raSpacingDegrees)
+            {
+                raValues.Add(raDegrees);
+            }
+            if (raValues.Count == 0)
+            {
+                raValues.Add(0.0d);
+            }
+
+            var decValues = new List<double>();
+            for (var decDegrees = -90.0d; decDegrees <= 90.0d; decDegrees += decSpacingDegrees)
+            {
+                decValues.Add(Math.Min(90.0d, decDegrees));
+            }
+            if (decValues.Count == 0 || Math.Abs(decValues[decValues.Count - 1] - 90.0d) > 0.0001d)
+            {
+                decValues.Add(90.0d);
+            }
+
+            var poleRows = decValues.Count(dec => Math.Abs(Math.Abs(dec) - 90.0d) < 0.0001d);
+            var nonPoleRows = decValues.Count - poleRows;
+            var estimatedPoints = (nonPoleRows * raValues.Count) + poleRows;
+            if (estimatedPoints > MAX_POINTS)
+            {
+                throw new Exception($"AutoGrid spacing produces {estimatedPoints} points, exceeding ASA limit of {MAX_POINTS}. Increase spacing.");
+            }
+
+            var now = DateTime.Now;
+            var points = new List<ModelPoint>(estimatedPoints);
+            foreach (var decDegrees in decValues)
+            {
+                var isPole = Math.Abs(Math.Abs(decDegrees) - 90.0d) < 0.0001d;
+                var localRAValues = isPole ? new List<double> { 0.0d } : raValues;
+                foreach (var raDegrees in localRAValues)
+                {
+                    var coordinates = new Coordinates(raDegrees / 15.0d, decDegrees, Epoch.JNOW, Coordinates.RAType.Hours);
+                    var pointCoordinates = ToTopocentric(coordinates, now);
+                    var azimuthDegrees = AstroUtil.EuclidianModulus(pointCoordinates.Azimuth.Degree, 360.0d);
+                    var altitudeDegrees = pointCoordinates.Altitude.Degree;
+
+                    var horizonAltitude = horizon.GetAltitude(azimuthDegrees);
+                    var creationState = DeterminePointState(altitudeDegrees, azimuthDegrees, horizonAltitude, applyAzimuthBounds: false);
+
+                    points.Add(
+                        new ModelPoint(telescopeMediator)
+                        {
+                            Altitude = altitudeDegrees,
+                            Azimuth = azimuthDegrees,
+                            ModelPointState = creationState
+                        });
+                }
+            }
+
+            return points;
+        }
+
         private TopocentricCoordinates ToTopocentric(Coordinates coordinates, DateTime dateTime)
         {
             var coordinatesAtTime = new Coordinates(Angle.ByHours(coordinates.RA), Angle.ByDegree(coordinates.Dec), coordinates.Epoch, new ConstantDateTime(dateTime));
@@ -185,6 +240,23 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 tempCelcius: temperature,
                 relativeHumidity: humidity,
                 wavelength: wavelength);
+        }
+
+        private ModelPointStateEnum DeterminePointState(double altitudeDegrees, double azimuthDegrees, double horizonAltitude, bool applyAzimuthBounds)
+        {
+            if (altitudeDegrees < options.MinPointAltitude || altitudeDegrees > options.MaxPointAltitude)
+            {
+                return ModelPointStateEnum.OutsideAltitudeBounds;
+            }
+            if (applyAzimuthBounds && (azimuthDegrees < options.MinPointAzimuth || azimuthDegrees >= options.MaxPointAzimuth))
+            {
+                return ModelPointStateEnum.OutsideAzimuthBounds;
+            }
+            if (altitudeDegrees >= horizonAltitude)
+            {
+                return ModelPointStateEnum.Generated;
+            }
+            return ModelPointStateEnum.BelowHorizon;
         }
 
         public List<ModelPoint> GenerateSiderealPath(Coordinates coordinates, Angle raDelta, DateTime startTime, DateTime endTime, CustomHorizon horizon)
@@ -344,23 +416,10 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 var altitudeDegrees = pointCoordinates.Altitude.Degree;
 
                 var horizonAltitude = horizon.GetAltitude(azimuthDegrees);
-                ModelPointStateEnum creationState;
-                if (altitudeDegrees < options.MinPointAltitude || altitudeDegrees > options.MaxPointAltitude)
-                {
-                    creationState = ModelPointStateEnum.OutsideAltitudeBounds;
-                }
-                /*else if (azimuthDegrees < options.MinPointAzimuth || azimuthDegrees >= options.MaxPointAzimuth)
-                {
-                    creationState = ModelPointStateEnum.OutsideAzimuthBounds;
-                }*/
-                else if (altitudeDegrees >= horizonAltitude)
+                var creationState = DeterminePointState(altitudeDegrees, azimuthDegrees, horizonAltitude, applyAzimuthBounds: false);
+                if (creationState == ModelPointStateEnum.Generated)
                 {
                     ++validPoints;
-                    creationState = ModelPointStateEnum.Generated;
-                }
-                else
-                {
-                    creationState = ModelPointStateEnum.BelowHorizon;
                 }
 
                 points.Add(

@@ -22,6 +22,9 @@ namespace NINA.Photon.Plugin.ASA.Model
         GoldenSpiral = 0,
 
         [Description("MLPT")]
-        SiderealPath = 1
+        SiderealPath = 1,
+
+        [Description("AutoGrid")]
+        AutoGrid = 2
     }
 }

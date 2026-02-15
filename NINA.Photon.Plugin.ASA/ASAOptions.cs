@@ -45,6 +45,8 @@ namespace NINA.Photon.Plugin.ASA
         private void InitializeOptions()
         {
             goldenSpiralStarCount = optionsAccessor.GetValueInt32("GoldenSpiralStarCount", 9);
+            autoGridRASpacingDegrees = optionsAccessor.GetValueDouble("AutoGridRASpacingDegrees", 10.0d);
+            autoGridDecSpacingDegrees = optionsAccessor.GetValueDouble("AutoGridDecSpacingDegrees", 10.0d);
             siderealTrackStartOffsetMinutes = optionsAccessor.GetValueInt32("SiderealTrackStartOffsetMinutes", 0);
             siderealTrackEndOffsetMinutes = optionsAccessor.GetValueInt32("SiderealTrackEndOffsetMinutes", 0);
             siderealTrackRADeltaDegrees = optionsAccessor.GetValueDouble("SiderealTrackRADeltaDegrees", 1.5d);
@@ -98,6 +100,8 @@ namespace NINA.Photon.Plugin.ASA
         public void ResetDefaults()
         {
             GoldenSpiralStarCount = 9;
+            AutoGridRASpacingDegrees = 10.0d;
+            AutoGridDecSpacingDegrees = 10.0d;
             SiderealTrackStartOffsetMinutes = 0;
             SiderealTrackEndOffsetMinutes = 0;
             SiderealTrackRADeltaDegrees = 1.5d;
@@ -214,6 +218,46 @@ namespace NINA.Photon.Plugin.ASA
                     }
                     goldenSpiralStarCount = value;
                     optionsAccessor.SetValueInt32("GoldenSpiralStarCount", goldenSpiralStarCount);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private double autoGridRASpacingDegrees;
+
+        public double AutoGridRASpacingDegrees
+        {
+            get => autoGridRASpacingDegrees;
+            set
+            {
+                if (Math.Abs(autoGridRASpacingDegrees - value) > double.Epsilon)
+                {
+                    if (value <= 0.0d || value > 360.0d)
+                    {
+                        throw new ArgumentException("AutoGridRASpacingDegrees must be between 0 and 360, exclusive-inclusive", "AutoGridRASpacingDegrees");
+                    }
+                    autoGridRASpacingDegrees = value;
+                    optionsAccessor.SetValueDouble("AutoGridRASpacingDegrees", autoGridRASpacingDegrees);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private double autoGridDecSpacingDegrees;
+
+        public double AutoGridDecSpacingDegrees
+        {
+            get => autoGridDecSpacingDegrees;
+            set
+            {
+                if (Math.Abs(autoGridDecSpacingDegrees - value) > double.Epsilon)
+                {
+                    if (value <= 0.0d || value > 180.0d)
+                    {
+                        throw new ArgumentException("AutoGridDecSpacingDegrees must be between 0 and 180, exclusive-inclusive", "AutoGridDecSpacingDegrees");
+                    }
+                    autoGridDecSpacingDegrees = value;
+                    optionsAccessor.SetValueDouble("AutoGridDecSpacingDegrees", autoGridDecSpacingDegrees);
                     RaisePropertyChanged();
                 }
             }

@@ -30,5 +30,7 @@ namespace NINA.Photon.Plugin.ASA.Interfaces {
         ImmutableList<ModelPoint> GenerateSiderealPath(InputCoordinates coordinates, Angle raDelta, IDateTimeProvider startTimeProvider, IDateTimeProvider endTimeProvider, int startOffsetMinutes, int endOffsetMinutes);
 
         ImmutableList<ModelPoint> GenerateGoldenSpiral(int goldenSpiralStarCount);
+
+        ImmutableList<ModelPoint> GenerateAutoGrid(double raSpacingDegrees, double decSpacingDegrees);
     }
 }

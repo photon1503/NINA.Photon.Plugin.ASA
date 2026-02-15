@@ -111,7 +111,7 @@
                             <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
                             <Setter Property="BorderThickness" Value="0,0,0,1" />
                             <Style.Triggers>
-                                <DataTrigger Binding="{Binding ElementName=PART_ModelPointGenerationTypeList, Path=SelectedItem}" Value="1">
+                                <DataTrigger Binding="{Binding ElementName=PART_ModelPointGenerationTypeList, Path=SelectedItem}" Value="{x:Static tmmodel:ModelPointGenerationTypeEnum.SiderealPath}">
                                     <Setter Property="FrameworkElement.Visibility" Value="Collapsed" />
                                 </DataTrigger>
                             </Style.Triggers>
@@ -164,6 +164,82 @@
                         </ninactrl:UnitTextBox>
                     </Grid>
                 </GroupBox>
+                <GroupBox>
+                    <GroupBox.Style>
+                        <Style TargetType="{x:Type GroupBox}" BasedOn="{StaticResource StandardGroupBox}">
+                            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
+                            <Setter Property="BorderThickness" Value="0,0,0,1" />
+                            <Setter Property="FrameworkElement.Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding ElementName=PART_ModelPointGenerationTypeList, Path=SelectedItem}" Value="{x:Static tmmodel:ModelPointGenerationTypeEnum.AutoGrid}">
+                                    <Setter Property="FrameworkElement.Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </GroupBox.Style>
+                    <GroupBox.Header>
+                        <Grid Height="36" Margin="5">
+                            <TextBlock
+                                   VerticalAlignment="Center"
+                                   FontSize="18"
+                                   Text="AutoGrid Options" />
+                        </Grid>
+                    </GroupBox.Header>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" SharedSizeGroup="SettingsCol0" />
+                            <ColumnDefinition Width="Auto" SharedSizeGroup="SettingsCol1" />
+                            <ColumnDefinition Width="Auto" SharedSizeGroup="SettingsCol2" />
+                        </Grid.ColumnDefinitions>
+
+                        <Grid.RowDefinitions>
+                            <RowDefinition />
+                            <RowDefinition />
+                            <RowDefinition />
+                        </Grid.RowDefinitions>
+                        <TextBlock
+                              Grid.Row="1" Grid.Column="0"
+                              HorizontalAlignment="Left"
+                              VerticalAlignment="Center"
+                              Text="RA spacing"
+                              ToolTip="Fixed RA spacing in degrees" />
+                        <ninactrl:UnitTextBox
+                              Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"
+                              MinWidth="80"
+                              Margin="10,5,0,0"
+                              HorizontalAlignment="Left"
+                              VerticalAlignment="Center"
+                              Unit="°"
+                              ToolTip="Fixed RA spacing in degrees">
+                            <Binding Path="AutoGridRASpacingDegrees" UpdateSourceTrigger="LostFocus">
+                                <Binding.ValidationRules>
+                                    <rules:GreaterThanZeroRule />
+                                </Binding.ValidationRules>
+                            </Binding>
+                        </ninactrl:UnitTextBox>
+
+                        <TextBlock
+                              Grid.Row="2" Grid.Column="0"
+                              HorizontalAlignment="Left"
+                              VerticalAlignment="Center"
+                              Text="Dec spacing"
+                              ToolTip="Fixed Dec spacing in degrees" />
+                        <ninactrl:UnitTextBox
+                              Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2"
+                              MinWidth="80"
+                              Margin="10,5,0,0"
+                              HorizontalAlignment="Left"
+                              VerticalAlignment="Center"
+                              Unit="°"
+                              ToolTip="Fixed Dec spacing in degrees">
+                            <Binding Path="AutoGridDecSpacingDegrees" UpdateSourceTrigger="LostFocus">
+                                <Binding.ValidationRules>
+                                    <rules:GreaterThanZeroRule />
+                                </Binding.ValidationRules>
+                            </Binding>
+                        </ninactrl:UnitTextBox>
+                    </Grid>
+                </GroupBox>
                 <!-- high altitude /-->
 
                 <GroupBox>
@@ -172,7 +248,7 @@
                             <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
                             <Setter Property="BorderThickness" Value="0,0,0,1" />
                             <Style.Triggers>
-                                <DataTrigger Binding="{Binding ElementName=PART_ModelPointGenerationTypeList, Path=SelectedItem}" Value="1">
+                                <DataTrigger Binding="{Binding ElementName=PART_ModelPointGenerationTypeList, Path=SelectedItem}" Value="{x:Static tmmodel:ModelPointGenerationTypeEnum.SiderealPath}">
                                     <Setter Property="FrameworkElement.Visibility" Value="Collapsed" />
                                 </DataTrigger>
                             </Style.Triggers>
@@ -297,7 +373,7 @@
                             <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
                             <Setter Property="BorderThickness" Value="0,0,0,1" />
                             <Style.Triggers>
-                                <DataTrigger Binding="{Binding ElementName=PART_ModelPointGenerationTypeList, Path=SelectedItem}" Value="1">
+                                <DataTrigger Binding="{Binding ElementName=PART_ModelPointGenerationTypeList, Path=SelectedItem}" Value="{x:Static tmmodel:ModelPointGenerationTypeEnum.SiderealPath}">
                                     <Setter Property="FrameworkElement.Visibility" Value="Collapsed" />
                                 </DataTrigger>
                             </Style.Triggers>
@@ -508,7 +584,13 @@
                             <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
                             <Setter Property="BorderThickness" Value="0,0,0,1" />
                             <Style.Triggers>
-                                <DataTrigger Binding="{Binding ElementName=PART_ModelPointGenerationTypeList, Path=SelectedItem}" Value="0">
+                                <DataTrigger Binding="{Binding ElementName=PART_ModelPointGenerationTypeList, Path=SelectedItem}" Value="{x:Static tmmodel:ModelPointGenerationTypeEnum.SiderealPath}">
+                                    <Setter Property="FrameworkElement.Visibility" Value="Visible" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding ElementName=PART_ModelPointGenerationTypeList, Path=SelectedItem}" Value="{x:Static tmmodel:ModelPointGenerationTypeEnum.GoldenSpiral}">
+                                    <Setter Property="FrameworkElement.Visibility" Value="Collapsed" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding ElementName=PART_ModelPointGenerationTypeList, Path=SelectedItem}" Value="{x:Static tmmodel:ModelPointGenerationTypeEnum.AutoGrid}">
                                     <Setter Property="FrameworkElement.Visibility" Value="Collapsed" />
                                 </DataTrigger>
                             </Style.Triggers>
@@ -952,7 +1034,10 @@
                     <Style x:Key="HideMlptChartsRowOnGoldenSpiral" TargetType="{x:Type RowDefinition}">
                         <Setter Property="Height" Value="Auto" />
                         <Style.Triggers>
-                            <DataTrigger Binding="{Binding ElementName=PART_ModelPointGenerationTypeList, Path=SelectedItem}" Value="0">
+                            <DataTrigger Binding="{Binding ElementName=PART_ModelPointGenerationTypeList, Path=SelectedItem}" Value="{x:Static tmmodel:ModelPointGenerationTypeEnum.GoldenSpiral}">
+                                <Setter Property="Height" Value="0" />
+                            </DataTrigger>
+                            <DataTrigger Binding="{Binding ElementName=PART_ModelPointGenerationTypeList, Path=SelectedItem}" Value="{x:Static tmmodel:ModelPointGenerationTypeEnum.AutoGrid}">
                                 <Setter Property="Height" Value="0" />
                             </DataTrigger>
                         </Style.Triggers>
@@ -1126,7 +1211,10 @@
                     <Grid.Style>
                         <Style TargetType="{x:Type Grid}">
                             <Style.Triggers>
-                                <DataTrigger Binding="{Binding ElementName=PART_ModelPointGenerationTypeList, Path=SelectedItem}" Value="0">
+                                <DataTrigger Binding="{Binding ElementName=PART_ModelPointGenerationTypeList, Path=SelectedItem}" Value="{x:Static tmmodel:ModelPointGenerationTypeEnum.GoldenSpiral}">
+                                    <Setter Property="FrameworkElement.Visibility" Value="Collapsed" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding ElementName=PART_ModelPointGenerationTypeList, Path=SelectedItem}" Value="{x:Static tmmodel:ModelPointGenerationTypeEnum.AutoGrid}">
                                     <Setter Property="FrameworkElement.Visibility" Value="Collapsed" />
                                 </DataTrigger>
                             </Style.Triggers>
@@ -1204,7 +1292,10 @@
                     <Grid.Style>
                         <Style TargetType="{x:Type Grid}">
                             <Style.Triggers>
-                                <DataTrigger Binding="{Binding ElementName=PART_ModelPointGenerationTypeList, Path=SelectedItem}" Value="0">
+                                <DataTrigger Binding="{Binding ElementName=PART_ModelPointGenerationTypeList, Path=SelectedItem}" Value="{x:Static tmmodel:ModelPointGenerationTypeEnum.GoldenSpiral}">
+                                    <Setter Property="FrameworkElement.Visibility" Value="Collapsed" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding ElementName=PART_ModelPointGenerationTypeList, Path=SelectedItem}" Value="{x:Static tmmodel:ModelPointGenerationTypeEnum.AutoGrid}">
                                     <Setter Property="FrameworkElement.Visibility" Value="Collapsed" />
                                 </DataTrigger>
                             </Style.Triggers>

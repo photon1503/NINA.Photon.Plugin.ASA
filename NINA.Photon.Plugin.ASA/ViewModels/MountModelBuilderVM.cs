@@ -591,6 +591,10 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 {
                     return Task.FromResult(GenerateGoldenSpiral(this.GoldenSpiralStarCount, true));
                 }
+                else if (this.ModelPointGenerationType == ModelPointGenerationTypeEnum.AutoGrid)
+                {
+                    return Task.FromResult(GenerateAutoGrid(true));
+                }
                 else if (this.ModelPointGenerationType == ModelPointGenerationTypeEnum.SiderealPath)
                 {
                     return Task.FromResult(GenerateSiderealPath(false));
@@ -690,6 +694,35 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             if (!GenerateGoldenSpiral(goldenSpiralStarCount, false))
             {
                 throw new Exception("Failed to generate golden spiral");
+            }
+            return this.ModelPoints;
+        }
+
+        private bool GenerateAutoGrid(bool showNotifications)
+        {
+            var localModelPoints = this.modelPointGenerator.GenerateAutoGrid(this.AutoGridRASpacingDegrees, this.AutoGridDecSpacingDegrees, this.CustomHorizon);
+            this.ModelPoints = ImmutableList.ToImmutableList(localModelPoints);
+            if (!this.modelBuilderOptions.ShowRemovedPoints)
+            {
+                localModelPoints = localModelPoints.Where(mp => mp.ModelPointState == ModelPointStateEnum.Generated).ToList();
+            }
+            if (showNotifications)
+            {
+                var numPoints = localModelPoints.Count(mp => mp.ModelPointState == ModelPointStateEnum.Generated);
+                Notification.ShowInformation($"Generated {numPoints} points");
+            }
+            this.DisplayModelPoints = new AsyncObservableCollection<ModelPoint>(localModelPoints);
+            return true;
+        }
+
+        public ImmutableList<ModelPoint> GenerateAutoGrid(double raSpacingDegrees, double decSpacingDegrees)
+        {
+            AutoGridRASpacingDegrees = raSpacingDegrees;
+            AutoGridDecSpacingDegrees = decSpacingDegrees;
+            ModelPointGenerationType = ModelPointGenerationTypeEnum.AutoGrid;
+            if (!GenerateAutoGrid(false))
+            {
+                throw new Exception("Failed to generate auto grid");
             }
             return this.ModelPoints;
         }
@@ -1391,6 +1424,32 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 if (this.modelBuilderOptions.GoldenSpiralStarCount != value)
                 {
                     this.modelBuilderOptions.GoldenSpiralStarCount = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        public double AutoGridRASpacingDegrees
+        {
+            get => this.modelBuilderOptions.AutoGridRASpacingDegrees;
+            set
+            {
+                if (Math.Abs(this.modelBuilderOptions.AutoGridRASpacingDegrees - value) > double.Epsilon)
+                {
+                    this.modelBuilderOptions.AutoGridRASpacingDegrees = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        public double AutoGridDecSpacingDegrees
+        {
+            get => this.modelBuilderOptions.AutoGridDecSpacingDegrees;
+            set
+            {
+                if (Math.Abs(this.modelBuilderOptions.AutoGridDecSpacingDegrees - value) > double.Epsilon)
+                {
+                    this.modelBuilderOptions.AutoGridDecSpacingDegrees = value;
                     RaisePropertyChanged();
                 }
             }
