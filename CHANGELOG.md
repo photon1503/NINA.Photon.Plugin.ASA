@@ -1,6 +1,10 @@
 
 # Changelog
 
+## 3.2.6.5 (2026-02-14)
+
+ - Added MLPT error graphs
+
 ## 3.2.6.4 (2025-11-29)
 
   Added new trigger Mount Dither.
