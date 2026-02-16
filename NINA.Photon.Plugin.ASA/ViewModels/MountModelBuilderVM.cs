@@ -1525,6 +1525,13 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             }
         }
 
+        public IList<ModelPointGenerationTypeEnum> ModelPointGenerationTypeOptions { get; } = new List<ModelPointGenerationTypeEnum>
+        {
+            ModelPointGenerationTypeEnum.AutoGrid,
+            ModelPointGenerationTypeEnum.SiderealPath,
+            ModelPointGenerationTypeEnum.GoldenSpiral,
+        };
+
         public int GoldenSpiralStarCount
         {
             get => this.modelBuilderOptions.GoldenSpiralStarCount;

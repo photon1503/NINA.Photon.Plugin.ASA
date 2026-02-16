@@ -62,7 +62,7 @@
                             Name="PART_ModelPointGenerationTypeList"
                             MinWidth="120"
                             ToolTip="{StaticResource PointGenerator_Tooltip}"
-                            ItemsSource="{Binding Source={util:EnumBindingSource {x:Type tmmodel:ModelPointGenerationTypeEnum}}}"
+                            ItemsSource="{Binding ModelPointGenerationTypeOptions}"
                             SelectedItem="{Binding ModelPointGenerationType}">
                             <ComboBox.ItemTemplate>
                                 <DataTemplate>
