@@ -732,15 +732,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
         {
             foreach (var point in state.ValidPoints)
             {
-                point.ModelIndex = -1;
-                point.ModelPointState = ModelPointStateEnum.Generated;
-                point.MountReportedDeclination = double.NaN;
-                point.MountReportedRightAscension = double.NaN;
-                point.MountReportedLocalSiderealTime = double.NaN; ;
-                point.PlateSolvedCoordinates = null;
-                point.MountReportedSideOfPier = PierSide.pierUnknown;
-                point.PlateSolvedDeclination = double.NaN;
-                point.PlateSolvedRightAscension = double.NaN;
+                point.ResetForBuildClearState();
             }
         }
 

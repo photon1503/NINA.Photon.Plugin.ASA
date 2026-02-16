@@ -61,6 +61,22 @@ namespace NINA.Photon.Plugin.ASA.Model
     {
         private readonly ITelescopeMediator telescopeMediator;
 
+        private static bool AreEqualOrBothNaN(double left, double right)
+        {
+            return left == right || (double.IsNaN(left) && double.IsNaN(right));
+        }
+
+        private void SetDoubleField(ref double field, double value, string propertyName)
+        {
+            if (AreEqualOrBothNaN(field, value))
+            {
+                return;
+            }
+
+            field = value;
+            RaisePropertyChanged(propertyName);
+        }
+
         public ModelPoint(ITelescopeMediator telescopeMediator)
         {
             this.telescopeMediator = telescopeMediator;
@@ -326,8 +342,7 @@ namespace NINA.Photon.Plugin.ASA.Model
             get => mountReportedLocalSiderealTime;
             set
             {
-                mountReportedLocalSiderealTime = value;
-                RaisePropertyChanged();
+                SetDoubleField(ref mountReportedLocalSiderealTime, value, nameof(MountReportedLocalSiderealTime));
             }
         }
 
@@ -338,8 +353,7 @@ namespace NINA.Photon.Plugin.ASA.Model
             get => mountReportedRightAscension;
             set
             {
-                mountReportedRightAscension = value;
-                RaisePropertyChanged();
+                SetDoubleField(ref mountReportedRightAscension, value, nameof(MountReportedRightAscension));
             }
         }
 
@@ -350,8 +364,7 @@ namespace NINA.Photon.Plugin.ASA.Model
             get => mountReportedDeclination;
             set
             {
-                mountReportedDeclination = value;
-                RaisePropertyChanged();
+                SetDoubleField(ref mountReportedDeclination, value, nameof(MountReportedDeclination));
             }
         }
 
@@ -377,7 +390,13 @@ namespace NINA.Photon.Plugin.ASA.Model
             get => plateSolvedCoordinates;
             set
             {
-                plateSolvedCoordinates = value?.Transform(Epoch.JNOW);
+                var transformed = value?.Transform(Epoch.JNOW);
+                if (plateSolvedCoordinates == null && transformed == null)
+                {
+                    return;
+                }
+
+                plateSolvedCoordinates = transformed;
                 RaisePropertyChanged();
             }
         }
@@ -389,8 +408,7 @@ namespace NINA.Photon.Plugin.ASA.Model
             get => plateSolvedRightAscension;
             set
             {
-                plateSolvedRightAscension = value;
-                RaisePropertyChanged();
+                SetDoubleField(ref plateSolvedRightAscension, value, nameof(PlateSolvedRightAscension));
             }
         }
 
@@ -401,9 +419,21 @@ namespace NINA.Photon.Plugin.ASA.Model
             get => plateSolvedDeclination;
             set
             {
-                plateSolvedDeclination = value;
-                RaisePropertyChanged();
+                SetDoubleField(ref plateSolvedDeclination, value, nameof(PlateSolvedDeclination));
             }
+        }
+
+        public void ResetForBuildClearState()
+        {
+            ModelIndex = -1;
+            ModelPointState = ModelPointStateEnum.Generated;
+            MountReportedDeclination = double.NaN;
+            MountReportedRightAscension = double.NaN;
+            MountReportedLocalSiderealTime = double.NaN;
+            PlateSolvedCoordinates = null;
+            MountReportedSideOfPier = PierSide.pierUnknown;
+            PlateSolvedDeclination = double.NaN;
+            PlateSolvedRightAscension = double.NaN;
         }
 
         private double rmsError = double.NaN;
