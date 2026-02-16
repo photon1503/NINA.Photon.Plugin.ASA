@@ -105,18 +105,11 @@
                     </Grid>
                 </GroupBox>
 
-                <GroupBox>
-                    <GroupBox.Style>
-                        <Style TargetType="{x:Type GroupBox}" BasedOn="{StaticResource StandardGroupBox}">
-                            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
-                            <Setter Property="BorderThickness" Value="0,0,0,1" />
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding ElementName=PART_ModelPointGenerationTypeList, Path=SelectedItem}" Value="{x:Static tmmodel:ModelPointGenerationTypeEnum.SiderealPath}">
-                                    <Setter Property="FrameworkElement.Visibility" Value="Collapsed" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </GroupBox.Style>
+                <GroupBox
+                    Style="{StaticResource StandardGroupBox}"
+                    BorderBrush="{StaticResource BorderBrush}"
+                    BorderThickness="0,0,0,1"
+                    Visibility="{Binding IsGoldenSpiralOptionsVisible, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}">
                     <GroupBox.Header>
                         <Grid Height="36" Margin="5">
                             <TextBlock
@@ -165,19 +158,11 @@
                         </ninactrl:UnitTextBox>
                     </Grid>
                 </GroupBox>
-                <GroupBox>
-                    <GroupBox.Style>
-                        <Style TargetType="{x:Type GroupBox}" BasedOn="{StaticResource StandardGroupBox}">
-                            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
-                            <Setter Property="BorderThickness" Value="0,0,0,1" />
-                            <Setter Property="FrameworkElement.Visibility" Value="Collapsed" />
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding ElementName=PART_ModelPointGenerationTypeList, Path=SelectedItem}" Value="{x:Static tmmodel:ModelPointGenerationTypeEnum.AutoGrid}">
-                                    <Setter Property="FrameworkElement.Visibility" Value="Visible" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </GroupBox.Style>
+                <GroupBox
+                    Style="{StaticResource StandardGroupBox}"
+                    BorderBrush="{StaticResource BorderBrush}"
+                    BorderThickness="0,0,0,1"
+                    Visibility="{Binding IsAutoGridOptionsVisible, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}">
                     <GroupBox.Header>
                         <Grid Height="36" Margin="5">
                             <TextBlock
@@ -257,35 +242,16 @@
                               HorizontalAlignment="Left"
                               VerticalAlignment="Center"
                               Text="Desired points"
-                              ToolTip="Target number of generated AutoGrid points">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="Visibility" Value="Collapsed" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding AutoGridInputMode}" Value="{x:Static tmmodel:AutoGridInputModeEnum.DesiredPoints}">
-                                            <Setter Property="Visibility" Value="Visible" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
+                              ToolTip="Target number of generated AutoGrid points"
+                              Visibility="{Binding IsAutoGridDesiredPointsMode, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}" />
                         <ninactrl:UnitTextBox
                                                         Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2"
                               MinWidth="80"
                               Margin="10,5,0,0"
                               HorizontalAlignment="Left"
                               VerticalAlignment="Center"
-                              ToolTip="Target number of generated AutoGrid points">
-                            <ninactrl:UnitTextBox.Style>
-                                <Style TargetType="ninactrl:UnitTextBox">
-                                    <Setter Property="Visibility" Value="Collapsed" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding AutoGridInputMode}" Value="{x:Static tmmodel:AutoGridInputModeEnum.DesiredPoints}">
-                                            <Setter Property="Visibility" Value="Visible" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </ninactrl:UnitTextBox.Style>
+                              ToolTip="Target number of generated AutoGrid points"
+                              Visibility="{Binding IsAutoGridDesiredPointsMode, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}">
                             <Binding Path="AutoGridDesiredPointCount" UpdateSourceTrigger="LostFocus">
                                 <Binding.ValidationRules>
                                     <rules:IntRangeRule>
@@ -302,18 +268,8 @@
                               HorizontalAlignment="Left"
                               VerticalAlignment="Center"
                               Text="RA spacing"
-                              ToolTip="Fixed RA spacing in degrees">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="Visibility" Value="Visible" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding AutoGridInputMode}" Value="{x:Static tmmodel:AutoGridInputModeEnum.DesiredPoints}">
-                                            <Setter Property="Visibility" Value="Collapsed" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
+                              ToolTip="Fixed RA spacing in degrees"
+                              Visibility="{Binding IsAutoGridSpacingMode, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}" />
                         <ninactrl:UnitTextBox
                                                         Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2"
                               MinWidth="80"
@@ -321,17 +277,8 @@
                               HorizontalAlignment="Left"
                               VerticalAlignment="Center"
                               Unit="°"
-                              ToolTip="Fixed RA spacing in degrees">
-                            <ninactrl:UnitTextBox.Style>
-                                <Style TargetType="ninactrl:UnitTextBox">
-                                    <Setter Property="Visibility" Value="Visible" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding AutoGridInputMode}" Value="{x:Static tmmodel:AutoGridInputModeEnum.DesiredPoints}">
-                                            <Setter Property="Visibility" Value="Collapsed" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </ninactrl:UnitTextBox.Style>
+                              ToolTip="Fixed RA spacing in degrees"
+                              Visibility="{Binding IsAutoGridSpacingMode, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}">
                             <Binding Path="AutoGridRASpacingDegrees" UpdateSourceTrigger="LostFocus">
                                 <Binding.ValidationRules>
                                     <rules:GreaterThanZeroRule />
@@ -344,18 +291,8 @@
                               HorizontalAlignment="Left"
                               VerticalAlignment="Center"
                               Text="Dec spacing"
-                              ToolTip="Fixed Dec spacing in degrees">
-                            <TextBlock.Style>
-                                <Style TargetType="TextBlock">
-                                    <Setter Property="Visibility" Value="Visible" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding AutoGridInputMode}" Value="{x:Static tmmodel:AutoGridInputModeEnum.DesiredPoints}">
-                                            <Setter Property="Visibility" Value="Collapsed" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </TextBlock.Style>
-                        </TextBlock>
+                              ToolTip="Fixed Dec spacing in degrees"
+                              Visibility="{Binding IsAutoGridSpacingMode, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}" />
                         <ninactrl:UnitTextBox
                                                         Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="2"
                               MinWidth="80"
@@ -363,17 +300,8 @@
                               HorizontalAlignment="Left"
                               VerticalAlignment="Center"
                               Unit="°"
-                              ToolTip="Fixed Dec spacing in degrees">
-                            <ninactrl:UnitTextBox.Style>
-                                <Style TargetType="ninactrl:UnitTextBox">
-                                    <Setter Property="Visibility" Value="Visible" />
-                                    <Style.Triggers>
-                                        <DataTrigger Binding="{Binding AutoGridInputMode}" Value="{x:Static tmmodel:AutoGridInputModeEnum.DesiredPoints}">
-                                            <Setter Property="Visibility" Value="Collapsed" />
-                                        </DataTrigger>
-                                    </Style.Triggers>
-                                </Style>
-                            </ninactrl:UnitTextBox.Style>
+                              ToolTip="Fixed Dec spacing in degrees"
+                              Visibility="{Binding IsAutoGridSpacingMode, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}">
                             <Binding Path="AutoGridDecSpacingDegrees" UpdateSourceTrigger="LostFocus">
                                 <Binding.ValidationRules>
                                     <rules:GreaterThanZeroRule />
@@ -384,18 +312,11 @@
                 </GroupBox>
                 <!-- high altitude /-->
 
-                <GroupBox>
-                    <GroupBox.Style>
-                        <Style TargetType="{x:Type GroupBox}" BasedOn="{StaticResource StandardGroupBox}">
-                            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
-                            <Setter Property="BorderThickness" Value="0,0,0,1" />
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding ElementName=PART_ModelPointGenerationTypeList, Path=SelectedItem}" Value="{x:Static tmmodel:ModelPointGenerationTypeEnum.SiderealPath}">
-                                    <Setter Property="FrameworkElement.Visibility" Value="Collapsed" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </GroupBox.Style>
+                <GroupBox
+                    Style="{StaticResource StandardGroupBox}"
+                    BorderBrush="{StaticResource BorderBrush}"
+                    BorderThickness="0,0,0,1"
+                    Visibility="{Binding IsHighAltitudeOptionsVisible, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}">
                     <GroupBox.Header>
                         <Grid Height="36" Margin="5">
                             <TextBlock
@@ -509,18 +430,11 @@
                     </Grid>
                 </GroupBox>
                 <!-- high altitude end /-->
-                <GroupBox>
-                    <GroupBox.Style>
-                        <Style TargetType="{x:Type GroupBox}" BasedOn="{StaticResource StandardGroupBox}">
-                            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
-                            <Setter Property="BorderThickness" Value="0,0,0,1" />
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding ElementName=PART_ModelPointGenerationTypeList, Path=SelectedItem}" Value="{x:Static tmmodel:ModelPointGenerationTypeEnum.SiderealPath}">
-                                    <Setter Property="FrameworkElement.Visibility" Value="Collapsed" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </GroupBox.Style>
+                <GroupBox
+                    Style="{StaticResource StandardGroupBox}"
+                    BorderBrush="{StaticResource BorderBrush}"
+                    BorderThickness="0,0,0,1"
+                    Visibility="{Binding IsSyncOptionsVisible, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}">
 
                     <GroupBox.Header>
 
@@ -720,24 +634,11 @@
                     </Expander>
                 </GroupBox>
                 <!-- sync options end -->
-                <GroupBox>
-                    <GroupBox.Style>
-                        <Style TargetType="{x:Type GroupBox}" BasedOn="{StaticResource StandardGroupBox}">
-                            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
-                            <Setter Property="BorderThickness" Value="0,0,0,1" />
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding ElementName=PART_ModelPointGenerationTypeList, Path=SelectedItem}" Value="{x:Static tmmodel:ModelPointGenerationTypeEnum.SiderealPath}">
-                                    <Setter Property="FrameworkElement.Visibility" Value="Visible" />
-                                </DataTrigger>
-                                <DataTrigger Binding="{Binding ElementName=PART_ModelPointGenerationTypeList, Path=SelectedItem}" Value="{x:Static tmmodel:ModelPointGenerationTypeEnum.GoldenSpiral}">
-                                    <Setter Property="FrameworkElement.Visibility" Value="Collapsed" />
-                                </DataTrigger>
-                                <DataTrigger Binding="{Binding ElementName=PART_ModelPointGenerationTypeList, Path=SelectedItem}" Value="{x:Static tmmodel:ModelPointGenerationTypeEnum.AutoGrid}">
-                                    <Setter Property="FrameworkElement.Visibility" Value="Collapsed" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </GroupBox.Style>
+                <GroupBox
+                    Style="{StaticResource StandardGroupBox}"
+                    BorderBrush="{StaticResource BorderBrush}"
+                    BorderThickness="0,0,0,1"
+                    Visibility="{Binding IsMlptOptionsVisible, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}">
                     <GroupBox.Header>
                         <Grid Height="36" Margin="5">
                             <TextBlock
@@ -1173,13 +1074,10 @@
             <Separator Grid.Column="1" Margin="10,5,5,10" Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" />
             <Grid Grid.Column="2" Grid.Row="0" Grid.RowSpan="2">
                 <Grid.Resources>
-                    <Style x:Key="HideMlptChartsRowOnGoldenSpiral" TargetType="{x:Type RowDefinition}">
+                    <Style x:Key="HideMlptChartsRowWhenHidden" TargetType="{x:Type RowDefinition}">
                         <Setter Property="Height" Value="Auto" />
                         <Style.Triggers>
-                            <DataTrigger Binding="{Binding ElementName=PART_ModelPointGenerationTypeList, Path=SelectedItem}" Value="{x:Static tmmodel:ModelPointGenerationTypeEnum.GoldenSpiral}">
-                                <Setter Property="Height" Value="0" />
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding ElementName=PART_ModelPointGenerationTypeList, Path=SelectedItem}" Value="{x:Static tmmodel:ModelPointGenerationTypeEnum.AutoGrid}">
+                            <DataTrigger Binding="{Binding AreMlptErrorChartsVisible}" Value="False">
                                 <Setter Property="Height" Value="0" />
                             </DataTrigger>
                         </Style.Triggers>
@@ -1190,8 +1088,8 @@
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="1*" />
-                    <RowDefinition Style="{StaticResource HideMlptChartsRowOnGoldenSpiral}" />
-                    <RowDefinition Style="{StaticResource HideMlptChartsRowOnGoldenSpiral}" />
+                    <RowDefinition Style="{StaticResource HideMlptChartsRowWhenHidden}" />
+                    <RowDefinition Style="{StaticResource HideMlptChartsRowWhenHidden}" />
                     <RowDefinition Height="1*" />
                 </Grid.RowDefinitions>
                 <oxy:Plot
@@ -1356,19 +1254,7 @@
                     </oxy:Plot.Annotations>
                 </oxy:Plot>
 
-                <Grid Grid.Row="1" Grid.Column="0" Margin="8,0,8,8">
-                    <Grid.Style>
-                        <Style TargetType="{x:Type Grid}">
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding ElementName=PART_ModelPointGenerationTypeList, Path=SelectedItem}" Value="{x:Static tmmodel:ModelPointGenerationTypeEnum.GoldenSpiral}">
-                                    <Setter Property="FrameworkElement.Visibility" Value="Collapsed" />
-                                </DataTrigger>
-                                <DataTrigger Binding="{Binding ElementName=PART_ModelPointGenerationTypeList, Path=SelectedItem}" Value="{x:Static tmmodel:ModelPointGenerationTypeEnum.AutoGrid}">
-                                    <Setter Property="FrameworkElement.Visibility" Value="Collapsed" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Grid.Style>
+                <Grid Grid.Row="1" Grid.Column="0" Margin="8,0,8,8" Visibility="{Binding AreMlptErrorChartsVisible, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
@@ -1401,6 +1287,7 @@
                                 MajorGridlineStyle="LongDash"
                                 MinorGridlineStyle="None"
                                 TextColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}"
+                                TitleColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}"
                                 TicklineColor="{Binding Path=Color, Source={StaticResource SecondaryBrush}}"
                                 AxislineColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}"
                                 Title="Image #" />
@@ -1413,8 +1300,9 @@
                                 MajorGridlineStyle="LongDash"
                                 MinorGridlineStyle="None"
                                 TextColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}"
+                                TitleColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}"
                                 TicklineColor="{Binding Path=Color, Source={StaticResource SecondaryBrush}}"
-                                AxislineColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}"
+                                AxislineColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}"                                
                                 Title="arcsec" />
                         </oxy:Plot.Axes>
                         <oxy:Plot.Series>
@@ -1437,19 +1325,7 @@
                     </oxy:Plot>
                 </Grid>
 
-                <Grid Grid.Row="2" Grid.Column="0" Margin="8,0,8,8">
-                    <Grid.Style>
-                        <Style TargetType="{x:Type Grid}">
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding ElementName=PART_ModelPointGenerationTypeList, Path=SelectedItem}" Value="{x:Static tmmodel:ModelPointGenerationTypeEnum.GoldenSpiral}">
-                                    <Setter Property="FrameworkElement.Visibility" Value="Collapsed" />
-                                </DataTrigger>
-                                <DataTrigger Binding="{Binding ElementName=PART_ModelPointGenerationTypeList, Path=SelectedItem}" Value="{x:Static tmmodel:ModelPointGenerationTypeEnum.AutoGrid}">
-                                    <Setter Property="FrameworkElement.Visibility" Value="Collapsed" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </Grid.Style>
+                <Grid Grid.Row="2" Grid.Column="0" Margin="8,0,8,8" Visibility="{Binding AreMlptErrorChartsVisible, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
@@ -1482,6 +1358,7 @@
                                 MajorGridlineStyle="LongDash"
                                 MinorGridlineStyle="None"
                                 TextColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}"
+                                TitleColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}"
                                 TicklineColor="{Binding Path=Color, Source={StaticResource SecondaryBrush}}"
                                 AxislineColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}"
                                 Title="Image #" />
@@ -1494,6 +1371,7 @@
                                 MajorGridlineStyle="LongDash"
                                 MinorGridlineStyle="None"
                                 TextColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}"
+                                TitleColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}"
                                 TicklineColor="{Binding Path=Color, Source={StaticResource SecondaryBrush}}"
                                 AxislineColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}"
                                 Title="arcsec" />

@@ -78,6 +78,8 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
         ? new DispatcherSynchronizationContext(Application.Current.Dispatcher)
         : null;
 
+        private bool hasValidGeneratedSiderealPath;
+
         [ImportingConstructor]
         public MountModelBuilderVM(IProfileService profileService, IApplicationStatusMediator applicationStatusMediator, ITelescopeMediator telescopeMediator, IDomeMediator domeMediator, IFramingAssistantVM framingAssistant, INighttimeCalculator nighttimeCalculator) :
             this(profileService,
@@ -331,6 +333,12 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
 
         private void RefreshMlptPlannedImageCount()
         {
+            if (this.ModelPointGenerationType == ModelPointGenerationTypeEnum.SiderealPath && !hasValidGeneratedSiderealPath)
+            {
+                MlptPlannedImageCount = 3;
+                return;
+            }
+
             var currentCount = DisplayModelPoints?.Count ?? 0;
             MlptPlannedImageCount = Math.Max(1, currentCount);
         }
@@ -728,11 +736,14 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
         {
             this.ModelPoints.Clear();
             this.DisplayModelPoints.Clear();
+            hasValidGeneratedSiderealPath = false;
+            RefreshMlptPlannedImageCount();
             return Task.FromResult(true);
         }
 
         private bool GenerateGoldenSpiral(int goldenSpiralStarCount, bool showNotifications)
         {
+            hasValidGeneratedSiderealPath = false;
             var localModelPoints = this.modelPointGenerator.GenerateGoldenSpiral(goldenSpiralStarCount, this.CustomHorizon);
             this.ModelPoints = ImmutableList.ToImmutableList(localModelPoints);
             if (!this.modelBuilderOptions.ShowRemovedPoints)
@@ -760,6 +771,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
 
         private bool GenerateAutoGrid(bool showNotifications)
         {
+            hasValidGeneratedSiderealPath = false;
             List<ModelPoint> localModelPoints;
             if (this.AutoGridInputMode == AutoGridInputModeEnum.DesiredPoints)
             {
@@ -830,6 +842,8 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
 
         private bool GenerateSiderealPath(bool showNotifications)
         {
+            hasValidGeneratedSiderealPath = false;
+
             //     if (Connected == false)
             //     { return false; }
 
@@ -876,6 +890,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             {
                 var localModelPoints = this.modelPointGenerator.GenerateSiderealPath(SiderealPathObjectCoordinates.Coordinates, Angle.ByDegree(SiderealTrackRADeltaDegrees), startTime, endTime, CustomHorizon);
                 this.ModelPoints = ImmutableList.ToImmutableList(localModelPoints);
+                hasValidGeneratedSiderealPath = this.ModelPoints.Count >= 2;
                 if (!this.modelBuilderOptions.ShowRemovedPoints)
                 {
                     localModelPoints = localModelPoints.Where(mp => mp.ModelPointState == ModelPointStateEnum.Generated).ToList();
@@ -1494,7 +1509,18 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 if (this.modelBuilderOptions.ModelPointGenerationType != value)
                 {
                     this.modelBuilderOptions.ModelPointGenerationType = value;
+                    if (value == ModelPointGenerationTypeEnum.SiderealPath)
+                    {
+                        hasValidGeneratedSiderealPath = false;
+                    }
                     RaisePropertyChanged();
+                    RaisePropertyChanged(nameof(IsGoldenSpiralOptionsVisible));
+                    RaisePropertyChanged(nameof(IsAutoGridOptionsVisible));
+                    RaisePropertyChanged(nameof(IsHighAltitudeOptionsVisible));
+                    RaisePropertyChanged(nameof(IsSyncOptionsVisible));
+                    RaisePropertyChanged(nameof(IsMlptOptionsVisible));
+                    RaisePropertyChanged(nameof(AreMlptErrorChartsVisible));
+                    RefreshMlptPlannedImageCount();
                 }
             }
         }
@@ -1547,9 +1573,27 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 {
                     this.modelBuilderOptions.AutoGridInputMode = value;
                     RaisePropertyChanged();
+                    RaisePropertyChanged(nameof(IsAutoGridDesiredPointsMode));
+                    RaisePropertyChanged(nameof(IsAutoGridSpacingMode));
                 }
             }
         }
+
+        public bool IsAutoGridDesiredPointsMode => this.modelBuilderOptions.AutoGridInputMode == AutoGridInputModeEnum.DesiredPoints;
+
+        public bool IsAutoGridSpacingMode => !IsAutoGridDesiredPointsMode;
+
+        public bool IsGoldenSpiralOptionsVisible => this.modelBuilderOptions.ModelPointGenerationType == ModelPointGenerationTypeEnum.GoldenSpiral;
+
+        public bool IsAutoGridOptionsVisible => this.modelBuilderOptions.ModelPointGenerationType == ModelPointGenerationTypeEnum.AutoGrid;
+
+        public bool IsHighAltitudeOptionsVisible => this.modelBuilderOptions.ModelPointGenerationType == ModelPointGenerationTypeEnum.GoldenSpiral;
+
+        public bool IsSyncOptionsVisible => this.modelBuilderOptions.ModelPointGenerationType != ModelPointGenerationTypeEnum.SiderealPath;
+
+        public bool IsMlptOptionsVisible => this.modelBuilderOptions.ModelPointGenerationType == ModelPointGenerationTypeEnum.SiderealPath;
+
+        public bool AreMlptErrorChartsVisible => IsMlptOptionsVisible;
 
         public AutoGridPathOrderingModeEnum AutoGridPathOrderingMode
         {
