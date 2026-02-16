@@ -196,7 +196,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 {
                     var hourAngleDegrees = localHourAngles[sequenceIndex];
                     var destination = ToHorizontalFromDeclinationHourAngle(latitudeDegrees, declinationDegrees, hourAngleDegrees);
-                    var azimuthDegrees = AstroUtil.EuclidianModulus(540.0d - destination.azimuthDegrees, 360.0d);
+                    var azimuthDegrees = AstroUtil.EuclidianModulus(720.0d - destination.azimuthDegrees, 360.0d);
                     var altitudeDegrees = destination.altitudeDegrees;
 
                     var horizonAltitude = horizon.GetAltitude(azimuthDegrees);
