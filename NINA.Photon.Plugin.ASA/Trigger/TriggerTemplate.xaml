@@ -380,6 +380,27 @@
     </WrapPanel>
 
     <WrapPanel
+     x:Key="ASADitherAfterExposuresTemplate"
+     x:Shared="false"
+     Orientation="Horizontal">
+        <StackPanel Orientation="Vertical">
+
+            <StackPanel Orientation="Horizontal">
+
+                <TextBlock VerticalAlignment="Center" Text="{ns:Loc LblAmount}" />
+                <ninactrl:UnitTextBox
+                     MinWidth="50"
+                     Margin="5,0,0,0"
+                     VerticalAlignment="Center"
+                     VerticalContentAlignment="Center"
+                     Text="{Binding Amount}"
+                     TextAlignment="Right"
+                     Unit="#" />
+            </StackPanel>
+        </StackPanel>
+    </WrapPanel>
+
+    <WrapPanel
      x:Key="RelaxSlewTemplate"
      x:Shared="false"
      Orientation="Horizontal">
@@ -704,6 +725,49 @@
                 </StackPanel>
             </mini:MiniSequenceItem.SequenceItemContent>
         </mini:MiniSequenceItem>
+    </DataTemplate>
+
+    <DataTemplate DataType="{x:Type local:MountDitherAfter}">
+        <view:SequenceBlockView>
+            <view:SequenceBlockView.SequenceItemContent>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock VerticalAlignment="Center" Text="{ns:Loc LblAfterExposures}" />
+                    <TextBox
+                        MinWidth="40"
+                        Margin="5,0,0,0"
+                        HorizontalAlignment="Right"
+                        VerticalAlignment="Center"
+                        Text="{Binding AfterExposures}" />
+                </StackPanel>
+            </view:SequenceBlockView.SequenceItemContent>
+            <view:SequenceBlockView.SequenceItemProgressContent>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock VerticalAlignment="Center" Text="{ns:Loc LblExposures}" />
+                    <TextBlock
+                        Margin="5,0,0,0"
+                        VerticalAlignment="Center"
+                        Text="{Binding ProgressExposures}" />
+                    <TextBlock Text="/" />
+                    <TextBlock VerticalAlignment="Center" Text="{Binding AfterExposures}" />
+                </StackPanel>
+            </view:SequenceBlockView.SequenceItemProgressContent>
+        </view:SequenceBlockView>
+    </DataTemplate>
+
+    <DataTemplate x:Key="NINA.Photon.Plugin.ASA.MLPT.MountDitherAfter_Mini">
+        <mini:MiniTrigger>
+            <mini:MiniTrigger.TriggerProgressContent>
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock VerticalAlignment="Center" Text="{ns:Loc LblExposures}" />
+                    <TextBlock
+                        Margin="5,0,0,0"
+                        VerticalAlignment="Center"
+                        Text="{Binding ProgressExposures}" />
+                    <TextBlock Text="/" />
+                    <TextBlock VerticalAlignment="Center" Text="{Binding AfterExposures}" />
+                </StackPanel>
+            </mini:MiniTrigger.TriggerProgressContent>
+        </mini:MiniTrigger>
     </DataTemplate>
 
     <!--DataTemplate DataType="{x:Type local:SetTrackingRate}">

@@ -13,7 +13,7 @@
 
 ## 3.2.6.4 (2025-11-29)
 
-  Added new trigger Mount Dither.
+- Added new trigger *Mount Dither*. This trigger always uses direct guider, even if another guider is selected in NINA.
 
 ## 3.2.6.3 (2025-11-27)
 
