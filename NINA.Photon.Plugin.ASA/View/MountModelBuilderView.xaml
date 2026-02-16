@@ -1091,6 +1091,7 @@
                     <RowDefinition Style="{StaticResource HideMlptChartsRowWhenHidden}" />
                     <RowDefinition Style="{StaticResource HideMlptChartsRowWhenHidden}" />
                     <RowDefinition Height="1*" />
+                    <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
                 <oxy:Plot
                     Grid.Row="0" Grid.Column="0"
@@ -1198,6 +1199,42 @@
                             LineStyle="Dot"
                             StrokeThickness="1.5"
                             TrackerFormatString="" />
+                        <oxy:LineSeries
+                            ItemsSource="{Binding MeridianLimitWestCurvePoints}"
+                            DataFieldX="X"
+                            DataFieldY="Y"
+                            LineStyle="Dot"
+                            StrokeThickness="2"
+                            TrackerFormatString=""
+                            Visibility="{Binding ShowMeridianLimitGuides, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"
+                            Color="#FFA500" />
+                        <oxy:LineSeries
+                            ItemsSource="{Binding MeridianLimitWestCurvePoints2}"
+                            DataFieldX="X"
+                            DataFieldY="Y"
+                            LineStyle="Dot"
+                            StrokeThickness="2"
+                            TrackerFormatString=""
+                            Visibility="{Binding ShowMeridianLimitGuides, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"
+                            Color="#FFA500" />
+                        <oxy:LineSeries
+                            ItemsSource="{Binding MeridianLimitEastCurvePoints}"
+                            DataFieldX="X"
+                            DataFieldY="Y"
+                            LineStyle="Dot"
+                            StrokeThickness="2"
+                            TrackerFormatString=""
+                            Visibility="{Binding ShowMeridianLimitGuides, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"
+                            Color="#FFA500" />
+                        <oxy:LineSeries
+                            ItemsSource="{Binding MeridianLimitEastCurvePoints2}"
+                            DataFieldX="X"
+                            DataFieldY="Y"
+                            LineStyle="Dot"
+                            StrokeThickness="2"
+                            TrackerFormatString=""
+                            Visibility="{Binding ShowMeridianLimitGuides, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"
+                            Color="#FFA500" />
                     </oxy:Plot.Series>
                     <oxy:Plot.Annotations>
                         <oxy:PointAnnotation
@@ -1209,6 +1246,29 @@
                             TextColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}"
                             X="{Binding TelescopePosition.X}"
                             Y="{Binding TelescopePosition.Y}" />
+                        <oxy:LineAnnotation
+                            MaximumY="90"
+                            Type="Vertical"
+                            LineStyle="Solid"
+                            StrokeThickness="3"
+                            X="{Binding MeridianAzimuth}"
+                            Color="{Binding Path=Color, Source={StaticResource PrimaryBrush}, Converter={StaticResource SetAlphaToColorConverter}, ConverterParameter=160}" />
+                        <oxy:LineAnnotation
+                            MaximumY="90"
+                            Type="Vertical"
+                            LineStyle="Dot"
+                            StrokeThickness="2"
+                            X="{Binding MeridianLimitWestAzimuth}"
+                            Visibility="{Binding ShowMeridianLimitGuides, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"
+                            Color="#FFA500" />
+                        <oxy:LineAnnotation
+                            MaximumY="90"
+                            Type="Vertical"
+                            LineStyle="Dot"
+                            StrokeThickness="2"
+                            X="{Binding MeridianLimitEastAzimuth}"
+                            Visibility="{Binding ShowMeridianLimitGuides, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"
+                            Color="#FFA500" />
                         <oxy:LineAnnotation
                             MaximumY="90"
                             Text="Dome Az"
@@ -1463,6 +1523,114 @@
                         </oxy:LinearColorAxis>
                     </oxy:Plot.Axes>
                     <oxy:Plot.Series>
+                        <oxy:LineSeries
+                            ItemsSource="{Binding MeridianPolarGuidePoints}"
+                            DataFieldX="X"
+                            DataFieldY="Y"
+                            XAxisKey="AltitudeAxis"
+                            YAxisKey="AzimuthAxis"
+                            LineStyle="Solid"
+                            StrokeThickness="2.5"
+                            TrackerFormatString=""
+                            Color="{Binding Path=Color, Source={StaticResource PrimaryBrush}, Converter={StaticResource SetAlphaToColorConverter}, ConverterParameter=160}" />
+                        <oxy:LineSeries
+                            ItemsSource="{Binding MeridianOppositePolarGuidePoints}"
+                            DataFieldX="X"
+                            DataFieldY="Y"
+                            XAxisKey="AltitudeAxis"
+                            YAxisKey="AzimuthAxis"
+                            LineStyle="Solid"
+                            StrokeThickness="2.5"
+                            TrackerFormatString=""
+                            Color="{Binding Path=Color, Source={StaticResource PrimaryBrush}, Converter={StaticResource SetAlphaToColorConverter}, ConverterParameter=160}" />
+                        <oxy:LineSeries
+                            ItemsSource="{Binding MeridianLimitWestPolarGuidePoints}"
+                            DataFieldX="X"
+                            DataFieldY="Y"
+                            XAxisKey="AltitudeAxis"
+                            YAxisKey="AzimuthAxis"
+                            LineStyle="Dot"
+                            StrokeThickness="1.75"
+                            TrackerFormatString=""
+                            Visibility="{Binding ShowMeridianLimitGuides, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"
+                            Color="#FFA500" />
+                        <oxy:LineSeries
+                            ItemsSource="{Binding MeridianLimitWestOppositePolarGuidePoints}"
+                            DataFieldX="X"
+                            DataFieldY="Y"
+                            XAxisKey="AltitudeAxis"
+                            YAxisKey="AzimuthAxis"
+                            LineStyle="Dot"
+                            StrokeThickness="1.75"
+                            TrackerFormatString=""
+                            Visibility="{Binding ShowMeridianLimitGuides, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"
+                            Color="#FFA500" />
+                        <oxy:LineSeries
+                            ItemsSource="{Binding MeridianLimitEastPolarGuidePoints}"
+                            DataFieldX="X"
+                            DataFieldY="Y"
+                            XAxisKey="AltitudeAxis"
+                            YAxisKey="AzimuthAxis"
+                            LineStyle="Dot"
+                            StrokeThickness="1.75"
+                            TrackerFormatString=""
+                            Visibility="{Binding ShowMeridianLimitGuides, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"
+                            Color="#FFA500" />
+                        <oxy:LineSeries
+                            ItemsSource="{Binding MeridianLimitEastOppositePolarGuidePoints}"
+                            DataFieldX="X"
+                            DataFieldY="Y"
+                            XAxisKey="AltitudeAxis"
+                            YAxisKey="AzimuthAxis"
+                            LineStyle="Dot"
+                            StrokeThickness="1.75"
+                            TrackerFormatString=""
+                            Visibility="{Binding ShowMeridianLimitGuides, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"
+                            Color="#FFA500" />
+                        <oxy:LineSeries
+                            ItemsSource="{Binding MeridianLimitWestCurvePointsPolar}"
+                            DataFieldX="X"
+                            DataFieldY="Y"
+                            XAxisKey="AltitudeAxis"
+                            YAxisKey="AzimuthAxis"
+                            LineStyle="Dot"
+                            StrokeThickness="2"
+                            TrackerFormatString=""
+                            Visibility="{Binding ShowMeridianLimitGuides, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"
+                            Color="#FFA500" />
+                        <oxy:LineSeries
+                            ItemsSource="{Binding MeridianLimitWestCurvePointsPolar2}"
+                            DataFieldX="X"
+                            DataFieldY="Y"
+                            XAxisKey="AltitudeAxis"
+                            YAxisKey="AzimuthAxis"
+                            LineStyle="Dot"
+                            StrokeThickness="2"
+                            TrackerFormatString=""
+                            Visibility="{Binding ShowMeridianLimitGuides, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"
+                            Color="#FFA500" />
+                        <oxy:LineSeries
+                            ItemsSource="{Binding MeridianLimitEastCurvePointsPolar}"
+                            DataFieldX="X"
+                            DataFieldY="Y"
+                            XAxisKey="AltitudeAxis"
+                            YAxisKey="AzimuthAxis"
+                            LineStyle="Dot"
+                            StrokeThickness="2"
+                            TrackerFormatString=""
+                            Visibility="{Binding ShowMeridianLimitGuides, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"
+                            Color="#FFA500" />
+                        <oxy:LineSeries
+                            ItemsSource="{Binding MeridianLimitEastCurvePointsPolar2}"
+                            DataFieldX="X"
+                            DataFieldY="Y"
+                            XAxisKey="AltitudeAxis"
+                            YAxisKey="AzimuthAxis"
+                            LineStyle="Dot"
+                            StrokeThickness="2"
+                            TrackerFormatString=""
+                            Visibility="{Binding ShowMeridianLimitGuides, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"
+                            Color="#FFA500" />
                         <!-- oxy:LineSeries
 
             ItemsSource="{Binding HorizonDataPointsPolar}"
@@ -1501,6 +1669,13 @@
          Y="{Binding TelescopePositionInverted.X}" />
                     </oxy:Plot.Annotations>
                 </oxy:Plot>
+
+                <TextBlock
+                    Grid.Row="4"
+                    Grid.Column="0"
+                    Margin="8,4,8,8"
+                    HorizontalAlignment="Center"
+                    Text="{Binding MeridianFlipMaxAngleDisplay}" />
             </Grid>
         </Grid>
     </ScrollViewer>

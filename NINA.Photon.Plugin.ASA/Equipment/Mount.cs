@@ -270,12 +270,16 @@ namespace NINA.Photon.Plugin.ASA.Equipment
                 Logger.Error($"CommandString MeridianFlipMaxAngle: {ex.Message}");
             }
 
+            Logger.Info($"MeridianFlipMaxAngle: {rc}");
+            
             double result = 0;
-            rc = rc.Replace(',', '.');
-            if (double.TryParse(rc, NumberStyles.Float, CultureInfo.InvariantCulture, out result))
+            var normalizedResponse = rc?.Trim().TrimEnd('#').Replace(',', '.');
+            if (double.TryParse(normalizedResponse, NumberStyles.Float, CultureInfo.InvariantCulture, out result))
             {
                 return new Response<double>(result, rc);
             }
+
+            Logger.Warning($"Failed to parse MeridianFlipMaxAngle from response '{rc}'");
             return new Response<double>(0, rc);
         }
 
