@@ -62,7 +62,7 @@
                             Name="PART_ModelPointGenerationTypeList"
                             MinWidth="120"
                             ToolTip="{StaticResource PointGenerator_Tooltip}"
-                            ItemsSource="{Binding Source={util:EnumBindingSource {x:Type tmmodel:ModelPointGenerationTypeEnum}}}"
+                            ItemsSource="{Binding ModelPointGenerationTypeOptions}"
                             SelectedItem="{Binding ModelPointGenerationType}">
                             <ComboBox.ItemTemplate>
                                 <DataTemplate>
@@ -105,18 +105,11 @@
                     </Grid>
                 </GroupBox>
 
-                <GroupBox>
-                    <GroupBox.Style>
-                        <Style TargetType="{x:Type GroupBox}" BasedOn="{StaticResource StandardGroupBox}">
-                            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
-                            <Setter Property="BorderThickness" Value="0,0,0,1" />
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding ElementName=PART_ModelPointGenerationTypeList, Path=SelectedItem}" Value="1">
-                                    <Setter Property="FrameworkElement.Visibility" Value="Collapsed" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </GroupBox.Style>
+                <GroupBox
+                    Style="{StaticResource StandardGroupBox}"
+                    BorderBrush="{StaticResource BorderBrush}"
+                    BorderThickness="0,0,0,1"
+                    Visibility="{Binding IsGoldenSpiralOptionsVisible, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}">
                     <GroupBox.Header>
                         <Grid Height="36" Margin="5">
                             <TextBlock
@@ -133,6 +126,7 @@
                         </Grid.ColumnDefinitions>
 
                         <Grid.RowDefinitions>
+                            <RowDefinition />
                             <RowDefinition />
                             <RowDefinition />
                             <RowDefinition />
@@ -164,20 +158,165 @@
                         </ninactrl:UnitTextBox>
                     </Grid>
                 </GroupBox>
+                <GroupBox
+                    Style="{StaticResource StandardGroupBox}"
+                    BorderBrush="{StaticResource BorderBrush}"
+                    BorderThickness="0,0,0,1"
+                    Visibility="{Binding IsAutoGridOptionsVisible, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}">
+                    <GroupBox.Header>
+                        <Grid Height="36" Margin="5">
+                            <TextBlock
+                                   VerticalAlignment="Center"
+                                   FontSize="18"
+                                   Text="AutoGrid Options" />
+                        </Grid>
+                    </GroupBox.Header>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" SharedSizeGroup="SettingsCol0" />
+                            <ColumnDefinition Width="Auto" SharedSizeGroup="SettingsCol1" />
+                            <ColumnDefinition Width="Auto" SharedSizeGroup="SettingsCol2" />
+                        </Grid.ColumnDefinitions>
+
+                        <Grid.RowDefinitions>
+                            <RowDefinition />
+                            <RowDefinition />
+                            <RowDefinition />
+                            <RowDefinition />
+                            <RowDefinition />
+                            <RowDefinition />
+                        </Grid.RowDefinitions>
+                        <TextBlock
+                              Grid.Row="0" Grid.Column="0"
+                              HorizontalAlignment="Left"
+                              VerticalAlignment="Center"
+                              Text="Input mode"
+                              ToolTip="Choose AutoGrid input mode" />
+                        <ComboBox
+                              Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2"
+                              Margin="10,5,0,0"
+                              MinWidth="120"
+                              ItemsSource="{Binding Source={util:EnumBindingSource {x:Type tmmodel:AutoGridInputModeEnum}}}"
+                              SelectedItem="{Binding AutoGridInputMode}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Converter={StaticResource TM_EnumStaticDescriptionValueConverter}}" />
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+
+                        <TextBlock
+                            Grid.Row="1" Grid.Column="0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Text="Path order"
+                            ToolTip="Choose point traversal order for AutoGrid builds" />
+                        <ComboBox
+                            Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"
+                            Margin="10,5,0,0"
+                            MinWidth="120"
+                            ItemsSource="{Binding Source={util:EnumBindingSource {x:Type tmmodel:AutoGridPathOrderingModeEnum}}}"
+                            SelectedItem="{Binding AutoGridPathOrderingMode}">
+                            <ComboBox.ItemTemplate>
+                              <DataTemplate>
+                                <TextBlock Text="{Binding Converter={StaticResource TM_EnumStaticDescriptionValueConverter}}" />
+                              </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+
+                                                <TextBlock
+                                                        Grid.Row="2" Grid.Column="0"
+                                                        HorizontalAlignment="Left"
+                                                        VerticalAlignment="Center"
+                                                        Text="Show path"
+                                                        ToolTip="Connect generated points using a dotted preview line" />
+                                                <CheckBox
+                                                        Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2"
+                                                        Margin="10,5,0,0"
+                                                        HorizontalAlignment="Left"
+                                                        VerticalAlignment="Center"
+                                                        IsChecked="{Binding ShowDisplayPath}" />
+
+                        <TextBlock
+                                                        Grid.Row="3" Grid.Column="0"
+                              HorizontalAlignment="Left"
+                              VerticalAlignment="Center"
+                              Text="Desired points"
+                              ToolTip="Target number of generated AutoGrid points"
+                              Visibility="{Binding IsAutoGridDesiredPointsMode, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}" />
+                        <ninactrl:UnitTextBox
+                                                        Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2"
+                              MinWidth="80"
+                              Margin="10,5,0,0"
+                              HorizontalAlignment="Left"
+                              VerticalAlignment="Center"
+                              ToolTip="Target number of generated AutoGrid points"
+                              Visibility="{Binding IsAutoGridDesiredPointsMode, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}">
+                            <Binding Path="AutoGridDesiredPointCount" UpdateSourceTrigger="LostFocus">
+                                <Binding.ValidationRules>
+                                    <rules:IntRangeRule>
+                                        <rules:IntRangeRule.ValidRange>
+                                            <rules:IntRangeChecker Maximum="1000" Minimum="3" />
+                                        </rules:IntRangeRule.ValidRange>
+                                    </rules:IntRangeRule>
+                                </Binding.ValidationRules>
+                            </Binding>
+                        </ninactrl:UnitTextBox>
+
+                        <TextBlock
+                                                        Grid.Row="4" Grid.Column="0"
+                              HorizontalAlignment="Left"
+                              VerticalAlignment="Center"
+                              Text="RA spacing"
+                              ToolTip="Fixed RA spacing in degrees"
+                              Visibility="{Binding IsAutoGridSpacingMode, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}" />
+                        <ninactrl:UnitTextBox
+                                                        Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2"
+                              MinWidth="80"
+                              Margin="10,5,0,0"
+                              HorizontalAlignment="Left"
+                              VerticalAlignment="Center"
+                              Unit="°"
+                              ToolTip="Fixed RA spacing in degrees"
+                              Visibility="{Binding IsAutoGridSpacingMode, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}">
+                            <Binding Path="AutoGridRASpacingDegrees" UpdateSourceTrigger="LostFocus">
+                                <Binding.ValidationRules>
+                                    <rules:GreaterThanZeroRule />
+                                </Binding.ValidationRules>
+                            </Binding>
+                        </ninactrl:UnitTextBox>
+
+                        <TextBlock
+                                                        Grid.Row="5" Grid.Column="0"
+                              HorizontalAlignment="Left"
+                              VerticalAlignment="Center"
+                              Text="Dec spacing"
+                              ToolTip="Fixed Dec spacing in degrees"
+                              Visibility="{Binding IsAutoGridSpacingMode, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}" />
+                        <ninactrl:UnitTextBox
+                                                        Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="2"
+                              MinWidth="80"
+                              Margin="10,5,0,0"
+                              HorizontalAlignment="Left"
+                              VerticalAlignment="Center"
+                              Unit="°"
+                              ToolTip="Fixed Dec spacing in degrees"
+                              Visibility="{Binding IsAutoGridSpacingMode, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}">
+                            <Binding Path="AutoGridDecSpacingDegrees" UpdateSourceTrigger="LostFocus">
+                                <Binding.ValidationRules>
+                                    <rules:GreaterThanZeroRule />
+                                </Binding.ValidationRules>
+                            </Binding>
+                        </ninactrl:UnitTextBox>
+                    </Grid>
+                </GroupBox>
                 <!-- high altitude /-->
 
-                <GroupBox>
-                    <GroupBox.Style>
-                        <Style TargetType="{x:Type GroupBox}" BasedOn="{StaticResource StandardGroupBox}">
-                            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
-                            <Setter Property="BorderThickness" Value="0,0,0,1" />
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding ElementName=PART_ModelPointGenerationTypeList, Path=SelectedItem}" Value="1">
-                                    <Setter Property="FrameworkElement.Visibility" Value="Collapsed" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </GroupBox.Style>
+                <GroupBox
+                    Style="{StaticResource StandardGroupBox}"
+                    BorderBrush="{StaticResource BorderBrush}"
+                    BorderThickness="0,0,0,1"
+                    Visibility="{Binding IsHighAltitudeOptionsVisible, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}">
                     <GroupBox.Header>
                         <Grid Height="36" Margin="5">
                             <TextBlock
@@ -291,18 +430,11 @@
                     </Grid>
                 </GroupBox>
                 <!-- high altitude end /-->
-                <GroupBox>
-                    <GroupBox.Style>
-                        <Style TargetType="{x:Type GroupBox}" BasedOn="{StaticResource StandardGroupBox}">
-                            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
-                            <Setter Property="BorderThickness" Value="0,0,0,1" />
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding ElementName=PART_ModelPointGenerationTypeList, Path=SelectedItem}" Value="1">
-                                    <Setter Property="FrameworkElement.Visibility" Value="Collapsed" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </GroupBox.Style>
+                <GroupBox
+                    Style="{StaticResource StandardGroupBox}"
+                    BorderBrush="{StaticResource BorderBrush}"
+                    BorderThickness="0,0,0,1"
+                    Visibility="{Binding IsSyncOptionsVisible, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}">
 
                     <GroupBox.Header>
 
@@ -502,18 +634,11 @@
                     </Expander>
                 </GroupBox>
                 <!-- sync options end -->
-                <GroupBox>
-                    <GroupBox.Style>
-                        <Style TargetType="{x:Type GroupBox}" BasedOn="{StaticResource StandardGroupBox}">
-                            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
-                            <Setter Property="BorderThickness" Value="0,0,0,1" />
-                            <Style.Triggers>
-                                <DataTrigger Binding="{Binding ElementName=PART_ModelPointGenerationTypeList, Path=SelectedItem}" Value="0">
-                                    <Setter Property="FrameworkElement.Visibility" Value="Collapsed" />
-                                </DataTrigger>
-                            </Style.Triggers>
-                        </Style>
-                    </GroupBox.Style>
+                <GroupBox
+                    Style="{StaticResource StandardGroupBox}"
+                    BorderBrush="{StaticResource BorderBrush}"
+                    BorderThickness="0,0,0,1"
+                    Visibility="{Binding IsMlptOptionsVisible, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}">
                     <GroupBox.Header>
                         <Grid Height="36" Margin="5">
                             <TextBlock
@@ -948,11 +1073,23 @@
             </StackPanel>
             <Separator Grid.Column="1" Margin="10,5,5,10" Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" />
             <Grid Grid.Column="2" Grid.Row="0" Grid.RowSpan="2">
+                <Grid.Resources>
+                    <Style x:Key="HideMlptChartsRowWhenHidden" TargetType="{x:Type RowDefinition}">
+                        <Setter Property="Height" Value="Auto" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding AreMlptErrorChartsVisible}" Value="False">
+                                <Setter Property="Height" Value="0" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Grid.Resources>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" MinWidth="200" />
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="1*" />
+                    <RowDefinition Style="{StaticResource HideMlptChartsRowWhenHidden}" />
+                    <RowDefinition Style="{StaticResource HideMlptChartsRowWhenHidden}" />
                     <RowDefinition Height="1*" />
                 </Grid.RowDefinitions>
                 <oxy:Plot
@@ -1054,6 +1191,13 @@
                             MarkerSize="4"
                             DataFieldValue="ModelPointState"
                             TrackerFormatString="{}Altitude: {Altitude:##0.00}&#176;&#x0a;Azimuth: {Azimuth:##0.00}&#176;&#x0a;State: {ModelPointStateString}&#x0a;RMS Error: {RMSErrorString}" />
+                        <oxy:LineSeries
+                            ItemsSource="{Binding DisplayPathPoints, UpdateSourceTrigger=PropertyChanged}"
+                            DataFieldX="X"
+                            DataFieldY="Y"
+                            LineStyle="Dot"
+                            StrokeThickness="1.5"
+                            TrackerFormatString="" />
                     </oxy:Plot.Series>
                     <oxy:Plot.Annotations>
                         <oxy:PointAnnotation
@@ -1110,8 +1254,150 @@
                     </oxy:Plot.Annotations>
                 </oxy:Plot>
 
-                <oxy:Plot
+                <Grid Grid.Row="1" Grid.Column="0" Margin="8,0,8,8" Visibility="{Binding AreMlptErrorChartsVisible, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <TextBlock
+                        Grid.Row="0"
+                        HorizontalAlignment="Center"
+                        Margin="0,0,0,4"
+                        Text="{Binding MaxMlptRaErrorArcsec, StringFormat=max RA Error {0:0.0} arcsec}" />
+                    <oxy:Plot
                         Grid.Row="1"
+                        MinWidth="300"
+                        MinHeight="120"
+                        Height="120"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Top"
+                        Background="{StaticResource BackgroundBrush}"
+                        PlotAreaBackground="{StaticResource BackgroundBrush}"
+                        PlotAreaBorderColor="Transparent">
+                        <oxy:Plot.Axes>
+                            <oxy:LinearAxis
+                                Position="Bottom"
+                                Minimum="1"
+                                Maximum="{Binding MlptPlannedImageCount}"
+                                MajorStep="1"
+                                MinorStep="1"
+                                StringFormat="0"
+                                IsPanEnabled="False"
+                                IsZoomEnabled="False"
+                                MajorGridlineStyle="LongDash"
+                                MinorGridlineStyle="None"
+                                TextColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}"
+                                TitleColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}"
+                                TicklineColor="{Binding Path=Color, Source={StaticResource SecondaryBrush}}"
+                                AxislineColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}"
+                                Title="Image #" />
+                            <oxy:LinearAxis
+                                Position="Left"
+                                Minimum="{Binding MlptRaErrorAxisMinimumArcsec}"
+                                Maximum="{Binding MlptRaErrorAxisLimitArcsec}"
+                                IsPanEnabled="False"
+                                IsZoomEnabled="False"
+                                MajorGridlineStyle="LongDash"
+                                MinorGridlineStyle="None"
+                                TextColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}"
+                                TitleColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}"
+                                TicklineColor="{Binding Path=Color, Source={StaticResource SecondaryBrush}}"
+                                AxislineColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}"                                
+                                Title="arcsec" />
+                        </oxy:Plot.Axes>
+                        <oxy:Plot.Series>
+                            <oxy:LineSeries
+                                ItemsSource="{Binding MlptRaErrorPoints}"
+                                DataFieldX="X"
+                                DataFieldY="Y"
+                                MarkerType="Circle"
+                                MarkerSize="3"
+                                TrackerFormatString="{}Image #{X:0}&#x0a;RA Error: {Y:0.##} arcsec" />
+                        </oxy:Plot.Series>
+                        <oxy:Plot.Annotations>
+                            <oxy:LineAnnotation
+                                Type="Horizontal"
+                                Y="0"
+                                LineStyle="Solid"
+                                StrokeThickness="1"
+                                Color="{Binding Path=Color, Source={StaticResource PrimaryBrush}, Converter={StaticResource SetAlphaToColorConverter}, ConverterParameter=70}" />
+                        </oxy:Plot.Annotations>
+                    </oxy:Plot>
+                </Grid>
+
+                <Grid Grid.Row="2" Grid.Column="0" Margin="8,0,8,8" Visibility="{Binding AreMlptErrorChartsVisible, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="*" />
+                    </Grid.RowDefinitions>
+                    <TextBlock
+                        Grid.Row="0"
+                        HorizontalAlignment="Center"
+                        Margin="0,0,0,4"
+                        Text="{Binding MaxMlptDeErrorArcsec, StringFormat=max DE Error {0:0.0} arcsec}" />
+                    <oxy:Plot
+                        Grid.Row="1"
+                        MinWidth="300"
+                        MinHeight="120"
+                        Height="120"
+                        HorizontalAlignment="Stretch"
+                        VerticalAlignment="Top"
+                        Background="{StaticResource BackgroundBrush}"
+                        PlotAreaBackground="{StaticResource BackgroundBrush}"
+                        PlotAreaBorderColor="Transparent">
+                        <oxy:Plot.Axes>
+                            <oxy:LinearAxis
+                                Position="Bottom"
+                                Minimum="1"
+                                Maximum="{Binding MlptPlannedImageCount}"
+                                MajorStep="1"
+                                MinorStep="1"
+                                StringFormat="0"
+                                IsPanEnabled="False"
+                                IsZoomEnabled="False"
+                                MajorGridlineStyle="LongDash"
+                                MinorGridlineStyle="None"
+                                TextColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}"
+                                TitleColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}"
+                                TicklineColor="{Binding Path=Color, Source={StaticResource SecondaryBrush}}"
+                                AxislineColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}"
+                                Title="Image #" />
+                            <oxy:LinearAxis
+                                Position="Left"
+                                Minimum="{Binding MlptDeErrorAxisMinimumArcsec}"
+                                Maximum="{Binding MlptDeErrorAxisLimitArcsec}"
+                                IsPanEnabled="False"
+                                IsZoomEnabled="False"
+                                MajorGridlineStyle="LongDash"
+                                MinorGridlineStyle="None"
+                                TextColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}"
+                                TitleColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}"
+                                TicklineColor="{Binding Path=Color, Source={StaticResource SecondaryBrush}}"
+                                AxislineColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}"
+                                Title="arcsec" />
+                        </oxy:Plot.Axes>
+                        <oxy:Plot.Series>
+                            <oxy:LineSeries
+                                ItemsSource="{Binding MlptDeErrorPoints}"
+                                DataFieldX="X"
+                                DataFieldY="Y"
+                                MarkerType="Circle"
+                                MarkerSize="3"
+                                TrackerFormatString="{}Image #{X:0}&#x0a;DE Error: {Y:0.##} arcsec" />
+                        </oxy:Plot.Series>
+                        <oxy:Plot.Annotations>
+                            <oxy:LineAnnotation
+                                Type="Horizontal"
+                                Y="0"
+                                LineStyle="Solid"
+                                StrokeThickness="1"
+                                Color="{Binding Path=Color, Source={StaticResource PrimaryBrush}, Converter={StaticResource SetAlphaToColorConverter}, ConverterParameter=70}" />
+                        </oxy:Plot.Annotations>
+                    </oxy:Plot>
+                </Grid>
+
+                <oxy:Plot
+                        Grid.Row="3"
                         Grid.Column="0"
                         Width="Auto"
                         MinWidth="300"
@@ -1193,6 +1479,15 @@
                                 TrackerFormatString="{}Altitude: {Altitude:###.####}&#176;&#x0a;Azimuth: {Azimuth:###.####}&#176;&#x0a;RMS Error: {ErrorArcsec:###.##} arcsec"
                                 XAxisKey="AltitudeAxis"
                                 YAxisKey="AzimuthAxis" />
+                            <oxy:LineSeries
+                                ItemsSource="{Binding DisplayPathPointsPolar, UpdateSourceTrigger=PropertyChanged}"
+                                DataFieldX="X"
+                                DataFieldY="Y"
+                                XAxisKey="AltitudeAxis"
+                                YAxisKey="AzimuthAxis"
+                                LineStyle="Dot"
+                                StrokeThickness="1.5"
+                                TrackerFormatString="" />
                     </oxy:Plot.Series>
                     <oxy:Plot.Annotations>
                         <oxy:PointAnnotation

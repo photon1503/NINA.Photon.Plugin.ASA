@@ -43,6 +43,9 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
         private readonly IMountMediator mountMediator;
         private readonly IMount mount;
 
+        private const double AUTO_GRID_RING_SCALE_EXPONENT = 0.82d;
+        private const double AUTO_GRID_RING_PHASE_STEP_DEGREES = 12.0d;
+
         public ModelPointGenerator(IProfileService profileService, ITelescopeMediator telescopeMediator, IWeatherDataMediator weatherDataMediator, IASAOptions options, IMountMediator mountMediator, IMount mount)
         {
             this.profileService = profileService;
@@ -99,27 +102,15 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                     }
 
                     var horizonAltitude = horizon.GetAltitude(azimuthDegrees);
-                    ModelPointStateEnum creationState;
-                    if (altitudeDegrees < options.MinPointAltitude || altitudeDegrees > options.MaxPointAltitude)
-                    {
-                        creationState = ModelPointStateEnum.OutsideAltitudeBounds;
-                    }
-                    else if (azimuthDegrees < options.MinPointAzimuth || azimuthDegrees >= options.MaxPointAzimuth)
-                    {
-                        creationState = ModelPointStateEnum.OutsideAzimuthBounds;
-                    }
-                    else if (altitudeDegrees >= horizonAltitude)
+                    var creationState = DeterminePointState(altitudeDegrees, azimuthDegrees, horizonAltitude, applyAzimuthBounds: true);
+                    if (creationState == ModelPointStateEnum.Generated)
                     {
                         ++validPoints;
-                        creationState = ModelPointStateEnum.Generated;
-                    }
-                    else
-                    {
-                        creationState = ModelPointStateEnum.BelowHorizon;
                     }
                     points.Add(
                         new ModelPoint(telescopeMediator)
                         {
+                            AutoGridBandIndex = i,
                             Altitude = altitudeDegrees,
                             Azimuth = azimuthDegrees,
                             ModelPointState = creationState
@@ -165,6 +156,419 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             }
         }
 
+        public List<ModelPoint> GenerateAutoGrid(double raSpacingDegrees, double decSpacingDegrees, CustomHorizon horizon)
+        {
+            if (raSpacingDegrees <= 0.0d || raSpacingDegrees > 360.0d)
+            {
+                throw new Exception("RA spacing must be between 0 and 360 degrees");
+            }
+            if (decSpacingDegrees <= 0.0d || decSpacingDegrees > 180.0d)
+            {
+                throw new Exception("Dec spacing must be between 0 and 180 degrees");
+            }
+
+            var ringDistances = BuildPolarRingDistances(decSpacingDegrees);
+            var estimatedPoints = 0;
+            for (var i = 0; i < ringDistances.Count; i++)
+            {
+                estimatedPoints += GetAutoGridRaValuesForRing(ringDistances[i], raSpacingDegrees, i).Count;
+            }
+            if (estimatedPoints > MAX_POINTS)
+            {
+                throw new Exception($"AutoGrid spacing produces {estimatedPoints} points, exceeding ASA limit of {MAX_POINTS}. Increase spacing.");
+            }
+
+            var points = new List<ModelPoint>(estimatedPoints);
+            var latitudeDegrees = profileService.ActiveProfile.AstrometrySettings.Latitude;
+            var isNorthernHemisphere = latitudeDegrees >= 0.0d;
+
+            for (var i = 0; i < ringDistances.Count; i++)
+            {
+                var ringDistanceDegrees = ringDistances[i];
+                var declinationDegrees = isNorthernHemisphere
+                    ? 90.0d - ringDistanceDegrees
+                    : -90.0d + ringDistanceDegrees;
+
+                var localHourAngles = GetAutoGridRaValuesForRing(ringDistanceDegrees, raSpacingDegrees, i);
+                var ringPoints = new List<ModelPoint>(localHourAngles.Count);
+                var ringPointCount = localHourAngles.Count;
+                for (var sequenceIndex = 0; sequenceIndex < localHourAngles.Count; sequenceIndex++)
+                {
+                    var hourAngleDegrees = localHourAngles[sequenceIndex];
+                    var destination = ToHorizontalFromDeclinationHourAngle(latitudeDegrees, declinationDegrees, hourAngleDegrees);
+                    var azimuthDegrees = AstroUtil.EuclidianModulus(720.0d - destination.azimuthDegrees, 360.0d);
+                    var altitudeDegrees = destination.altitudeDegrees;
+
+                    var horizonAltitude = horizon.GetAltitude(azimuthDegrees);
+                    var creationState = DeterminePointState(altitudeDegrees, azimuthDegrees, horizonAltitude, applyAzimuthBounds: false);
+
+                    ringPoints.Add(
+                        new ModelPoint(telescopeMediator)
+                        {
+                            AutoGridBandIndex = i,
+                            AutoGridBandSequence = sequenceIndex,
+                            AutoGridBandPointCount = ringPointCount,
+                            Altitude = altitudeDegrees,
+                            Azimuth = azimuthDegrees,
+                            ModelPointState = creationState
+                        });
+                }
+
+                var eastToWestOrdered = ringPoints
+                    .OrderBy(p => ClockwiseDistanceDegrees(90.0d, p.Azimuth))
+                    .ThenByDescending(p => p.Altitude)
+                    .ToList();
+
+                for (var eastToWestIndex = 0; eastToWestIndex < eastToWestOrdered.Count; eastToWestIndex++)
+                {
+                    eastToWestOrdered[eastToWestIndex].AutoGridBandEastToWestOrder = eastToWestIndex;
+                }
+
+                points.AddRange(ringPoints);
+            }
+
+            var radialBandWidthDegrees = Math.Max(1.0d, decSpacingDegrees);
+            var radialBands = points
+                .GroupBy(p => (int)Math.Floor((90.0d - p.Altitude) / radialBandWidthDegrees + 1e-9d))
+                .ToList();
+
+            foreach (var radialBand in radialBands)
+            {
+                var radialBandIndex = radialBand.Key;
+                var orderedEastToWest = radialBand
+                    .OrderBy(p => CounterClockwiseDistanceDegrees(90.0d, p.Azimuth))
+                    .ThenByDescending(p => p.Altitude)
+                    .ToList();
+
+                for (var eastToWestIndex = 0; eastToWestIndex < orderedEastToWest.Count; eastToWestIndex++)
+                {
+                    var point = orderedEastToWest[eastToWestIndex];
+                    point.AutoGridRadialBandIndex = radialBandIndex;
+                    point.AutoGridRadialBandEastToWestOrder = eastToWestIndex;
+                }
+            }
+
+            return points;
+        }
+
+        public List<ModelPoint> GenerateAutoGridByPointCount(int desiredPointCount, CustomHorizon horizon)
+        {
+            if (desiredPointCount > MAX_POINTS)
+            {
+                throw new Exception($"ASA mounts do not support more than {MAX_POINTS} points");
+            }
+            if (desiredPointCount < 3)
+            {
+                throw new Exception("At least 3 points required for a viable model");
+            }
+
+            const double HEMISPHERE_SURFACE_DEGREES2 = 20626.48062470965d;
+            var guessSpacing = Math.Sqrt(HEMISPHERE_SURFACE_DEGREES2 / desiredPointCount);
+            guessSpacing = Math.Max(0.5d, Math.Min(90.0d, guessSpacing));
+
+            var bestSpacing = guessSpacing;
+            var maxGenerated = 0;
+            var candidates = new List<(double spacing, int generated, int difference, int stabilityPenalty)>();
+
+            void EvaluateScalar(double spacing)
+            {
+                if (spacing <= 0.0d || spacing > 90.0d)
+                {
+                    return;
+                }
+
+                var generatedCount = EstimateGeneratedAutoGridCount(spacing, spacing, horizon);
+                if (generatedCount <= 0)
+                {
+                    return;
+                }
+
+                maxGenerated = Math.Max(maxGenerated, generatedCount);
+
+                var difference = Math.Abs(generatedCount - desiredPointCount);
+                var stabilityPenalty = EstimateAutoGridCountStabilityPenalty(spacing, spacing, horizon, generatedCount);
+                candidates.Add((spacing, generatedCount, difference, stabilityPenalty));
+            }
+
+            for (var spacing = 0.5d; spacing <= 90.0d; spacing += 0.25d)
+            {
+                EvaluateScalar(spacing);
+            }
+
+            for (var spacing = Math.Max(0.5d, bestSpacing - 2.0d); spacing <= Math.Min(90.0d, bestSpacing + 2.0d); spacing += 0.05d)
+            {
+                EvaluateScalar(spacing);
+            }
+
+            if (candidates.Count == 0)
+            {
+                return GenerateAutoGrid(guessSpacing, guessSpacing, horizon);
+            }
+
+            var minDifference = candidates.Min(c => c.difference);
+            var proximityWindow = Math.Max(4, (int)Math.Round(desiredPointCount * 0.12d));
+            var allowedDifference = Math.Max(minDifference, proximityWindow);
+            var minimumReasonableGenerated = maxGenerated >= desiredPointCount
+                ? Math.Max(3, (int)Math.Round(desiredPointCount * 0.75d))
+                : 0;
+
+            var shortlist = candidates
+                .Where(c => c.difference <= allowedDifference && c.generated >= minimumReasonableGenerated)
+                .ToList();
+
+            if (shortlist.Count == 0)
+            {
+                shortlist = candidates
+                    .Where(c => c.difference == minDifference)
+                    .ToList();
+            }
+
+            var bestCandidate = shortlist
+                .OrderBy(c => c.stabilityPenalty)
+                .ThenBy(c => c.difference)
+                .ThenBy(c => c.generated > desiredPointCount ? 1 : 0)
+                .ThenBy(c => c.spacing)
+                .First();
+
+            bestSpacing = bestCandidate.spacing;
+
+            var points = GenerateAutoGrid(bestSpacing, bestSpacing, horizon);
+            var generated = points.Count(p => p.ModelPointState == ModelPointStateEnum.Generated);
+            if (generated != desiredPointCount)
+            {
+                Logger.Info($"AutoGrid requested {desiredPointCount} points; selected equidistant spacing {bestSpacing:F2}° with {generated} points (±{Math.Abs(generated - desiredPointCount)}). Max found during search: {maxGenerated}.");
+            }
+            return points;
+        }
+
+        private (double raSpacingDegrees, double decSpacingDegrees, int generatedCount)? FindBestQuantizedAutoGridCandidate(int desiredPointCount, CustomHorizon horizon)
+        {
+            (double raSpacingDegrees, double decSpacingDegrees, int generatedCount)? best = null;
+            double bestScore = double.MaxValue;
+            var maxDifference = Math.Max(12, (int)Math.Round(desiredPointCount * 0.20d));
+
+            var preferredVisibleRingCount = Math.Max(6, (int)Math.Round(Math.Sqrt(desiredPointCount)) - 1);
+            var preferredDecSpacing = 90.0d / Math.Max(1, preferredVisibleRingCount - 1);
+
+            for (var ringSegments = 8; ringSegments <= 36; ringSegments++)
+            {
+                var decSpacing = 180.0d / ringSegments;
+                for (var baseCount = 8; baseCount <= 144; baseCount++)
+                {
+                    var raSpacing = 360.0d / baseCount;
+                    var generatedCount = EstimateGeneratedAutoGridCount(raSpacing, decSpacing, horizon);
+                    if (generatedCount <= 0)
+                    {
+                        continue;
+                    }
+
+                    var difference = Math.Abs(generatedCount - desiredPointCount);
+                    if (difference > maxDifference)
+                    {
+                        continue;
+                    }
+
+                    var stabilityPenalty = EstimateAutoGridCountStabilityPenalty(raSpacing, decSpacing, horizon, generatedCount);
+                    var ringFamilyPenalty = Math.Abs(decSpacing - preferredDecSpacing);
+                    var overTargetPenalty = generatedCount > desiredPointCount ? 1.0d : 0.0d;
+                    var score =
+                        (stabilityPenalty * 100.0d) +
+                        (ringFamilyPenalty * 5.0d) +
+                        (difference * 1.0d) +
+                        (overTargetPenalty * 0.5d);
+
+                    if (score < bestScore ||
+                        (Math.Abs(score - bestScore) < 1e-9d && best.HasValue && generatedCount <= desiredPointCount && best.Value.generatedCount > desiredPointCount) ||
+                        (Math.Abs(score - bestScore) < 1e-9d && !best.HasValue))
+                    {
+                        best = (raSpacing, decSpacing, generatedCount);
+                        bestScore = score;
+                    }
+                }
+            }
+
+            return best;
+        }
+
+        private int EstimateAutoGridCountStabilityPenalty(double raSpacingDegrees, double decSpacingDegrees, CustomHorizon horizon, int centerCount)
+        {
+            if (centerCount <= 0)
+            {
+                return int.MaxValue;
+            }
+
+            var penalty = 0;
+            var offsets = new (double raOffset, double decOffset)[]
+            {
+                (-0.5d, 0.0d),
+                (0.5d, 0.0d),
+                (0.0d, -0.5d),
+                (0.0d, 0.5d)
+            };
+
+            foreach (var (raOffset, decOffset) in offsets)
+            {
+                var candidateRaSpacing = Math.Max(0.5d, Math.Min(90.0d, raSpacingDegrees + raOffset));
+                var candidateDecSpacing = Math.Max(0.5d, Math.Min(90.0d, decSpacingDegrees + decOffset));
+                var candidateCount = EstimateGeneratedAutoGridCount(candidateRaSpacing, candidateDecSpacing, horizon);
+                if (candidateCount <= 0)
+                {
+                    penalty += centerCount;
+                }
+                else
+                {
+                    penalty += Math.Abs(candidateCount - centerCount);
+                }
+            }
+
+            return penalty;
+        }
+
+        private int EstimateGeneratedAutoGridCount(double raSpacingDegrees, double decSpacingDegrees, CustomHorizon horizon)
+        {
+            try
+            {
+                var points = GenerateAutoGrid(raSpacingDegrees, decSpacingDegrees, horizon);
+                return points.Count(p => p.ModelPointState == ModelPointStateEnum.Generated);
+            }
+            catch
+            {
+                return 0;
+            }
+        }
+
+        private List<double> BuildPolarRingDistances(double decSpacingDegrees)
+        {
+            var ringDistances = new List<double>();
+            for (var ringDistanceDegrees = 0.0d; ringDistanceDegrees <= 180.0d; ringDistanceDegrees += decSpacingDegrees)
+            {
+                ringDistances.Add(Math.Min(180.0d, ringDistanceDegrees));
+            }
+
+            if (ringDistances.Count == 0 || Math.Abs(ringDistances[ringDistances.Count - 1] - 180.0d) > 0.0001d)
+            {
+                ringDistances.Add(180.0d);
+            }
+
+            return ringDistances;
+        }
+
+        private static double CounterClockwiseDistanceDegrees(double fromAzimuth, double toAzimuth)
+        {
+            return AstroUtil.EuclidianModulus(fromAzimuth - toAzimuth, 360.0d);
+        }
+
+        private static double ClockwiseDistanceDegrees(double fromAzimuth, double toAzimuth)
+        {
+            return AstroUtil.EuclidianModulus(toAzimuth - fromAzimuth, 360.0d);
+        }
+
+        private List<double> GetAutoGridRaValuesForRing(double ringDistanceDegrees, double raSpacingDegrees, int ringIndex)
+        {
+            if (Math.Abs(ringDistanceDegrees) < 0.0001d)
+            {
+                return new List<double>();
+            }
+
+            if (Math.Abs(ringDistanceDegrees - 180.0d) < 0.0001d)
+            {
+                return new List<double> { 0.0d };
+            }
+
+            var baseCount = Math.Max(1, (int)Math.Round(360.0d / raSpacingDegrees));
+            var rawRingScale = Math.Abs(Math.Sin(Angle.ByDegree(ringDistanceDegrees).Radians));
+            var ringScale = Math.Pow(rawRingScale, AUTO_GRID_RING_SCALE_EXPONENT);
+            var ringCount = Math.Max(2, (int)Math.Round(baseCount * ringScale));
+
+            var ringSpacing = 360.0d / ringCount;
+            var ringPhase = AstroUtil.EuclidianModulus(
+                (ringIndex * AUTO_GRID_RING_PHASE_STEP_DEGREES) +
+                (ringIndex % 2 == 0 ? 0.0d : ringSpacing / 2.0d),
+                360.0d);
+            var startHourAngle = -180.0d + ringPhase;
+
+            var raValues = new List<double>(ringCount);
+            for (var i = 0; i < ringCount; i++)
+            {
+                var hourAngleDegrees = startHourAngle + (i * ringSpacing);
+                if (hourAngleDegrees < -180.0d)
+                {
+                    hourAngleDegrees += 360.0d;
+                }
+                else if (hourAngleDegrees >= 180.0d)
+                {
+                    hourAngleDegrees -= 360.0d;
+                }
+                raValues.Add(hourAngleDegrees);
+            }
+
+            return raValues;
+        }
+
+        private (double altitudeDegrees, double azimuthDegrees) ToHorizontalFromDeclinationHourAngle(double latitudeDegrees, double declinationDegrees, double hourAngleDegrees)
+        {
+            var latitudeRadians = Angle.ByDegree(latitudeDegrees).Radians;
+            var declinationRadians = Angle.ByDegree(declinationDegrees).Radians;
+            var hourAngleRadians = Angle.ByDegree(hourAngleDegrees).Radians;
+
+            var sinAltitude = (Math.Sin(latitudeRadians) * Math.Sin(declinationRadians)) +
+                              (Math.Cos(latitudeRadians) * Math.Cos(declinationRadians) * Math.Cos(hourAngleRadians));
+            var altitudeRadians = Math.Asin(Math.Max(-1.0d, Math.Min(1.0d, sinAltitude)));
+            var cosAltitude = Math.Cos(altitudeRadians);
+
+            double azimuthRadians;
+            if (Math.Abs(cosAltitude) < 1e-12d)
+            {
+                azimuthRadians = 0.0d;
+            }
+            else
+            {
+                var sinAzimuth = -(Math.Cos(declinationRadians) * Math.Sin(hourAngleRadians)) / cosAltitude;
+                var cosAzimuth = (Math.Sin(declinationRadians) - (Math.Sin(altitudeRadians) * Math.Sin(latitudeRadians))) /
+                                 (cosAltitude * Math.Cos(latitudeRadians));
+                azimuthRadians = Math.Atan2(sinAzimuth, cosAzimuth);
+            }
+
+            var altitudeDegrees = Angle.ByRadians(altitudeRadians).Degree;
+            var azimuthDegrees = AstroUtil.EuclidianModulus(Angle.ByRadians(azimuthRadians).Degree, 360.0d);
+            return (altitudeDegrees, azimuthDegrees);
+        }
+
+        private (double altitudeDegrees, double azimuthDegrees) MoveProjectedCircle(double poleProjectionOffsetDegrees, bool isNorthernHemisphere, double ringDistanceDegrees, double ringAngleDegrees)
+        {
+            var centerX = 0.0d;
+            var centerY = isNorthernHemisphere ? poleProjectionOffsetDegrees : -poleProjectionOffsetDegrees;
+
+            var ringAngleRadians = Angle.ByDegree(ringAngleDegrees).Radians;
+            var x = centerX + (ringDistanceDegrees * Math.Sin(ringAngleRadians));
+            var y = centerY + (ringDistanceDegrees * Math.Cos(ringAngleRadians));
+
+            var zenithDistanceDegrees = Math.Sqrt((x * x) + (y * y));
+            var altitudeDegrees = 90.0d - zenithDistanceDegrees;
+
+            var azimuthDegrees = AstroUtil.EuclidianModulus(Angle.ByRadians(Math.Atan2(x, y)).Degree, 360.0d);
+            return (altitudeDegrees, azimuthDegrees);
+        }
+
+        private (double altitudeDegrees, double azimuthDegrees) MoveGreatCircle(double startAltitudeDegrees, double startAzimuthDegrees, double distanceDegrees, double bearingDegrees)
+        {
+            var lat1 = Angle.ByDegree(startAltitudeDegrees).Radians;
+            var lon1 = Angle.ByDegree(startAzimuthDegrees).Radians;
+            var distance = Angle.ByDegree(distanceDegrees).Radians;
+            var bearing = Angle.ByDegree(bearingDegrees).Radians;
+
+            var sinLat2 = (Math.Sin(lat1) * Math.Cos(distance)) + (Math.Cos(lat1) * Math.Sin(distance) * Math.Cos(bearing));
+            var lat2 = Math.Asin(Math.Max(-1.0d, Math.Min(1.0d, sinLat2)));
+
+            var y = Math.Sin(bearing) * Math.Sin(distance) * Math.Cos(lat1);
+            var x = Math.Cos(distance) - (Math.Sin(lat1) * Math.Sin(lat2));
+            var lon2 = lon1 + Math.Atan2(y, x);
+
+            var altitudeDegrees = Angle.ByRadians(lat2).Degree;
+            var azimuthDegrees = AstroUtil.EuclidianModulus(Angle.ByRadians(lon2).Degree, 360.0d);
+            return (altitudeDegrees, azimuthDegrees);
+        }
+
         private TopocentricCoordinates ToTopocentric(Coordinates coordinates, DateTime dateTime)
         {
             var coordinatesAtTime = new Coordinates(Angle.ByHours(coordinates.RA), Angle.ByDegree(coordinates.Dec), coordinates.Epoch, new ConstantDateTime(dateTime));
@@ -185,6 +589,23 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 tempCelcius: temperature,
                 relativeHumidity: humidity,
                 wavelength: wavelength);
+        }
+
+        private ModelPointStateEnum DeterminePointState(double altitudeDegrees, double azimuthDegrees, double horizonAltitude, bool applyAzimuthBounds)
+        {
+            if (altitudeDegrees < options.MinPointAltitude || altitudeDegrees > options.MaxPointAltitude)
+            {
+                return ModelPointStateEnum.OutsideAltitudeBounds;
+            }
+            if (applyAzimuthBounds && (azimuthDegrees < options.MinPointAzimuth || azimuthDegrees >= options.MaxPointAzimuth))
+            {
+                return ModelPointStateEnum.OutsideAzimuthBounds;
+            }
+            if (altitudeDegrees >= horizonAltitude)
+            {
+                return ModelPointStateEnum.Generated;
+            }
+            return ModelPointStateEnum.BelowHorizon;
         }
 
         public List<ModelPoint> GenerateSiderealPath(Coordinates coordinates, Angle raDelta, DateTime startTime, DateTime endTime, CustomHorizon horizon)
@@ -344,23 +765,10 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 var altitudeDegrees = pointCoordinates.Altitude.Degree;
 
                 var horizonAltitude = horizon.GetAltitude(azimuthDegrees);
-                ModelPointStateEnum creationState;
-                if (altitudeDegrees < options.MinPointAltitude || altitudeDegrees > options.MaxPointAltitude)
-                {
-                    creationState = ModelPointStateEnum.OutsideAltitudeBounds;
-                }
-                /*else if (azimuthDegrees < options.MinPointAzimuth || azimuthDegrees >= options.MaxPointAzimuth)
-                {
-                    creationState = ModelPointStateEnum.OutsideAzimuthBounds;
-                }*/
-                else if (altitudeDegrees >= horizonAltitude)
+                var creationState = DeterminePointState(altitudeDegrees, azimuthDegrees, horizonAltitude, applyAzimuthBounds: false);
+                if (creationState == ModelPointStateEnum.Generated)
                 {
                     ++validPoints;
-                    creationState = ModelPointStateEnum.Generated;
-                }
-                else
-                {
-                    creationState = ModelPointStateEnum.BelowHorizon;
                 }
 
                 points.Add(

@@ -45,6 +45,11 @@ namespace NINA.Photon.Plugin.ASA
         private void InitializeOptions()
         {
             goldenSpiralStarCount = optionsAccessor.GetValueInt32("GoldenSpiralStarCount", 9);
+            autoGridRASpacingDegrees = optionsAccessor.GetValueDouble("AutoGridRASpacingDegrees", 10.0d);
+            autoGridDecSpacingDegrees = optionsAccessor.GetValueDouble("AutoGridDecSpacingDegrees", 10.0d);
+            autoGridInputMode = optionsAccessor.GetValueEnum("AutoGridInputMode", AutoGridInputModeEnum.Spacing);
+            autoGridPathOrderingMode = optionsAccessor.GetValueEnum("AutoGridPathOrderingMode", AutoGridPathOrderingModeEnum.LegacyAzimuthSweep);
+            autoGridDesiredPointCount = optionsAccessor.GetValueInt32("AutoGridDesiredPointCount", 195);
             siderealTrackStartOffsetMinutes = optionsAccessor.GetValueInt32("SiderealTrackStartOffsetMinutes", 0);
             siderealTrackEndOffsetMinutes = optionsAccessor.GetValueInt32("SiderealTrackEndOffsetMinutes", 0);
             siderealTrackRADeltaDegrees = optionsAccessor.GetValueDouble("SiderealTrackRADeltaDegrees", 1.5d);
@@ -98,6 +103,11 @@ namespace NINA.Photon.Plugin.ASA
         public void ResetDefaults()
         {
             GoldenSpiralStarCount = 9;
+            AutoGridRASpacingDegrees = 10.0d;
+            AutoGridDecSpacingDegrees = 10.0d;
+            AutoGridInputMode = AutoGridInputModeEnum.Spacing;
+            AutoGridPathOrderingMode = AutoGridPathOrderingModeEnum.LegacyAzimuthSweep;
+            AutoGridDesiredPointCount = 195;
             SiderealTrackStartOffsetMinutes = 0;
             SiderealTrackEndOffsetMinutes = 0;
             SiderealTrackRADeltaDegrees = 1.5d;
@@ -214,6 +224,99 @@ namespace NINA.Photon.Plugin.ASA
                     }
                     goldenSpiralStarCount = value;
                     optionsAccessor.SetValueInt32("GoldenSpiralStarCount", goldenSpiralStarCount);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private double autoGridRASpacingDegrees;
+
+        public double AutoGridRASpacingDegrees
+        {
+            get => autoGridRASpacingDegrees;
+            set
+            {
+                if (Math.Abs(autoGridRASpacingDegrees - value) > double.Epsilon)
+                {
+                    if (value <= 0.0d || value > 360.0d)
+                    {
+                        throw new ArgumentException("AutoGridRASpacingDegrees must be between 0 and 360, exclusive-inclusive", "AutoGridRASpacingDegrees");
+                    }
+                    autoGridRASpacingDegrees = value;
+                    optionsAccessor.SetValueDouble("AutoGridRASpacingDegrees", autoGridRASpacingDegrees);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private double autoGridDecSpacingDegrees;
+
+        public double AutoGridDecSpacingDegrees
+        {
+            get => autoGridDecSpacingDegrees;
+            set
+            {
+                if (Math.Abs(autoGridDecSpacingDegrees - value) > double.Epsilon)
+                {
+                    if (value <= 0.0d || value > 180.0d)
+                    {
+                        throw new ArgumentException("AutoGridDecSpacingDegrees must be between 0 and 180, exclusive-inclusive", "AutoGridDecSpacingDegrees");
+                    }
+                    autoGridDecSpacingDegrees = value;
+                    optionsAccessor.SetValueDouble("AutoGridDecSpacingDegrees", autoGridDecSpacingDegrees);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private AutoGridInputModeEnum autoGridInputMode;
+
+        public AutoGridInputModeEnum AutoGridInputMode
+        {
+            get => autoGridInputMode;
+            set
+            {
+                if (autoGridInputMode != value)
+                {
+                    autoGridInputMode = value;
+                    optionsAccessor.SetValueEnum("AutoGridInputMode", autoGridInputMode);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private AutoGridPathOrderingModeEnum autoGridPathOrderingMode;
+
+        public AutoGridPathOrderingModeEnum AutoGridPathOrderingMode
+        {
+            get => autoGridPathOrderingMode;
+            set
+            {
+                if (autoGridPathOrderingMode != value)
+                {
+                    autoGridPathOrderingMode = value;
+                    optionsAccessor.SetValueEnum("AutoGridPathOrderingMode", autoGridPathOrderingMode);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private int autoGridDesiredPointCount;
+
+        public int AutoGridDesiredPointCount
+        {
+            get => autoGridDesiredPointCount;
+            set
+            {
+                if (autoGridDesiredPointCount != value)
+                {
+                    if (value < 3 || value > ModelPointGenerator.MAX_POINTS)
+                    {
+                        throw new ArgumentException($"AutoGridDesiredPointCount must be between 3 and {ModelPointGenerator.MAX_POINTS}, inclusive", "AutoGridDesiredPointCount");
+                    }
+
+                    autoGridDesiredPointCount = value;
+                    optionsAccessor.SetValueInt32("AutoGridDesiredPointCount", autoGridDesiredPointCount);
                     RaisePropertyChanged();
                 }
             }

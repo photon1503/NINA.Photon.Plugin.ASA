@@ -35,6 +35,16 @@ namespace NINA.Photon.Plugin.ASA.Interfaces
 
         int GoldenSpiralStarCount { get; set; }
 
+        double AutoGridRASpacingDegrees { get; set; }
+
+        double AutoGridDecSpacingDegrees { get; set; }
+
+        AutoGridInputModeEnum AutoGridInputMode { get; set; }
+
+        AutoGridPathOrderingModeEnum AutoGridPathOrderingMode { get; set; }
+
+        int AutoGridDesiredPointCount { get; set; }
+
         string SiderealTrackStartTimeProvider { get; set; }
 
         string SiderealTrackEndTimeProvider { get; set; }

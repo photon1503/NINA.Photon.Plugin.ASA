@@ -858,77 +858,11 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             IProgress<ApplicationStatus> stepProgress)
         {
             var eligiblePoints = state.ValidPoints.Where(IsPointEligibleForBuild).ToList();
-            var eligiblePointsOrdered = eligiblePoints.OrderBy(p => p, state.PointAzimuthComparer).ToList();
-
-            // For MLTP, order by east to west (for northern hemisphere) or west to east (for southern hemisphere)
-            if (state.Options.ModelPointGenerationType == ModelPointGenerationTypeEnum.SiderealPath)
-            {
-                eligiblePointsOrdered = eligiblePoints;
-            }
-
-            Logger.Info($"Sync is {(state.Options.UseSync ? "enabled" : "disabled")}");
-
-            if (state.Options.UseSync == true)
-            {
-                Logger.Info("Adding sync points to eligible points");
-                // add sync point to eligible points
-
-                ModelPoint syncPointEast = new ModelPoint(telescopeMediator)
-                {
-                    Altitude = state.Options.SyncEastAltitude,
-                    Azimuth = state.Options.SyncEastAzimuth,
-                    IsSyncPoint = true,
-                    ModelPointState = ModelPointStateEnum.Generated
-                };
-
-                ModelPoint lastSyncPoint = null;
-                ModelPoint syncPointWest = new ModelPoint(telescopeMediator)
-                {
-                    Altitude = state.Options.SyncWestAltitude,
-                    Azimuth = state.Options.SyncWestAzimuth,
-                    IsSyncPoint = true,
-                    ModelPointState = ModelPointStateEnum.Generated
-                };
-
-                var PointsWithSync = new List<ModelPoint>();
-
-                int idx = 0;
-                bool addSyncPoint = false;
-                foreach (var point in eligiblePointsOrdered)
-                {
-                    if (lastSyncPoint == null ||
-                        Math.Abs(lastSyncPoint.Azimuth - point.Azimuth) >= state.Options.SyncEveryHA ||
-                        Math.Abs(lastSyncPoint.Azimuth - point.Azimuth) > 180)
-                    {
-                        ModelPoint syncPoint;
-                        // is the point east or west of the meridian?
-                        if (point.Azimuth < 180)
-                        {
-                            syncPoint = new ModelPoint(telescopeMediator);
-                            syncPoint.CopyFrom(syncPointEast);
-                        }
-                        else
-                        {
-                            syncPoint = new ModelPoint(telescopeMediator);
-                            syncPoint.CopyFrom(syncPointWest);
-                        }
-                        syncPoint.ModelIndex = idx++;
-                        PointsWithSync.Add(syncPoint);
-                        addSyncPoint = true;
-                    }
-                    point.ModelIndex = idx++;
-                    PointsWithSync.Add(point);
-
-                    if (addSyncPoint)
-                    {
-                        addSyncPoint = false;
-                        lastSyncPoint = point;
-                    }
-                }
-                eligiblePointsOrdered = PointsWithSync;
-            }
-            else
-                Logger.Info("Not adding sync points.");
+            var eligiblePointsOrdered = BuildOrderedTraversalPoints(
+                eligiblePoints,
+                state.Options,
+                state.PointAzimuthComparer,
+                cloneNonSyncPoints: false);
 
             var nextPoint = eligiblePointsOrdered.FirstOrDefault();
 
@@ -1098,7 +1032,11 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 PreStep3_CacheDomeAzimuthRanges(state);
 
                 var eligibleForNextPoint = eligiblePointsOrdered.Where(p => IsPointEligibleForBuild(p)).ToList();
-                if (state.Options.MinimizeMeridianFlips)
+                var preserveAsaBandPathOrdering =
+                    state.Options.ModelPointGenerationType == ModelPointGenerationTypeEnum.AutoGrid &&
+                    state.Options.AutoGridPathOrderingMode == AutoGridPathOrderingModeEnum.ASABandPath;
+
+                if (state.Options.MinimizeMeridianFlips && !preserveAsaBandPathOrdering)
                 {
                     if (eligibleForNextPoint.Any(p => p.ExpectedDomeSideOfPier == nextPoint.ExpectedDomeSideOfPier))
                     {
@@ -1146,6 +1084,336 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
 
             //TODO: Need to update state.ValidPoints with the ordered list
             state.UpdateValidPoints(eligiblePointsOrdered.ToImmutableList());
+        }
+
+        public IList<ModelPoint> GetPreviewOrder(IList<ModelPoint> modelPoints, ModelBuilderOptions options)
+        {
+            if (modelPoints == null || options == null)
+            {
+                return new List<ModelPoint>();
+            }
+
+            var useDome = false;
+            var domeInfo = domeMediator.GetInfo();
+            if (domeInfo?.Connected == true && domeInfo?.CanSetAzimuth == true && !options.DomeControlNINA)
+            {
+                useDome = true;
+            }
+
+            var pointComparer = GetPointComparer(useDome, options, reversed: false);
+            var eligiblePoints = modelPoints.Where(IsPointEligibleForBuild).ToList();
+            return BuildOrderedTraversalPoints(eligiblePoints, options, pointComparer, cloneNonSyncPoints: true);
+        }
+
+        private List<ModelPoint> BuildOrderedTraversalPoints(
+            IReadOnlyList<ModelPoint> eligiblePoints,
+            ModelBuilderOptions options,
+            IComparer<ModelPoint> pointComparer,
+            bool cloneNonSyncPoints)
+        {
+            if (eligiblePoints == null || eligiblePoints.Count == 0)
+            {
+                return new List<ModelPoint>();
+            }
+
+            var orderedBase = eligiblePoints.OrderBy(p => p, pointComparer).ToList();
+
+            if (options.ModelPointGenerationType == ModelPointGenerationTypeEnum.SiderealPath)
+            {
+                orderedBase = eligiblePoints.ToList();
+            }
+            else if (options.ModelPointGenerationType == ModelPointGenerationTypeEnum.AutoGrid &&
+                options.AutoGridPathOrderingMode == AutoGridPathOrderingModeEnum.ASABandPath)
+            {
+                orderedBase = OrderAutoGridPointsAsaBandPath(eligiblePoints);
+            }
+
+            Logger.Info($"Sync is {(options.UseSync ? "enabled" : "disabled")}");
+
+            if (!options.UseSync)
+            {
+                if (cloneNonSyncPoints)
+                {
+                    return orderedBase.Select(p => p.Clone()).ToList();
+                }
+
+                return orderedBase;
+            }
+
+            Logger.Info("Adding sync points to eligible points");
+            var syncPointEast = new ModelPoint(telescopeMediator)
+            {
+                Altitude = options.SyncEastAltitude,
+                Azimuth = options.SyncEastAzimuth,
+                IsSyncPoint = true,
+                ModelPointState = ModelPointStateEnum.Generated
+            };
+
+            var syncPointWest = new ModelPoint(telescopeMediator)
+            {
+                Altitude = options.SyncWestAltitude,
+                Azimuth = options.SyncWestAzimuth,
+                IsSyncPoint = true,
+                ModelPointState = ModelPointStateEnum.Generated
+            };
+
+            var pointsWithSync = new List<ModelPoint>();
+            ModelPoint lastSyncPoint = null;
+            var idx = 0;
+
+            foreach (var sourcePoint in orderedBase)
+            {
+                var point = cloneNonSyncPoints ? sourcePoint.Clone() : sourcePoint;
+                var shouldInsertSync =
+                    lastSyncPoint == null ||
+                    Math.Abs(lastSyncPoint.Azimuth - point.Azimuth) >= options.SyncEveryHA ||
+                    Math.Abs(lastSyncPoint.Azimuth - point.Azimuth) > 180;
+
+                if (shouldInsertSync)
+                {
+                    var syncPoint = new ModelPoint(telescopeMediator);
+                    syncPoint.CopyFrom(point.Azimuth < 180 ? syncPointEast : syncPointWest);
+                    syncPoint.ModelIndex = idx++;
+                    pointsWithSync.Add(syncPoint);
+                }
+
+                point.ModelIndex = idx++;
+                pointsWithSync.Add(point);
+
+                if (shouldInsertSync)
+                {
+                    lastSyncPoint = point;
+                }
+            }
+
+            return pointsWithSync;
+        }
+
+        private static IComparer<ModelPoint> GetPointComparer(bool useDome, ModelBuilderOptions options, bool reversed)
+        {
+            bool westToEast = options.WestToEastSorting ^ reversed;
+            if (useDome && options.MinimizeDomeMovement)
+            {
+                return Comparer<ModelPoint>.Create(
+                    (mp1, mp2) =>
+                    {
+                        if (!westToEast)
+                        {
+                            var bound1 = double.IsNaN(mp1.MinDomeAzimuth) ? double.MinValue : mp1.MinDomeAzimuth;
+                            var bound2 = double.IsNaN(mp2.MinDomeAzimuth) ? double.MinValue : mp2.MinDomeAzimuth;
+                            return DOUBLE_COMPARER.Compare(bound1, bound2);
+                        }
+                        else
+                        {
+                            var bound1 = double.IsNaN(mp1.MaxDomeAzimuth) ? double.MaxValue : mp1.MaxDomeAzimuth;
+                            var bound2 = double.IsNaN(mp2.MaxDomeAzimuth) ? double.MaxValue : mp2.MaxDomeAzimuth;
+                            return DOUBLE_COMPARER.Compare(bound2, bound1);
+                        }
+                    });
+            }
+            else
+            {
+                return Comparer<ModelPoint>.Create(
+                    (mp1, mp2) => !westToEast ? DOUBLE_COMPARER.Compare(mp1.Azimuth, mp2.Azimuth) : DOUBLE_COMPARER.Compare(mp2.Azimuth, mp1.Azimuth));
+            }
+        }
+
+        private List<ModelPoint> OrderAutoGridPointsAsaBandPath(IReadOnlyList<ModelPoint> points)
+        {
+            if (points == null || points.Count == 0)
+            {
+                return new List<ModelPoint>();
+            }
+
+            var pointsWithBandMetadata = points.Where(p => p.AutoGridBandIndex >= 0).ToList();
+
+            List<(List<ModelPoint> Points, double MaxRadialDistance, double MeanRadialDistance)> groupedBands;
+            if (pointsWithBandMetadata.Count == points.Count)
+            {
+                groupedBands = pointsWithBandMetadata
+                    .GroupBy(p => p.AutoGridBandIndex)
+                    .OrderByDescending(group => group.Key)
+                    .Select(group => (
+                        Points: group.ToList(),
+                        MaxRadialDistance: group.Max(p => 90.0d - p.Altitude),
+                        MeanRadialDistance: group.Average(p => 90.0d - p.Altitude)))
+                    .ToList();
+            }
+            else
+            {
+                var configuredSpacing = asaOptions?.AutoGridDecSpacingDegrees ?? 0.0d;
+                var bandWidthDegrees = configuredSpacing > 0.0d ? configuredSpacing : ComputeAutoGridBandWidthDegrees(points);
+                bandWidthDegrees = Math.Max(1.0d, bandWidthDegrees);
+
+                groupedBands = points
+                    .GroupBy(p => (int)Math.Floor((90.0d - p.Altitude) / bandWidthDegrees + 1e-9d))
+                    .Select(group => (
+                        Points: group.ToList(),
+                        MaxRadialDistance: group.Max(p => 90.0d - p.Altitude),
+                        MeanRadialDistance: group.Average(p => 90.0d - p.Altitude)))
+                    .OrderByDescending(band => band.MaxRadialDistance)
+                    .ThenByDescending(band => band.MeanRadialDistance)
+                    .ToList();
+            }
+
+            var ordered = new List<ModelPoint>(points.Count);
+            foreach (var band in groupedBands)
+            {
+                var bandPath = OrderBandPointsFromFarEast(band.Points);
+
+                ordered.AddRange(bandPath);
+            }
+
+            Logger.Info($"Using ASA AutoGrid band ordering. Ordered {ordered.Count} points across {groupedBands.Count} bands.");
+            return ordered;
+        }
+
+        private static double ComputeAutoGridBandWidthDegrees(IReadOnlyList<ModelPoint> points)
+        {
+            var orderedAltitudes = points
+                .Select(p => p.Altitude)
+                .OrderBy(altitude => altitude)
+                .ToList();
+
+            var deltas = new List<double>();
+            for (var i = 1; i < orderedAltitudes.Count; i++)
+            {
+                var delta = orderedAltitudes[i] - orderedAltitudes[i - 1];
+                if (delta > 0.15d)
+                {
+                    deltas.Add(delta);
+                }
+            }
+
+            if (deltas.Count == 0)
+            {
+                return 5.0d;
+            }
+
+            deltas.Sort();
+            var median = deltas[deltas.Count / 2];
+            return Math.Max(1.0d, Math.Min(30.0d, median));
+        }
+
+        private static double CircularDistanceDegrees(double azimuthA, double azimuthB)
+        {
+            var delta = Math.Abs(azimuthA - azimuthB) % 360.0d;
+            return delta <= 180.0d ? delta : 360.0d - delta;
+        }
+
+        private static double ClockwiseDistanceDegrees(double fromAzimuth, double toAzimuth)
+        {
+            return AstroUtil.EuclidianModulus(toAzimuth - fromAzimuth, 360.0d);
+        }
+
+        private static double CounterClockwiseDistanceDegrees(double fromAzimuth, double toAzimuth)
+        {
+            return AstroUtil.EuclidianModulus(fromAzimuth - toAzimuth, 360.0d);
+        }
+
+        private static List<ModelPoint> OrderBandPointsFromFarEast(List<ModelPoint> bandPoints)
+        {
+            if (bandPoints == null || bandPoints.Count <= 1)
+            {
+                return bandPoints ?? new List<ModelPoint>();
+            }
+
+            var pointsWithSequenceAndCount = bandPoints
+                .Where(p => p.AutoGridBandSequence >= 0 && p.AutoGridBandPointCount > 0)
+                .ToList();
+            if (pointsWithSequenceAndCount.Count == bandPoints.Count)
+            {
+                var totalBandPointCount = pointsWithSequenceAndCount.Max(p => p.AutoGridBandPointCount);
+                if (totalBandPointCount > 1)
+                {
+                    var sequenceSorted = pointsWithSequenceAndCount
+                        .OrderBy(p => p.AutoGridBandSequence)
+                        .ToList();
+
+                    var largestGap = int.MinValue;
+                    var largestGapIndex = 0;
+                    for (var index = 0; index < sequenceSorted.Count; index++)
+                    {
+                        var current = sequenceSorted[index].AutoGridBandSequence;
+                        var next = sequenceSorted[(index + 1) % sequenceSorted.Count].AutoGridBandSequence;
+                        var gap = (next - current + totalBandPointCount) % totalBandPointCount;
+                        if (gap == 0)
+                        {
+                            gap = totalBandPointCount;
+                        }
+
+                        if (gap > largestGap)
+                        {
+                            largestGap = gap;
+                            largestGapIndex = index;
+                        }
+                    }
+
+                    var startIndex = (largestGapIndex + 1) % sequenceSorted.Count;
+                    var forward = new List<ModelPoint>(sequenceSorted.Count);
+                    for (var offset = 0; offset < sequenceSorted.Count; offset++)
+                    {
+                        forward.Add(sequenceSorted[(startIndex + offset) % sequenceSorted.Count]);
+                    }
+
+                    var reverse = forward.AsEnumerable().Reverse().ToList();
+
+                    var forwardScore = (2.0d * CircularDistanceDegrees(forward.First().Azimuth, 90.0d)) + CircularDistanceDegrees(forward.Last().Azimuth, 270.0d);
+                    var reverseScore = (2.0d * CircularDistanceDegrees(reverse.First().Azimuth, 90.0d)) + CircularDistanceDegrees(reverse.Last().Azimuth, 270.0d);
+                    return forwardScore <= reverseScore ? forward : reverse;
+                }
+            }
+
+            var pointsWithEastWestOrder = bandPoints.Where(p => p.AutoGridBandEastToWestOrder >= 0).ToList();
+            if (pointsWithEastWestOrder.Count == bandPoints.Count)
+            {
+                return pointsWithEastWestOrder
+                    .OrderBy(p => p.AutoGridBandEastToWestOrder)
+                    .ThenByDescending(p => p.Altitude)
+                    .ToList();
+            }
+
+            var pointsWithSequence = bandPoints.Where(p => p.AutoGridBandSequence >= 0).OrderBy(p => p.AutoGridBandSequence).ToList();
+            if (pointsWithSequence.Count == bandPoints.Count)
+            {
+                var startIndex = pointsWithSequence
+                    .Select((point, index) => new { point, index })
+                    .OrderBy(x => CircularDistanceDegrees(x.point.Azimuth, 90.0d))
+                    .ThenBy(x => ClockwiseDistanceDegrees(90.0d, x.point.Azimuth))
+                    .First()
+                    .index;
+
+                var count = pointsWithSequence.Count;
+                var sequenceStartPoint = pointsWithSequence[startIndex];
+                var nextPoint = pointsWithSequence[(startIndex + 1) % count];
+                var prevPoint = pointsWithSequence[(startIndex - 1 + count) % count];
+
+                var forwardClockwiseDistance = ClockwiseDistanceDegrees(sequenceStartPoint.Azimuth, nextPoint.Azimuth);
+                var backwardClockwiseDistance = ClockwiseDistanceDegrees(sequenceStartPoint.Azimuth, prevPoint.Azimuth);
+                var goForward = forwardClockwiseDistance <= backwardClockwiseDistance;
+
+                var orderedBySequence = new List<ModelPoint>(count);
+                for (var i = 0; i < count; i++)
+                {
+                    var index = goForward
+                        ? (startIndex + i) % count
+                        : (startIndex - i + count) % count;
+                    orderedBySequence.Add(pointsWithSequence[index]);
+                }
+
+                return orderedBySequence;
+            }
+
+            var startPoint = bandPoints
+                .OrderBy(p => CircularDistanceDegrees(p.Azimuth, 90.0d))
+                .ThenBy(p => ClockwiseDistanceDegrees(90.0d, p.Azimuth))
+                .First();
+
+            var startAzimuth = startPoint.Azimuth;
+            return bandPoints
+                .OrderBy(p => ClockwiseDistanceDegrees(startAzimuth, p.Azimuth))
+                .ThenByDescending(p => p.Altitude)
+                .ToList();
         }
 
         private async Task<bool> SlewDomeIfNecessary(ModelBuilderState state, List<ModelPoint> sideOfPierPoints, CancellationToken ct)

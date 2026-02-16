@@ -1,4 +1,4 @@
-﻿#region "copyright"
+#region "copyright"
 
 /*
     Copyright © 2021 - 2021 George Hilios <ghilios+NINA@googlemail.com>
@@ -16,15 +16,12 @@ using System.ComponentModel;
 namespace NINA.Photon.Plugin.ASA.Model
 {
     [TypeConverter(typeof(EnumStaticDescriptionTypeConverter))]
-    public enum ModelPointGenerationTypeEnum
+    public enum AutoGridInputModeEnum
     {
-        [Description("Golden Spiral")]
-        GoldenSpiral = 0,
+        [Description("Spacing")]
+        Spacing = 0,
 
-        [Description("MLPT")]
-        SiderealPath = 1,
-
-        [Description("AutoGrid")]
-        AutoGrid = 2
+        [Description("Desired points")]
+        DesiredPoints = 1
     }
 }

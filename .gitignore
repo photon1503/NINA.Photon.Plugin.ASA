@@ -1,6 +1,8 @@
 # Exclude nuget.exe
 /publish/nuget.exe
 
+tmp_*.ps1
+
 # User-specific files
 *.rsuser
 *.user

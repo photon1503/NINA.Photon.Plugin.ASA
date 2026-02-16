@@ -36,5 +36,13 @@ namespace NINA.Photon.Plugin.ASA.Equipment {
         public ImmutableList<ModelPoint> GenerateGoldenSpiral(int goldenSpiralStarCount) {
             return handler.GenerateGoldenSpiral(goldenSpiralStarCount);
         }
+
+        public ImmutableList<ModelPoint> GenerateAutoGrid(double raSpacingDegrees, double decSpacingDegrees) {
+            return handler.GenerateAutoGrid(raSpacingDegrees, decSpacingDegrees);
+        }
+
+        public ImmutableList<ModelPoint> GenerateAutoGrid(int desiredPointCount) {
+            return handler.GenerateAutoGrid(desiredPointCount);
+        }
     }
 }
