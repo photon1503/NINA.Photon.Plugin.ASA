@@ -1254,7 +1254,7 @@
                             X="{Binding MeridianAzimuth}"
                             Color="{Binding Path=Color, Source={StaticResource PrimaryBrush}, Converter={StaticResource SetAlphaToColorConverter}, ConverterParameter=160}" />
                         <oxy:LineAnnotation
-                            MaximumY="90"
+                            MaximumY="15"
                             Type="Vertical"
                             LineStyle="Dot"
                             StrokeThickness="2"
@@ -1262,7 +1262,7 @@
                             Visibility="{Binding ShowMeridianLimitGuides, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"
                             Color="#FFA500" />
                         <oxy:LineAnnotation
-                            MaximumY="90"
+                            MaximumY="15"
                             Type="Vertical"
                             LineStyle="Dot"
                             StrokeThickness="2"
@@ -1543,50 +1543,6 @@
                             StrokeThickness="2.5"
                             TrackerFormatString=""
                             Color="{Binding Path=Color, Source={StaticResource PrimaryBrush}, Converter={StaticResource SetAlphaToColorConverter}, ConverterParameter=160}" />
-                        <oxy:LineSeries
-                            ItemsSource="{Binding MeridianLimitWestPolarGuidePoints}"
-                            DataFieldX="X"
-                            DataFieldY="Y"
-                            XAxisKey="AltitudeAxis"
-                            YAxisKey="AzimuthAxis"
-                            LineStyle="Dot"
-                            StrokeThickness="1.75"
-                            TrackerFormatString=""
-                            Visibility="{Binding ShowMeridianLimitGuides, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"
-                            Color="#FFA500" />
-                        <oxy:LineSeries
-                            ItemsSource="{Binding MeridianLimitWestOppositePolarGuidePoints}"
-                            DataFieldX="X"
-                            DataFieldY="Y"
-                            XAxisKey="AltitudeAxis"
-                            YAxisKey="AzimuthAxis"
-                            LineStyle="Dot"
-                            StrokeThickness="1.75"
-                            TrackerFormatString=""
-                            Visibility="{Binding ShowMeridianLimitGuides, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"
-                            Color="#FFA500" />
-                        <oxy:LineSeries
-                            ItemsSource="{Binding MeridianLimitEastPolarGuidePoints}"
-                            DataFieldX="X"
-                            DataFieldY="Y"
-                            XAxisKey="AltitudeAxis"
-                            YAxisKey="AzimuthAxis"
-                            LineStyle="Dot"
-                            StrokeThickness="1.75"
-                            TrackerFormatString=""
-                            Visibility="{Binding ShowMeridianLimitGuides, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"
-                            Color="#FFA500" />
-                        <oxy:LineSeries
-                            ItemsSource="{Binding MeridianLimitEastOppositePolarGuidePoints}"
-                            DataFieldX="X"
-                            DataFieldY="Y"
-                            XAxisKey="AltitudeAxis"
-                            YAxisKey="AzimuthAxis"
-                            LineStyle="Dot"
-                            StrokeThickness="1.75"
-                            TrackerFormatString=""
-                            Visibility="{Binding ShowMeridianLimitGuides, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"
-                            Color="#FFA500" />
                         <oxy:LineSeries
                             ItemsSource="{Binding MeridianLimitWestCurvePointsPolar}"
                             DataFieldX="X"

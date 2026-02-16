@@ -320,9 +320,22 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             sinAltitude = Math.Max(-1.0d, Math.Min(1.0d, sinAltitude));
             var altitudeRadians = Math.Asin(sinAltitude);
 
-            var y = Math.Sin(hourAngleRadians);
-            var x = (Math.Cos(hourAngleRadians) * Math.Sin(latitudeRadians)) - (Math.Tan(declinationRadians) * Math.Cos(latitudeRadians));
-            var azimuthDegrees = NormalizeAzimuthDegrees((Math.Atan2(y, x) * 180.0d / Math.PI) + 180.0d);
+            // Numerically stable azimuth computation that avoids tan(dec) singularities near +/-90 deg.
+            // Azimuth convention: 0 = North, 90 = East, 180 = South, 270 = West.
+            var cosAltitude = Math.Cos(altitudeRadians);
+            var sinAzimuth = 0.0d;
+            var cosAzimuth = 1.0d;
+            if (Math.Abs(cosAltitude) > 1e-12)
+            {
+                sinAzimuth = -(Math.Cos(declinationRadians) * Math.Sin(hourAngleRadians)) / cosAltitude;
+                cosAzimuth = ((Math.Sin(declinationRadians) * Math.Cos(latitudeRadians))
+                              - (Math.Cos(declinationRadians) * Math.Sin(latitudeRadians) * Math.Cos(hourAngleRadians))) / cosAltitude;
+
+                sinAzimuth = Math.Max(-1.0d, Math.Min(1.0d, sinAzimuth));
+                cosAzimuth = Math.Max(-1.0d, Math.Min(1.0d, cosAzimuth));
+            }
+
+            var azimuthDegrees = NormalizeAzimuthDegrees(Math.Atan2(sinAzimuth, cosAzimuth) * 180.0d / Math.PI);
             var altitudeDegrees = altitudeRadians * 180.0d / Math.PI;
             return (azimuthDegrees, altitudeDegrees);
         }
@@ -436,9 +449,10 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             var latitudeDegrees = this.profileService.ActiveProfile.AstrometrySettings.Latitude;
             var curvePoints = new List<DataPoint>();
 
-            var declinationStart = -89.5d;
-            var declinationEnd = 89.5d;
-            var declinationStep = 0.5d;
+            // Sweep the full hour-circle so both visible branches (south and north side) can appear.
+            var declinationStart = -180.0d;
+            var declinationEnd = 180.0d;
+            var declinationStep = 0.25d;
 
             for (double declinationDegrees = declinationStart; declinationDegrees <= declinationEnd; declinationDegrees += declinationStep)
             {
@@ -462,6 +476,17 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             var selectedSegments = SelectSouthAndNorthSegments(segments);
             var southSegment = selectedSegments.SouthSegment;
             var northSegment = selectedSegments.NorthSegment;
+
+            if ((northSegment == null || northSegment.Count < 2) && curvePoints.Count > 0)
+            {
+                southSegment = curvePoints
+                    .Where(point => point.X >= 90.0d && point.X <= 270.0d)
+                    .ToList();
+
+                northSegment = curvePoints
+                    .Where(point => point.X < 90.0d || point.X > 270.0d)
+                    .ToList();
+            }
 
             if (isWestCurve)
             {
