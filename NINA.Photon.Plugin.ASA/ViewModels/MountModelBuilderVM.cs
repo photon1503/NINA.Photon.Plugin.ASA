@@ -78,6 +78,11 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
         ? new DispatcherSynchronizationContext(Application.Current.Dispatcher)
         : null;
 
+        private readonly object displayRefreshLock = new object();
+        private bool displayRefreshScheduled;
+        private bool displayPathRefreshPending;
+        private bool mlptChartsRefreshPending;
+
         private bool hasValidGeneratedSiderealPath;
 
         [ImportingConstructor]
@@ -240,18 +245,20 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             }
 
             RefreshMlptPlannedImageCount();
-            RefreshMlptErrorCharts();
-            RefreshDisplayPathPoints();
+            QueueDisplayRefresh(refreshDisplayPath: true, refreshMlptCharts: true);
         }
 
         private void DisplayModelPoint_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
+            var refreshDisplayPath = false;
+            var refreshMlptCharts = false;
+
             if (string.IsNullOrWhiteSpace(e.PropertyName)
                 || e.PropertyName == nameof(ModelPoint.Azimuth)
                 || e.PropertyName == nameof(ModelPoint.Altitude)
                 || e.PropertyName == nameof(ModelPoint.ModelPointState))
             {
-                RefreshDisplayPathPoints();
+                refreshDisplayPath = true;
             }
 
             if (string.IsNullOrWhiteSpace(e.PropertyName)
@@ -263,7 +270,69 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 || e.PropertyName == nameof(ModelPoint.ModelIndex)
                 || e.PropertyName == nameof(ModelPoint.ModelPointState))
             {
-                RefreshMlptErrorCharts();
+                refreshMlptCharts = true;
+            }
+
+            if (refreshDisplayPath || refreshMlptCharts)
+            {
+                QueueDisplayRefresh(refreshDisplayPath, refreshMlptCharts);
+            }
+        }
+
+        private void QueueDisplayRefresh(bool refreshDisplayPath, bool refreshMlptCharts)
+        {
+            lock (displayRefreshLock)
+            {
+                if (refreshDisplayPath)
+                {
+                    displayPathRefreshPending = true;
+                }
+
+                if (refreshMlptCharts)
+                {
+                    mlptChartsRefreshPending = true;
+                }
+
+                if (displayRefreshScheduled)
+                {
+                    return;
+                }
+
+                displayRefreshScheduled = true;
+            }
+
+            void FlushPendingRefreshes()
+            {
+                bool runDisplayPath;
+                bool runMlptCharts;
+
+                lock (displayRefreshLock)
+                {
+                    runDisplayPath = displayPathRefreshPending;
+                    runMlptCharts = mlptChartsRefreshPending;
+                    displayPathRefreshPending = false;
+                    mlptChartsRefreshPending = false;
+                    displayRefreshScheduled = false;
+                }
+
+                if (runDisplayPath)
+                {
+                    RefreshDisplayPathPoints();
+                }
+
+                if (runMlptCharts)
+                {
+                    RefreshMlptErrorCharts();
+                }
+            }
+
+            if (synchronizationContext != null)
+            {
+                synchronizationContext.Post(_ => FlushPendingRefreshes(), null);
+            }
+            else
+            {
+                FlushPendingRefreshes();
             }
         }
 
