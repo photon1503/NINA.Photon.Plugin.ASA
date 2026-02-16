@@ -1087,15 +1087,20 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
 
         private Task<bool> CoordsFromScope()
         {
+            return Task.FromResult(TrySetSiderealCoordsFromScope());
+        }
+
+        private bool TrySetSiderealCoordsFromScope()
+        {
             try
             {
                 var telescopeInfo = telescopeMediator.GetInfo();
                 this.SiderealPathObjectCoordinates = new InputCoordinates(telescopeInfo.Coordinates);
-                return Task.FromResult(true);
+                return true;
             }
             catch (Exception)
             {
-                return Task.FromResult(false);
+                return false;
             }
         }
 
@@ -1512,6 +1517,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                     if (value == ModelPointGenerationTypeEnum.SiderealPath)
                     {
                         hasValidGeneratedSiderealPath = false;
+                        TrySetSiderealCoordsFromScope();
                     }
                     RaisePropertyChanged();
                     RaisePropertyChanged(nameof(IsGoldenSpiralOptionsVisible));

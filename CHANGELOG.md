@@ -1,6 +1,16 @@
 
 # Changelog
 
+## 3.2.7.0
+
+- Added **AutoGrid** as a first-class generator option and reordered generator list to: AutoGrid, MLPT, Golden Spiral.
+- Added selectable AutoGrid path ordering modes (legacy sweep vs ASA-style band traversal).
+- Added AutoGrid path preview toggle (**Show path**) with dotted path rendering in both main and radial/top-view plots.
+- Added AutoGrid input mode UX refinements:
+
+- Added MLPT diagnostics charts for RA/DE error progression (Image # vs arcsec).
+- Selecting MLPT generator now auto-imports current scope RA/Dec coordinates (same behavior as the scope import button).
+
 ## 3.2.6.4 (2025-11-29)
 
   Added new trigger Mount Dither.
