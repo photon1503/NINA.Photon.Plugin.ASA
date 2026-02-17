@@ -1357,7 +1357,7 @@
                             MarkerType="Circle"
                             ItemsSource="{Binding DisplayModelPoints, UpdateSourceTrigger=PropertyChanged}"
                             ColorAxisKey="ModelPointStateColorAxis"
-                            DataFieldX="PlotAzimuth"
+                            DataFieldX="Azimuth"
                             DataFieldY="Altitude"
                             MarkerSize="{Binding ChartPointSize}"
                             DataFieldValue="PlotColorValue"
@@ -1803,7 +1803,7 @@
                         </oxy:AreaSeries>
                         <oxy:ScatterSeries
                                 DataFieldX="InvertedAltitude"
-                            DataFieldY="PlotAzimuth"
+                            DataFieldY="Azimuth"
                                 ItemsSource="{Binding DisplayModelPoints, UpdateSourceTrigger=PropertyChanged}"
                             ColorAxisKey="ModelPointStateColorAxisPolar"
                             DataFieldValue="PlotColorValue"

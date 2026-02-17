@@ -4,7 +4,7 @@
 ## 3.2.7.x
 
 - AutoGrid now generates dual-side coverage around the meridian (ASA-style overlap), storing a desired pier side per point and duplicating overlap points for both east/west pier solutions.
-- Dual-side overlap points now use a display-only side offset in charts to avoid complete marker overlap while preserving true build coordinates.
+- Dual-side overlap points are now generated via separate east/west sampling in the meridian overlap zone (ASA-style), improving distribution instead of cloning identical coordinates.
 - Added east/west pier-side coloring for generated points in both model builder charts.
 - Model slews now enforce each point's stored desired pier side via ASCOM `forcenextpierside` before slewing.
 
@@ -26,6 +26,7 @@
 
 
 ## 3.2.7.1
+
  - Fixed UI freeze when starting full sky model build
   
 ## 3.2.7.0
