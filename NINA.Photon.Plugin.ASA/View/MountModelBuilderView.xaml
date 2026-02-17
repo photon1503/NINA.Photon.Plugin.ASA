@@ -1590,11 +1590,17 @@
                             TrackerFormatString=""
                             Visibility="{Binding ShowMeridianLimitGuides, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"
                             Color="#FFA500" />
-                        <!-- oxy:LineSeries
-
-            ItemsSource="{Binding HorizonDataPointsPolar}"
-            TrackerFormatString="Altitude: {2:0.00}&#176;&#x0a;Azimuth: {4:0.00}&#176;"
-            Color="{Binding Path=Color, Source={StaticResource ButtonBackgroundBrush}}" /-->
+                        <oxy:AreaSeries
+                            ItemsSource="{Binding HorizonDataPointsPolarArea}"
+                            DataFieldX="X"
+                            DataFieldY="Y"
+                            DataFieldX2="X2"
+                            DataFieldY2="Y2"
+                            XAxisKey="AltitudeAxis"
+                            YAxisKey="AzimuthAxis"
+                            TrackerFormatString="Altitude: {2:0.00}&#176;&#x0a;Azimuth: {4:0.00}&#176;"
+                            Fill="{Binding Path=Color, Source={StaticResource ButtonBackgroundBrush}, Converter={StaticResource SetAlphaToColorConverter}, ConverterParameter=90}"
+                            Color="{Binding Path=Color, Source={StaticResource ButtonBackgroundBrush}}" />
                         <oxy:ScatterSeries
                                 DataFieldX="InvertedAltitude"
                                 DataFieldY="Azimuth"

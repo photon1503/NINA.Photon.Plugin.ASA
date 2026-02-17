@@ -2481,6 +2481,8 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             {
                 horizonDataPoints = value;
                 RaisePropertyChanged();
+                RaisePropertyChanged(nameof(HorizonDataPointsPolar));
+                RaisePropertyChanged(nameof(HorizonDataPointsPolarArea));
             }
         }
 
@@ -2488,15 +2490,34 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
         {
             get
             {
-                return HorizonDataPoints.Select(p =>
-                {
-                    double radius = p.Y; // Altitude becomes radius
-                    double angle = p.X;   // Azimuth is angle
-                    double x = radius * Math.Cos(angle * Math.PI / 180);
-                    double y = radius * Math.Sin(angle * Math.PI / 180);
-                    return new DataPoint(x, y);
-                }).ToList();
+                return HorizonDataPoints
+                    .Select(point => new DataPoint(90.0d - point.Y, point.X))
+                    .ToList();
             }
+        }
+
+        public List<PolarAreaDataPoint> HorizonDataPointsPolarArea
+        {
+            get
+            {
+                return HorizonDataPoints
+                    .Select(point => new PolarAreaDataPoint
+                    {
+                        X = 90.0d - point.Y,
+                        Y = point.X,
+                        X2 = 90.0d,
+                        Y2 = point.X
+                    })
+                    .ToList();
+            }
+        }
+
+        public class PolarAreaDataPoint
+        {
+            public double X { get; set; }
+            public double Y { get; set; }
+            public double X2 { get; set; }
+            public double Y2 { get; set; }
         }
 
         private Angle domeShutterAzimuthForOpening;
