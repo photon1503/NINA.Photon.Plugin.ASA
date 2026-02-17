@@ -1279,12 +1279,62 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             var ordered = new List<ModelPoint>(points.Count);
             foreach (var band in groupedBands)
             {
-                var bandPath = OrderBandPointsFromFarEast(band.Points);
+                var bandPath = OrderBandPointsAsaSidePasses(band.Points);
 
                 ordered.AddRange(bandPath);
             }
 
             Logger.Info($"Using ASA AutoGrid band ordering. Ordered {ordered.Count} points across {groupedBands.Count} bands.");
+            return ordered;
+        }
+
+        private static PierSide GetAsaOrderingPierSide(ModelPoint point)
+        {
+            if (point.DesiredPierSide != PierSide.pierUnknown)
+            {
+                return point.DesiredPierSide;
+            }
+
+            if (point.ExpectedDomeSideOfPier != PierSide.pierUnknown)
+            {
+                return point.ExpectedDomeSideOfPier;
+            }
+
+            return point.Azimuth <= 180.0d ? PierSide.pierEast : PierSide.pierWest;
+        }
+
+        private static List<ModelPoint> OrderBandPointsAsaSidePasses(List<ModelPoint> bandPoints)
+        {
+            if (bandPoints == null || bandPoints.Count <= 1)
+            {
+                return bandPoints ?? new List<ModelPoint>();
+            }
+
+            var eastPoints = OrderBandPointsFromFarEast(
+                bandPoints
+                    .Where(point => GetAsaOrderingPierSide(point) == PierSide.pierEast)
+                    .ToList());
+
+            var westPoints = OrderBandPointsFromFarEast(
+                bandPoints
+                    .Where(point => GetAsaOrderingPierSide(point) == PierSide.pierWest)
+                    .ToList());
+            westPoints.Reverse();
+
+            var unknownSidePoints = bandPoints
+                .Where(point =>
+                {
+                    var side = GetAsaOrderingPierSide(point);
+                    return side != PierSide.pierEast && side != PierSide.pierWest;
+                })
+                .ToList();
+
+            unknownSidePoints = OrderBandPointsFromFarEast(unknownSidePoints);
+
+            var ordered = new List<ModelPoint>(bandPoints.Count);
+            ordered.AddRange(eastPoints);
+            ordered.AddRange(westPoints);
+            ordered.AddRange(unknownSidePoints);
             return ordered;
         }
 

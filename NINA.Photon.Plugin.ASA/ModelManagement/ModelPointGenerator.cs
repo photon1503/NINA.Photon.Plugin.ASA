@@ -197,7 +197,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 var ringPoints = new List<ModelPoint>(localHourAngles.Count * 2);
                 var ringPointCount = localHourAngles.Count;
                 var ringSpacingDegrees = localHourAngles.Count > 1 ? 360.0d / localHourAngles.Count : 0.0d;
-                var overlapSelectionDegrees = overlapMeridianDegrees + Math.Min(2.0d, ringSpacingDegrees / 6.0d);
+                var overlapSelectionDegrees = overlapMeridianDegrees;
                 for (var sequenceIndex = 0; sequenceIndex < localHourAngles.Count; sequenceIndex++)
                 {
                     var hourAngleDegrees = localHourAngles[sequenceIndex];
