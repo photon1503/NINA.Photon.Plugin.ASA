@@ -82,6 +82,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
         private bool hasValidGeneratedSiderealPath;
         private DateTime lastMeridianFlipAngleRefreshUtc = DateTime.MinValue;
         private static readonly TimeSpan MeridianFlipAngleRefreshInterval = TimeSpan.FromSeconds(10);
+        private bool shouldPollMeridianFlipMaxAngle = true;
 
         [ImportingConstructor]
         public MountModelBuilderVM(IProfileService profileService, IApplicationStatusMediator applicationStatusMediator, ITelescopeMediator telescopeMediator, IDomeMediator domeMediator, IFramingAssistantVM framingAssistant, INighttimeCalculator nighttimeCalculator) :
@@ -526,6 +527,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                     MeridianFlipMaxAngleDegrees = maxAngleDegrees;
                     if (maxAngleDegrees > double.Epsilon)
                     {
+                        shouldPollMeridianFlipMaxAngle = false;
                         westLimit = NormalizeAzimuthDegrees(180.0d - maxAngleDegrees);
                         eastLimit = NormalizeAzimuthDegrees(180.0d + maxAngleDegrees);
                         BuildAndAssignMeridianLimitCurveCollections(-maxAngleDegrees, isWestCurve: true);
@@ -541,6 +543,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
 
             if (!hasAngleValue)
             {
+                shouldPollMeridianFlipMaxAngle = true;
                 MeridianFlipMaxAngleDegrees = double.NaN;
             }
 
@@ -551,6 +554,11 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
 
         private void TryRefreshMeridianLimitGuides(bool force = false)
         {
+            if (!force && !shouldPollMeridianFlipMaxAngle)
+            {
+                return;
+            }
+
             if (!force && DateTime.UtcNow - lastMeridianFlipAngleRefreshUtc < MeridianFlipAngleRefreshInterval)
             {
                 return;
