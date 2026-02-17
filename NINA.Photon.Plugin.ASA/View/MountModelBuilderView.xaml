@@ -1238,6 +1238,30 @@
                     </oxy:Plot.Series>
                     <oxy:Plot.Annotations>
                         <oxy:PointAnnotation
+                            Shape="None"
+                            Text="N"
+                            X="0"
+                            Y="2"
+                            TextColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}" />
+                        <oxy:PointAnnotation
+                            Shape="None"
+                            Text="E"
+                            X="90"
+                            Y="2"
+                            TextColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}" />
+                        <oxy:PointAnnotation
+                            Shape="None"
+                            Text="S"
+                            X="180"
+                            Y="2"
+                            TextColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}" />
+                        <oxy:PointAnnotation
+                            Shape="None"
+                            Text="W"
+                            X="270"
+                            Y="2"
+                            TextColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}" />
+                        <oxy:PointAnnotation
                             Stroke="{Binding Path=Color, Source={StaticResource PrimaryBrush}, Converter={StaticResource SetAlphaToColorConverter}, ConverterParameter=60}"
                             StrokeThickness="3"
                             Shape="Cross"
@@ -1614,6 +1638,30 @@
                                 TrackerFormatString="" />
                     </oxy:Plot.Series>
                     <oxy:Plot.Annotations>
+                        <oxy:PointAnnotation
+                            Shape="None"
+                            Text="N"
+                            X="88"
+                            Y="0"
+                            TextColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}" />
+                        <oxy:PointAnnotation
+                            Shape="None"
+                            Text="E"
+                            X="88"
+                            Y="90"
+                            TextColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}" />
+                        <oxy:PointAnnotation
+                            Shape="None"
+                            Text="S"
+                            X="-88"
+                            Y="180"
+                            TextColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}" />
+                        <oxy:PointAnnotation
+                            Shape="None"
+                            Text="W"
+                            X="88"
+                            Y="270"
+                            TextColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}" />
                         <oxy:PointAnnotation
          Stroke="{Binding Path=Color, Source={StaticResource PrimaryBrush}, Converter={StaticResource SetAlphaToColorConverter}, ConverterParameter=60}"
          StrokeThickness="3"
