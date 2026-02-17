@@ -100,6 +100,7 @@ namespace NINA.Photon.Plugin.ASA
             poxOutputDirectory = optionsAccessor.GetValueString("POXOutputDirectory", DefaultASAPointingPicsPath());
             chartPointSize = optionsAccessor.GetValueDouble("ChartPointSize", 2.8d);
             showHorizon = optionsAccessor.GetValueBoolean("ShowHorizon", true);
+            showCardinalLabels = optionsAccessor.GetValueBoolean("ShowCardinalLabels", false);
             horizonTransparencyPercent = optionsAccessor.GetValueInt32("HorizonTransparencyPercent", 65);
         }
 
@@ -160,6 +161,7 @@ namespace NINA.Photon.Plugin.ASA
             RefWestAzimuth = 270.0d;
             ChartPointSize = 2.8d;
             ShowHorizon = true;
+            ShowCardinalLabels = false;
             HorizonTransparencyPercent = 65;
 
             POXOutputDirectory = DefaultASAPointingPicsPath();
@@ -816,6 +818,22 @@ namespace NINA.Photon.Plugin.ASA
                 {
                     showHorizon = value;
                     optionsAccessor.SetValueBoolean("ShowHorizon", showHorizon);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private bool showCardinalLabels;
+
+        public bool ShowCardinalLabels
+        {
+            get => showCardinalLabels;
+            set
+            {
+                if (showCardinalLabels != value)
+                {
+                    showCardinalLabels = value;
+                    optionsAccessor.SetValueBoolean("ShowCardinalLabels", showCardinalLabels);
                     RaisePropertyChanged();
                 }
             }

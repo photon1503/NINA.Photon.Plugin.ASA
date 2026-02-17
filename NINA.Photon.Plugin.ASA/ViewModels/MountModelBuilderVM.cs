@@ -719,6 +719,13 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             {
                 RaisePropertyChanged(nameof(HorizonTransparencyPercent));
             }
+
+            if (e.PropertyName == nameof(modelBuilderOptions.ShowCardinalLabels))
+            {
+                RaisePropertyChanged(nameof(ShowCardinalLabels));
+                RaisePropertyChanged(nameof(CartesianAzimuthLabelFormatter));
+                RaisePropertyChanged(nameof(PolarAzimuthLabelFormatter));
+            }
         }
 
         private void UpdateDisplayModelPoints()
@@ -2037,6 +2044,74 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 }
             }
         }
+
+        public bool ShowCardinalLabels
+        {
+            get => this.modelBuilderOptions.ShowCardinalLabels;
+            set
+            {
+                if (this.modelBuilderOptions.ShowCardinalLabels != value)
+                {
+                    this.modelBuilderOptions.ShowCardinalLabels = value;
+                    RaisePropertyChanged();
+                    RaisePropertyChanged(nameof(CartesianAzimuthLabelFormatter));
+                    RaisePropertyChanged(nameof(PolarAzimuthLabelFormatter));
+                }
+            }
+        }
+
+        public Func<double, string> CartesianAzimuthLabelFormatter =>
+            ShowCardinalLabels
+                ? value => CardinalDirectionLabel(value, include360North: true)
+                : DegreesLabel;
+
+        public Func<double, string> PolarAzimuthLabelFormatter =>
+            ShowCardinalLabels
+                ? value => CardinalDirectionLabel(value, include360North: false)
+                : DegreesLabel;
+
+        private static string DegreesLabel(double value)
+        {
+            if (IsNear(value, 360.0d))
+            {
+                return "360";
+            }
+
+            if (IsNear(value, 0.0d))
+            {
+                return "0";
+            }
+
+            var rounded = Math.Round(value);
+            return rounded.ToString(CultureInfo.InvariantCulture);
+        }
+
+        private static string CardinalDirectionLabel(double value, bool include360North)
+        {
+            if (IsNear(value, 0.0d) || (include360North && IsNear(value, 360.0d)))
+            {
+                return "N";
+            }
+
+            if (IsNear(value, 90.0d))
+            {
+                return "E";
+            }
+
+            if (IsNear(value, 180.0d))
+            {
+                return "S";
+            }
+
+            if (IsNear(value, 270.0d))
+            {
+                return "W";
+            }
+
+            return string.Empty;
+        }
+
+        private static bool IsNear(double value, double expected) => Math.Abs(value - expected) <= 0.25d;
 
         public int HorizonTransparencyPercent
         {

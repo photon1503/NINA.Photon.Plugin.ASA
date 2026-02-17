@@ -89,6 +89,8 @@ namespace NINA.Photon.Plugin.ASA.Interfaces
 
         bool ShowHorizon { get; set; }
 
+        bool ShowCardinalLabels { get; set; }
+
         int HorizonTransparencyPercent { get; set; }
 
         bool RemoveHighRMSPointsAfterBuild { get; set; }

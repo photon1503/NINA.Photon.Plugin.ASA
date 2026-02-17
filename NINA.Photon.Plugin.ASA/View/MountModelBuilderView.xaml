@@ -49,6 +49,7 @@
                             <RowDefinition />
                             <RowDefinition />
                             <RowDefinition />
+                            <RowDefinition />
                         </Grid.RowDefinitions>
                         <TextBlock
                             Grid.Row="0" Grid.Column="0"
@@ -1070,6 +1071,7 @@
                             <RowDefinition />
                             <RowDefinition />
                             <RowDefinition />
+                              <RowDefinition />
                         </Grid.RowDefinitions>
 
                         <TextBlock
@@ -1130,6 +1132,20 @@
                                 </Binding.ValidationRules>
                             </Binding>
                         </ninactrl:UnitTextBox>
+
+                        <TextBlock
+                            Grid.Row="3" Grid.Column="0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Text="Axis labels"
+                            ToolTip="Toggle azimuth axis labels between degrees and cardinal directions" />
+                        <CheckBox
+                            Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2"
+                            Margin="10,5,0,0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Content="NSEW instead of degrees"
+                            IsChecked="{Binding ShowCardinalLabels}" />
                     </Grid>
                 </GroupBox>
 
@@ -1199,6 +1215,7 @@
                         <oxy:LinearAxis
                             AxislineColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}"
                             IntervalLength="15"
+                            LabelFormatter="{Binding CartesianAzimuthLabelFormatter}"
                             IsPanEnabled="False"
                             IsZoomEnabled="False"
                             MajorGridlineColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}, Converter={StaticResource SetAlphaToColorConverter}, ConverterParameter=60}"
@@ -1334,30 +1351,6 @@
                     </oxy:Plot.Series>
                     <oxy:Plot.Annotations>
                         <oxy:PointAnnotation
-                            Shape="None"
-                            Text="N"
-                            X="0"
-                            Y="2"
-                            TextColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}" />
-                        <oxy:PointAnnotation
-                            Shape="None"
-                            Text="E"
-                            X="90"
-                            Y="2"
-                            TextColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}" />
-                        <oxy:PointAnnotation
-                            Shape="None"
-                            Text="S"
-                            X="180"
-                            Y="2"
-                            TextColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}" />
-                        <oxy:PointAnnotation
-                            Shape="None"
-                            Text="W"
-                            X="270"
-                            Y="2"
-                            TextColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}" />
-                        <oxy:PointAnnotation
                             Stroke="{Binding Path=Color, Source={StaticResource PrimaryBrush}, Converter={StaticResource SetAlphaToColorConverter}, ConverterParameter=60}"
                             StrokeThickness="3"
                             Shape="Cross"
@@ -1411,7 +1404,6 @@
                             </oxy:LineAnnotation.TextColor>
                         </oxy:LineAnnotation>
                         <oxy:PointAnnotation
-                            StrokeThickness="2"
                             Shape="Plus"
                             Size="8"
                             Opacity="0.6"
@@ -1576,14 +1568,13 @@
                     </oxy:Plot>
                 </Grid>
 
-                <oxy:Plot
-                        Grid.Row="3"
-                        Grid.Column="0"
+                <Grid Grid.Row="3" Grid.Column="0">
+                    <oxy:Plot
                         Width="Auto"
                         MinWidth="300"
                         MinHeight="300"
                         HorizontalAlignment="Stretch"
-                    VerticalAlignment="Stretch"
+                        VerticalAlignment="Stretch"
                         Background="{StaticResource BackgroundBrush}"
                         PlotAreaBackground="{StaticResource BackgroundBrush}"
                         PlotAreaBorderColor="Transparent"
@@ -1610,6 +1601,7 @@
                                 EndAngle="90"
                                 EndPosition="1"
                                 IntervalLength="15"
+                            LabelFormatter="{Binding PolarAzimuthLabelFormatter}"
                                 IsPanEnabled="False"
                                 IsZoomEnabled="False"
                                 MajorGridlineColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}, Converter={StaticResource SetAlphaToColorConverter}, ConverterParameter=60}"
@@ -1733,30 +1725,6 @@
                     </oxy:Plot.Series>
                     <oxy:Plot.Annotations>
                         <oxy:PointAnnotation
-                            Shape="None"
-                            Text="N"
-                            X="88"
-                            Y="0"
-                            TextColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}" />
-                        <oxy:PointAnnotation
-                            Shape="None"
-                            Text="E"
-                            X="88"
-                            Y="90"
-                            TextColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}" />
-                        <oxy:PointAnnotation
-                            Shape="None"
-                            Text="S"
-                            X="-88"
-                            Y="180"
-                            TextColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}" />
-                        <oxy:PointAnnotation
-                            Shape="None"
-                            Text="W"
-                            X="88"
-                            Y="270"
-                            TextColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}" />
-                        <oxy:PointAnnotation
          Stroke="{Binding Path=Color, Source={StaticResource PrimaryBrush}, Converter={StaticResource SetAlphaToColorConverter}, ConverterParameter=60}"
          StrokeThickness="3"
          Shape="Cross"
@@ -1766,7 +1734,8 @@
          X="{Binding TelescopePositionInverted.Y}"
          Y="{Binding TelescopePositionInverted.X}" />
                     </oxy:Plot.Annotations>
-                </oxy:Plot>
+                    </oxy:Plot>
+                </Grid>
 
                 <TextBlock
                     Grid.Row="4"
