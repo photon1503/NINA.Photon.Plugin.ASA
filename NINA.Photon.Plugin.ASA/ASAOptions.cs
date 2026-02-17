@@ -74,6 +74,7 @@ namespace NINA.Photon.Plugin.ASA
             alternateDirectionsBetweenIterations = optionsAccessor.GetValueBoolean("AlternateDirectionsBetweenIterations", true);
             minPointAzimuth = optionsAccessor.GetValueDouble("MinPointAzimuth", 0.5d);
             maxPointAzimuth = optionsAccessor.GetValueDouble("MaxPointAzimuth", 359.5d);
+            minDistanceToHorizonDegrees = optionsAccessor.GetValueDouble("MinDistanceToHorizonDegrees", 0.0d);
             disableRefractionCorrection = false; // optionsAccessor.GetValueBoolean("DisableRefractionCorrection", false);
             //ipAddress = optionsAccessor.GetValueString("IPAddress", "");
             //macAddress = optionsAccessor.GetValueString("MACAddress", "");
@@ -137,6 +138,7 @@ namespace NINA.Photon.Plugin.ASA
             AlternateDirectionsBetweenIterations = true;
             MinPointAzimuth = 0.5d;
             MaxPointAzimuth = 359.5d;
+            MinDistanceToHorizonDegrees = 0.0d;
             DisableRefractionCorrection = false;
             IsLegacyDDM = true;
             DomeControlNINA = false;
@@ -1034,6 +1036,27 @@ namespace NINA.Photon.Plugin.ASA
                     }
 
                     optionsAccessor.SetValueDouble("MaxPointAzimuth", maxPointAzimuth);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private double minDistanceToHorizonDegrees;
+
+        public double MinDistanceToHorizonDegrees
+        {
+            get => minDistanceToHorizonDegrees;
+            set
+            {
+                if (Math.Abs(minDistanceToHorizonDegrees - value) > double.Epsilon)
+                {
+                    if (value < 0.0d || value > 90.0d)
+                    {
+                        throw new ArgumentException("MinDistanceToHorizonDegrees must be between 0 and 90, inclusive", nameof(MinDistanceToHorizonDegrees));
+                    }
+
+                    minDistanceToHorizonDegrees = value;
+                    optionsAccessor.SetValueDouble("MinDistanceToHorizonDegrees", minDistanceToHorizonDegrees);
                     RaisePropertyChanged();
                 }
             }

@@ -77,6 +77,7 @@
                 <TextBlock x:Key="MaxPointAltitude_Tooltip" Text="The maximum altitude allowed for point generation" />
                 <TextBlock x:Key="MinPointAzimuth_Tooltip" Text="The minimum azimuth allowed for point generation. This is helpful for providing clearance during the point where meridian flips occur" />
                 <TextBlock x:Key="MaxPointAzimuth_Tooltip" Text="The maximum azimuth allowed for point generation. This is helpful for providing clearance during the point where meridian flips occur" />
+                <TextBlock x:Key="MinDistanceToHorizon_Tooltip" Text="Minimum clearance above the custom horizon required for generated points" />
                 <TextBlock x:Key="ShowRemovedPoints_Tooltip" Text="Whether to show points that were rejected for being outside of the altitude bounds or below the defined horizon" />
                 <TextBlock x:Key="DomeShutterWidth_Tooltip" Text="The width of the dome shutter, in mm. If set, this is used to determine if the scope is pointing out of the shutter instead of the Threshold setting from Dome Options" />
                 <TextBlock x:Key="MinimizeDomeMovement_Tooltip" Text="If enabled, points will be ordered based on the calculated dome azimuth. The left boundary of the dome opening is used for E-&gt;W sorting, and the right boundary for W-&gt;E" />
@@ -413,6 +414,31 @@
                     </Binding.ValidationRules>
                 </Binding>
             </ninactrl:UnitTextBox-->
+            <TextBlock
+                Grid.Row="16"
+                Grid.Column="0"
+                VerticalAlignment="Center"
+                Text="Min Horizon Distance"
+                ToolTip="{StaticResource MinDistanceToHorizon_Tooltip}" />
+            <ninactrl:UnitTextBox
+                Grid.Row="16"
+                Grid.Column="1"
+                MinWidth="80"
+                Margin="5,5,0,0"
+                HorizontalAlignment="Left"
+                ToolTip="{StaticResource MinDistanceToHorizon_Tooltip}"
+                Unit="°">
+                <Binding Path="MinDistanceToHorizonDegrees" UpdateSourceTrigger="LostFocus">
+                    <Binding.ValidationRules>
+                        <rules:DoubleRangeRule>
+                            <rules:DoubleRangeRule.ValidRange>
+                                <rules:DoubleRangeChecker Maximum="90" Minimum="0" />
+                            </rules:DoubleRangeRule.ValidRange>
+                        </rules:DoubleRangeRule>
+                    </Binding.ValidationRules>
+                </Binding>
+            </ninactrl:UnitTextBox>
+
             <TextBlock
                  Grid.Row="17"
                  Grid.Column="0"

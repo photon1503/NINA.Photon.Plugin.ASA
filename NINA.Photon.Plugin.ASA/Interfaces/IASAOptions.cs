@@ -82,6 +82,7 @@ namespace NINA.Photon.Plugin.ASA.Interfaces
         int MaxPointAltitude { get; set; }
         double MinPointAzimuth { get; set; }
         double MaxPointAzimuth { get; set; }
+        double MinDistanceToHorizonDegrees { get; set; }
 
         bool ShowRemovedPoints { get; set; }
 

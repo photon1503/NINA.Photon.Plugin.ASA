@@ -45,6 +45,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
 
         private const double AUTO_GRID_RING_SCALE_EXPONENT = 0.82d;
         private const double AUTO_GRID_RING_PHASE_STEP_DEGREES = 12.0d;
+        private const int AUTO_GRID_SPARSE_RING_THRESHOLD = 8;
 
         public ModelPointGenerator(IProfileService profileService, ITelescopeMediator telescopeMediator, IWeatherDataMediator weatherDataMediator, IASAOptions options, IMountMediator mountMediator, IMount mount)
         {
@@ -190,6 +191,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                     : -90.0d + ringDistanceDegrees;
 
                 var localHourAngles = GetAutoGridRaValuesForRing(ringDistanceDegrees, raSpacingDegrees, i);
+                localHourAngles = OptimizeAutoGridRingHourAnglesForHorizon(localHourAngles, latitudeDegrees, declinationDegrees, horizon);
                 var ringPoints = new List<ModelPoint>(localHourAngles.Count);
                 var ringPointCount = localHourAngles.Count;
                 for (var sequenceIndex = 0; sequenceIndex < localHourAngles.Count; sequenceIndex++)
@@ -463,6 +465,11 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             return AstroUtil.EuclidianModulus(toAzimuth - fromAzimuth, 360.0d);
         }
 
+        private static double NormalizeHourAngleDegrees(double hourAngleDegrees)
+        {
+            return AstroUtil.EuclidianModulus(hourAngleDegrees + 180.0d, 360.0d) - 180.0d;
+        }
+
         private List<double> GetAutoGridRaValuesForRing(double ringDistanceDegrees, double raSpacingDegrees, int ringIndex)
         {
             if (Math.Abs(ringDistanceDegrees) < 0.0001d)
@@ -481,11 +488,22 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             var ringCount = Math.Max(2, (int)Math.Round(baseCount * ringScale));
 
             var ringSpacing = 360.0d / ringCount;
-            var ringPhase = AstroUtil.EuclidianModulus(
-                (ringIndex * AUTO_GRID_RING_PHASE_STEP_DEGREES) +
-                (ringIndex % 2 == 0 ? 0.0d : ringSpacing / 2.0d),
-                360.0d);
-            var startHourAngle = -180.0d + ringPhase;
+            double startHourAngle;
+            if (ringCount <= AUTO_GRID_SPARSE_RING_THRESHOLD)
+            {
+                // Sparse rings can miss the entire visible near-horizon arc if phase shifted.
+                // Anchor these rings around the meridian so hour-angle 0 is always sampled.
+                var centerIndex = ringCount / 2;
+                startHourAngle = -(centerIndex * ringSpacing);
+            }
+            else
+            {
+                var ringPhase = AstroUtil.EuclidianModulus(
+                    (ringIndex * AUTO_GRID_RING_PHASE_STEP_DEGREES) +
+                    (ringIndex % 2 == 0 ? 0.0d : ringSpacing / 2.0d),
+                    360.0d);
+                startHourAngle = -180.0d + ringPhase;
+            }
 
             var raValues = new List<double>(ringCount);
             for (var i = 0; i < ringCount; i++)
@@ -503,6 +521,63 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             }
 
             return raValues;
+        }
+
+        private List<double> OptimizeAutoGridRingHourAnglesForHorizon(
+            List<double> baseHourAngles,
+            double latitudeDegrees,
+            double declinationDegrees,
+            CustomHorizon horizon)
+        {
+            if (baseHourAngles == null || baseHourAngles.Count <= 2 || horizon == null)
+            {
+                return baseHourAngles;
+            }
+
+            var ringCount = baseHourAngles.Count;
+            var ringSpacing = 360.0d / ringCount;
+            var phaseSamples = Math.Min(16, Math.Max(4, ringCount));
+            var phaseStepDegrees = ringSpacing / phaseSamples;
+
+            var bestHourAngles = baseHourAngles;
+            var bestGenerated = -1;
+            var bestClearanceScore = double.NegativeInfinity;
+
+            for (var phaseIndex = 0; phaseIndex < phaseSamples; phaseIndex++)
+            {
+                var phaseOffsetDegrees = phaseIndex * phaseStepDegrees;
+                var candidateHourAngles = new List<double>(ringCount);
+                var generatedCount = 0;
+                var clearanceScore = 0.0d;
+
+                for (var pointIndex = 0; pointIndex < ringCount; pointIndex++)
+                {
+                    var candidateHourAngle = NormalizeHourAngleDegrees(baseHourAngles[pointIndex] + phaseOffsetDegrees);
+                    candidateHourAngles.Add(candidateHourAngle);
+
+                    var destination = ToHorizontalFromDeclinationHourAngle(latitudeDegrees, declinationDegrees, candidateHourAngle);
+                    var azimuthDegrees = AstroUtil.EuclidianModulus(720.0d - destination.azimuthDegrees, 360.0d);
+                    var altitudeDegrees = destination.altitudeDegrees;
+                    var horizonAltitude = horizon.GetAltitude(azimuthDegrees);
+                    var pointState = DeterminePointState(altitudeDegrees, azimuthDegrees, horizonAltitude, applyAzimuthBounds: false);
+
+                    if (pointState == ModelPointStateEnum.Generated)
+                    {
+                        generatedCount++;
+                        clearanceScore += Math.Max(0.0d, altitudeDegrees - horizonAltitude);
+                    }
+                }
+
+                if (generatedCount > bestGenerated
+                    || (generatedCount == bestGenerated && clearanceScore > bestClearanceScore))
+                {
+                    bestGenerated = generatedCount;
+                    bestClearanceScore = clearanceScore;
+                    bestHourAngles = candidateHourAngles;
+                }
+            }
+
+            return bestHourAngles;
         }
 
         private (double altitudeDegrees, double azimuthDegrees) ToHorizontalFromDeclinationHourAngle(double latitudeDegrees, double declinationDegrees, double hourAngleDegrees)
@@ -601,7 +676,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             {
                 return ModelPointStateEnum.OutsideAzimuthBounds;
             }
-            if (altitudeDegrees >= horizonAltitude)
+            if (altitudeDegrees >= horizonAltitude + options.MinDistanceToHorizonDegrees)
             {
                 return ModelPointStateEnum.Generated;
             }

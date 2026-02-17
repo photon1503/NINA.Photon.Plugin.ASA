@@ -1071,8 +1071,9 @@
                             <RowDefinition />
                             <RowDefinition />
                             <RowDefinition />
-                                                        <RowDefinition />
-                                                        <RowDefinition />
+                            <RowDefinition />
+                            <RowDefinition />
+                            <RowDefinition />
                         </Grid.RowDefinitions>
 
                         <TextBlock
@@ -1160,6 +1161,31 @@
                             HorizontalAlignment="Left"
                             VerticalAlignment="Center"
                             IsChecked="{Binding ShowCelestialPole}" />
+
+                        <TextBlock
+                            Grid.Row="5" Grid.Column="0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Text="Min horizon distance"
+                            ToolTip="Minimum clearance above horizon for generated points" />
+                        <ninactrl:UnitTextBox
+                            Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="2"
+                            MinWidth="80"
+                            Margin="10,5,0,0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Unit="°"
+                            ToolTip="Minimum clearance above horizon for generated points">
+                            <Binding Path="MinDistanceToHorizonDegrees" UpdateSourceTrigger="LostFocus">
+                                <Binding.ValidationRules>
+                                    <rules:DoubleRangeRule>
+                                        <rules:DoubleRangeRule.ValidRange>
+                                            <rules:DoubleRangeChecker Maximum="90" Minimum="0" />
+                                        </rules:DoubleRangeRule.ValidRange>
+                                    </rules:DoubleRangeRule>
+                                </Binding.ValidationRules>
+                            </Binding>
+                        </ninactrl:UnitTextBox>
                     </Grid>
                 </GroupBox>
 

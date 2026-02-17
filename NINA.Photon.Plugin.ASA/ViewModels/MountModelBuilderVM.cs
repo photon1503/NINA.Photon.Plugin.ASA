@@ -720,6 +720,11 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 RaisePropertyChanged(nameof(HorizonTransparencyPercent));
             }
 
+            if (e.PropertyName == nameof(modelBuilderOptions.MinDistanceToHorizonDegrees))
+            {
+                RaisePropertyChanged(nameof(MinDistanceToHorizonDegrees));
+            }
+
             if (e.PropertyName == nameof(modelBuilderOptions.ShowCardinalLabels))
             {
                 RaisePropertyChanged(nameof(ShowCardinalLabels));
@@ -2165,6 +2170,19 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 if (this.modelBuilderOptions.HorizonTransparencyPercent != value)
                 {
                     this.modelBuilderOptions.HorizonTransparencyPercent = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        public double MinDistanceToHorizonDegrees
+        {
+            get => this.modelBuilderOptions.MinDistanceToHorizonDegrees;
+            set
+            {
+                if (Math.Abs(this.modelBuilderOptions.MinDistanceToHorizonDegrees - value) > double.Epsilon)
+                {
+                    this.modelBuilderOptions.MinDistanceToHorizonDegrees = value;
                     RaisePropertyChanged();
                 }
             }
