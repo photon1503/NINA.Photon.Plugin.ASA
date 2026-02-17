@@ -1138,7 +1138,7 @@
                             Grid.Row="3" Grid.Column="0"
                             HorizontalAlignment="Left"
                             VerticalAlignment="Center"
-                            Text="Axis labels"
+                            Text="Cardinal directions"
                             ToolTip="Toggle azimuth axis labels between degrees and cardinal directions" />
                         <CheckBox
                             Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2"
@@ -1374,16 +1374,26 @@
                             X="{Binding TelescopePosition.X}"
                             Y="{Binding TelescopePosition.Y}" />
                         <oxy:PointAnnotation
-                            Stroke="{Binding Path=Color, Source={StaticResource ButtonForegroundBrush}}"
                             StrokeThickness="2"
                             Shape="Cross"
                             Size="5"
                             Opacity="0.9"
                             Text="{Binding CelestialPoleLabel}"
-                            TextColor="{Binding Path=Color, Source={StaticResource ButtonForegroundBrush}}"
                             X="{Binding CelestialPoleAzimuth}"
-                            Y="{Binding CelestialPoleAltitude}"
-                            Visibility="{Binding ShowCelestialPole, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}" />
+                            Y="{Binding CelestialPoleAltitude}">
+                            <oxy:PointAnnotation.Stroke>
+                                <MultiBinding Converter="{StaticResource TM_ColorAndBooleanToTransparentMultiBinding}">
+                                    <Binding Path="Color" Source="{StaticResource ButtonForegroundBrush}" />
+                                    <Binding Path="ShowCelestialPole" />
+                                </MultiBinding>
+                            </oxy:PointAnnotation.Stroke>
+                            <oxy:PointAnnotation.TextColor>
+                                <MultiBinding Converter="{StaticResource TM_ColorAndBooleanToTransparentMultiBinding}">
+                                    <Binding Path="Color" Source="{StaticResource ButtonForegroundBrush}" />
+                                    <Binding Path="ShowCelestialPole" />
+                                </MultiBinding>
+                            </oxy:PointAnnotation.TextColor>
+                        </oxy:PointAnnotation>
                         <oxy:LineAnnotation
                             MaximumY="90"
                             Type="Vertical"
@@ -1759,16 +1769,26 @@
          X="{Binding TelescopePositionInverted.Y}"
          Y="{Binding TelescopePositionInverted.X}" />
                         <oxy:PointAnnotation
-         Stroke="{Binding Path=Color, Source={StaticResource ButtonForegroundBrush}}"
          StrokeThickness="2"
          Shape="Cross"
          Size="5"
          Opacity="0.9"
          Text="{Binding CelestialPoleLabel}"
-         TextColor="{Binding Path=Color, Source={StaticResource ButtonForegroundBrush}}"
          X="{Binding CelestialPoleInvertedAltitude}"
-         Y="{Binding CelestialPoleAzimuth}"
-         Visibility="{Binding ShowCelestialPole, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}" />
+         Y="{Binding CelestialPoleAzimuth}">
+                            <oxy:PointAnnotation.Stroke>
+                                <MultiBinding Converter="{StaticResource TM_ColorAndBooleanToTransparentMultiBinding}">
+                                    <Binding Path="Color" Source="{StaticResource ButtonForegroundBrush}" />
+                                    <Binding Path="ShowCelestialPole" />
+                                </MultiBinding>
+                            </oxy:PointAnnotation.Stroke>
+                            <oxy:PointAnnotation.TextColor>
+                                <MultiBinding Converter="{StaticResource TM_ColorAndBooleanToTransparentMultiBinding}">
+                                    <Binding Path="Color" Source="{StaticResource ButtonForegroundBrush}" />
+                                    <Binding Path="ShowCelestialPole" />
+                                </MultiBinding>
+                            </oxy:PointAnnotation.TextColor>
+                        </oxy:PointAnnotation>
                     </oxy:Plot.Annotations>
                     </oxy:Plot>
                 </Grid>
