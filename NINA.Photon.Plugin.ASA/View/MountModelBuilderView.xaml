@@ -1189,7 +1189,7 @@
                             ColorAxisKey="ModelPointStateColorAxis"
                             DataFieldX="Azimuth"
                             DataFieldY="Altitude"
-                            MarkerSize="4"
+                            MarkerSize="2.8"
                             DataFieldValue="ModelPointState"
                             TrackerFormatString="{}Altitude: {Altitude:##0.00}&#176;&#x0a;Azimuth: {Azimuth:##0.00}&#176;&#x0a;State: {ModelPointStateString}&#x0a;RMS Error: {RMSErrorString}" />
                         <oxy:LineSeries
@@ -1618,11 +1618,11 @@
             Color="{Binding Path=Color, Source={StaticResource ButtonBackgroundBrush}}" /-->
                         <oxy:ScatterSeries
                                 ColorAxisKey="ErrorColorAxis"
-                                DataFieldSize="ErrorPointRadius"
                                 DataFieldValue="ModelPointState"
                                 DataFieldX="InvertedAltitude"
                                 DataFieldY="Azimuth"
                                 ItemsSource="{Binding DisplayModelPoints, UpdateSourceTrigger=PropertyChanged}"
+                            MarkerSize="2.8"
                                 MarkerType="Circle"
                                 TrackerFormatString="{}Altitude: {Altitude:###.####}&#176;&#x0a;Azimuth: {Azimuth:###.####}&#176;&#x0a;RMS Error: {ErrorArcsec:###.##} arcsec"
                                 XAxisKey="AltitudeAxis"
