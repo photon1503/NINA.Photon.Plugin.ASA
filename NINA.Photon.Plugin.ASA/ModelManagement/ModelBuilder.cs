@@ -1319,7 +1319,6 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 bandPoints
                     .Where(point => GetAsaOrderingPierSide(point) == PierSide.pierWest)
                     .ToList());
-            westPoints.Reverse();
 
             var unknownSidePoints = bandPoints
                 .Where(point =>
