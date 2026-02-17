@@ -704,6 +704,21 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             {
                 UpdateDisplayModelPoints();
             }
+
+            if (e.PropertyName == nameof(modelBuilderOptions.ChartPointSize))
+            {
+                RaisePropertyChanged(nameof(ChartPointSize));
+            }
+
+            if (e.PropertyName == nameof(modelBuilderOptions.ShowHorizon))
+            {
+                RaisePropertyChanged(nameof(ShowHorizon));
+            }
+
+            if (e.PropertyName == nameof(modelBuilderOptions.HorizonTransparencyPercent))
+            {
+                RaisePropertyChanged(nameof(HorizonTransparencyPercent));
+            }
         }
 
         private void UpdateDisplayModelPoints()
@@ -1993,6 +2008,45 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                     showDisplayPath = value;
                     RaisePropertyChanged();
                     RefreshDisplayPathPoints();
+                }
+            }
+        }
+
+        public double ChartPointSize
+        {
+            get => this.modelBuilderOptions.ChartPointSize;
+            set
+            {
+                if (Math.Abs(this.modelBuilderOptions.ChartPointSize - value) > double.Epsilon)
+                {
+                    this.modelBuilderOptions.ChartPointSize = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        public bool ShowHorizon
+        {
+            get => this.modelBuilderOptions.ShowHorizon;
+            set
+            {
+                if (this.modelBuilderOptions.ShowHorizon != value)
+                {
+                    this.modelBuilderOptions.ShowHorizon = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        public int HorizonTransparencyPercent
+        {
+            get => this.modelBuilderOptions.HorizonTransparencyPercent;
+            set
+            {
+                if (this.modelBuilderOptions.HorizonTransparencyPercent != value)
+                {
+                    this.modelBuilderOptions.HorizonTransparencyPercent = value;
+                    RaisePropertyChanged();
                 }
             }
         }

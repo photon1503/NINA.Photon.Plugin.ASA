@@ -85,6 +85,12 @@ namespace NINA.Photon.Plugin.ASA.Interfaces
 
         bool ShowRemovedPoints { get; set; }
 
+        double ChartPointSize { get; set; }
+
+        bool ShowHorizon { get; set; }
+
+        int HorizonTransparencyPercent { get; set; }
+
         bool RemoveHighRMSPointsAfterBuild { get; set; }
 
         double PlateSolveSubframePercentage { get; set; }

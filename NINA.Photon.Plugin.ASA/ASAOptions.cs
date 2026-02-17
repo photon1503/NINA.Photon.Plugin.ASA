@@ -98,6 +98,9 @@ namespace NINA.Photon.Plugin.ASA
             refEastAzimuth = optionsAccessor.GetValueDouble("RefEastAzimuth", 90.0d);
             refWestAzimuth = optionsAccessor.GetValueDouble("RefWestAzimuth", 270.0d);
             poxOutputDirectory = optionsAccessor.GetValueString("POXOutputDirectory", DefaultASAPointingPicsPath());
+            chartPointSize = optionsAccessor.GetValueDouble("ChartPointSize", 2.8d);
+            showHorizon = optionsAccessor.GetValueBoolean("ShowHorizon", true);
+            horizonTransparencyPercent = optionsAccessor.GetValueInt32("HorizonTransparencyPercent", 65);
         }
 
         public void ResetDefaults()
@@ -155,6 +158,9 @@ namespace NINA.Photon.Plugin.ASA
             RefWestAltitude = 35.0d;
             RefEastAzimuth = 90.0d;
             RefWestAzimuth = 270.0d;
+            ChartPointSize = 2.8d;
+            ShowHorizon = true;
+            HorizonTransparencyPercent = 65;
 
             POXOutputDirectory = DefaultASAPointingPicsPath();
         }
@@ -773,6 +779,64 @@ namespace NINA.Photon.Plugin.ASA
                 {
                     showRemovedPoints = value;
                     optionsAccessor.SetValueBoolean("ShowRemovedPoints", showRemovedPoints);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private double chartPointSize;
+
+        public double ChartPointSize
+        {
+            get => chartPointSize;
+            set
+            {
+                if (Math.Abs(chartPointSize - value) > double.Epsilon)
+                {
+                    if (value <= 0.0d || value > 20.0d)
+                    {
+                        throw new ArgumentException("ChartPointSize must be greater than 0 and no more than 20", nameof(ChartPointSize));
+                    }
+
+                    chartPointSize = value;
+                    optionsAccessor.SetValueDouble("ChartPointSize", chartPointSize);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private bool showHorizon;
+
+        public bool ShowHorizon
+        {
+            get => showHorizon;
+            set
+            {
+                if (showHorizon != value)
+                {
+                    showHorizon = value;
+                    optionsAccessor.SetValueBoolean("ShowHorizon", showHorizon);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private int horizonTransparencyPercent;
+
+        public int HorizonTransparencyPercent
+        {
+            get => horizonTransparencyPercent;
+            set
+            {
+                if (horizonTransparencyPercent != value)
+                {
+                    if (value < 0 || value > 100)
+                    {
+                        throw new ArgumentException("HorizonTransparencyPercent must be between 0 and 100", nameof(HorizonTransparencyPercent));
+                    }
+
+                    horizonTransparencyPercent = value;
+                    optionsAccessor.SetValueInt32("HorizonTransparencyPercent", horizonTransparencyPercent);
                     RaisePropertyChanged();
                 }
             }

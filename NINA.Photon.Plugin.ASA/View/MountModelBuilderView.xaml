@@ -1057,6 +1057,88 @@
                             <TextBlock
                                 VerticalAlignment="Center"
                                 FontSize="18"
+                                Text="Chart options" />
+                        </Grid>
+                    </GroupBox.Header>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" SharedSizeGroup="SettingsCol0" />
+                            <ColumnDefinition Width="Auto" SharedSizeGroup="SettingsCol1" />
+                            <ColumnDefinition Width="Auto" SharedSizeGroup="SettingsCol2" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition />
+                            <RowDefinition />
+                            <RowDefinition />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock
+                            Grid.Row="0" Grid.Column="0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Text="Point size"
+                            ToolTip="Size of chart points" />
+                        <ninactrl:UnitTextBox
+                            Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2"
+                            MinWidth="80"
+                            Margin="10,5,0,0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Unit="px"
+                            ToolTip="Size of chart points">
+                            <Binding Path="ChartPointSize" UpdateSourceTrigger="LostFocus">
+                                <Binding.ValidationRules>
+                                    <rules:GreaterThanZeroRule />
+                                </Binding.ValidationRules>
+                            </Binding>
+                        </ninactrl:UnitTextBox>
+
+                        <TextBlock
+                            Grid.Row="1" Grid.Column="0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Text="Show horizon"
+                            ToolTip="Show horizon on both charts" />
+                        <CheckBox
+                            Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"
+                            Margin="10,5,0,0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            IsChecked="{Binding ShowHorizon}" />
+
+                        <TextBlock
+                            Grid.Row="2" Grid.Column="0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Text="Horizon transparency"
+                            ToolTip="Horizon transparency percentage (0-100)" />
+                        <ninactrl:UnitTextBox
+                            Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2"
+                            MinWidth="80"
+                            Margin="10,5,0,0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Unit="%"
+                            ToolTip="Horizon transparency percentage (0-100)">
+                            <Binding Path="HorizonTransparencyPercent" UpdateSourceTrigger="LostFocus">
+                                <Binding.ValidationRules>
+                                    <rules:IntRangeRule>
+                                        <rules:IntRangeRule.ValidRange>
+                                            <rules:IntRangeChecker Maximum="100" Minimum="0" />
+                                        </rules:IntRangeRule.ValidRange>
+                                    </rules:IntRangeRule>
+                                </Binding.ValidationRules>
+                            </Binding>
+                        </ninactrl:UnitTextBox>
+                    </Grid>
+                </GroupBox>
+
+                <GroupBox>
+                    <GroupBox.Header>
+                        <Grid Height="36" Margin="5">
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                FontSize="18"
                                 Text="Checklist" />
                         </Grid>
                     </GroupBox.Header>
@@ -1161,7 +1243,22 @@
                             DataFieldY="Value"
                             ItemsSource="{Binding HorizonDataPoints}"
                             TrackerFormatString="Altitude: {2:0.00}&#176;&#x0a;Azimuth: {4:0.00}&#176;"
-                            Color="{Binding Path=Color, Source={StaticResource ButtonBackgroundBrush}}" />
+                            Visibility="{Binding ShowHorizon, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}">
+                            <oxy:AreaSeries.Color>
+                                <MultiBinding Converter="{StaticResource TM_ColorAndBooleanToTransparentMultiBinding}">
+                                    <Binding Path="Color" Source="{StaticResource ButtonBackgroundBrush}" />
+                                    <Binding Path="ShowHorizon" />
+                                    <Binding Path="HorizonTransparencyPercent" />
+                                </MultiBinding>
+                            </oxy:AreaSeries.Color>
+                            <oxy:AreaSeries.Fill>
+                                <MultiBinding Converter="{StaticResource TM_ColorAndBooleanToTransparentMultiBinding}">
+                                    <Binding Path="Color" Source="{StaticResource ButtonBackgroundBrush}" />
+                                    <Binding Path="ShowHorizon" />
+                                    <Binding Path="HorizonTransparencyPercent" />
+                                </MultiBinding>
+                            </oxy:AreaSeries.Fill>
+                        </oxy:AreaSeries>
                         <oxy:AreaSeries
                             Visibility="{Binding DomeControlEnabled, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"
                             Color2="{StaticResource DomeShutterColor}"
@@ -1188,7 +1285,7 @@
                             ColorAxisKey="ModelPointStateColorAxis"
                             DataFieldX="Azimuth"
                             DataFieldY="Altitude"
-                            MarkerSize="2.8"
+                            MarkerSize="{Binding ChartPointSize}"
                             DataFieldValue="ModelPointState"
                             TrackerFormatString="{}Altitude: {Altitude:##0.00}&#176;&#x0a;Azimuth: {Azimuth:##0.00}&#176;&#x0a;State: {ModelPointStateString}&#x0a;RMS Error: {RMSErrorString}" />
                         <oxy:LineSeries
@@ -1599,13 +1696,27 @@
                             XAxisKey="AltitudeAxis"
                             YAxisKey="AzimuthAxis"
                             TrackerFormatString="Altitude: {2:0.00}&#176;&#x0a;Azimuth: {4:0.00}&#176;"
-                            Fill="{Binding Path=Color, Source={StaticResource ButtonBackgroundBrush}, Converter={StaticResource SetAlphaToColorConverter}, ConverterParameter=90}"
-                            Color="{Binding Path=Color, Source={StaticResource ButtonBackgroundBrush}}" />
+                            Visibility="{Binding ShowHorizon, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}">
+                            <oxy:AreaSeries.Color>
+                                <MultiBinding Converter="{StaticResource TM_ColorAndBooleanToTransparentMultiBinding}">
+                                    <Binding Path="Color" Source="{StaticResource ButtonBackgroundBrush}" />
+                                    <Binding Path="ShowHorizon" />
+                                    <Binding Path="HorizonTransparencyPercent" />
+                                </MultiBinding>
+                            </oxy:AreaSeries.Color>
+                            <oxy:AreaSeries.Fill>
+                                <MultiBinding Converter="{StaticResource TM_ColorAndBooleanToTransparentMultiBinding}">
+                                    <Binding Path="Color" Source="{StaticResource ButtonBackgroundBrush}" />
+                                    <Binding Path="ShowHorizon" />
+                                    <Binding Path="HorizonTransparencyPercent" />
+                                </MultiBinding>
+                            </oxy:AreaSeries.Fill>
+                        </oxy:AreaSeries>
                         <oxy:ScatterSeries
                                 DataFieldX="InvertedAltitude"
                                 DataFieldY="Azimuth"
                                 ItemsSource="{Binding DisplayModelPoints, UpdateSourceTrigger=PropertyChanged}"
-                            MarkerSize="2.8"
+                                MarkerSize="{Binding ChartPointSize}"
                                 MarkerType="Circle"
                                 TrackerFormatString="{}Altitude: {Altitude:###.####}&#176;&#x0a;Azimuth: {Azimuth:###.####}&#176;&#x0a;RMS Error: {ErrorArcsec:###.##} arcsec"
                                 XAxisKey="AltitudeAxis"
