@@ -726,6 +726,11 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 RaisePropertyChanged(nameof(CartesianAzimuthLabelFormatter));
                 RaisePropertyChanged(nameof(PolarAzimuthLabelFormatter));
             }
+
+            if (e.PropertyName == nameof(modelBuilderOptions.ShowCelestialPole))
+            {
+                RaisePropertyChanged(nameof(ShowCelestialPole));
+            }
         }
 
         private void UpdateDisplayModelPoints()
@@ -810,6 +815,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             this.profileService.ActiveProfile.AstrometrySettings.PropertyChanged += AstrometrySettings_PropertyChanged;
             this.profileService.ActiveProfile.DomeSettings.PropertyChanged += DomeSettings_PropertyChanged;
             this.LoadHorizon();
+            this.RaiseCelestialPolePropertiesChanged();
         }
 
         private void DomeSettings_PropertyChanged(object sender, PropertyChangedEventArgs e)
@@ -826,6 +832,21 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             {
                 this.LoadHorizon();
             }
+
+            if (string.IsNullOrWhiteSpace(e.PropertyName)
+                || e.PropertyName == nameof(this.profileService.ActiveProfile.AstrometrySettings.Latitude))
+            {
+                this.RaiseCelestialPolePropertiesChanged();
+            }
+        }
+
+        private void RaiseCelestialPolePropertiesChanged()
+        {
+            this.RaisePropertyChanged(nameof(IsNorthernHemisphere));
+            this.RaisePropertyChanged(nameof(CelestialPoleLabel));
+            this.RaisePropertyChanged(nameof(CelestialPoleAzimuth));
+            this.RaisePropertyChanged(nameof(CelestialPoleAltitude));
+            this.RaisePropertyChanged(nameof(CelestialPoleInvertedAltitude));
         }
 
         private void LoadHorizon()
@@ -2059,6 +2080,29 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 }
             }
         }
+
+        public bool ShowCelestialPole
+        {
+            get => this.modelBuilderOptions.ShowCelestialPole;
+            set
+            {
+                if (this.modelBuilderOptions.ShowCelestialPole != value)
+                {
+                    this.modelBuilderOptions.ShowCelestialPole = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private bool IsNorthernHemisphere => this.profileService.ActiveProfile.AstrometrySettings.Latitude >= 0.0d;
+
+        public string CelestialPoleLabel => IsNorthernHemisphere ? "NCP" : "SCP";
+
+        public double CelestialPoleAzimuth => IsNorthernHemisphere ? 0.0d : 180.0d;
+
+        public double CelestialPoleAltitude => Math.Max(0.0d, Math.Min(90.0d, Math.Abs(this.profileService.ActiveProfile.AstrometrySettings.Latitude)));
+
+        public double CelestialPoleInvertedAltitude => 90.0d - CelestialPoleAltitude;
 
         public Func<double, string> CartesianAzimuthLabelFormatter =>
             ShowCardinalLabels

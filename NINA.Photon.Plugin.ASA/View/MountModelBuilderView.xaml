@@ -1071,7 +1071,8 @@
                             <RowDefinition />
                             <RowDefinition />
                             <RowDefinition />
-                              <RowDefinition />
+                                                        <RowDefinition />
+                                                        <RowDefinition />
                         </Grid.RowDefinitions>
 
                         <TextBlock
@@ -1146,6 +1147,19 @@
                             VerticalAlignment="Center"
                             Content="NSEW instead of degrees"
                             IsChecked="{Binding ShowCardinalLabels}" />
+
+                        <TextBlock
+                            Grid.Row="4" Grid.Column="0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Text="Show celestial pole"
+                            ToolTip="Show celestial pole marker and NCP/SCP label on both charts" />
+                        <CheckBox
+                            Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2"
+                            Margin="10,5,0,0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            IsChecked="{Binding ShowCelestialPole}" />
                     </Grid>
                 </GroupBox>
 
@@ -1359,6 +1373,17 @@
                             TextColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}"
                             X="{Binding TelescopePosition.X}"
                             Y="{Binding TelescopePosition.Y}" />
+                        <oxy:PointAnnotation
+                            Stroke="{Binding Path=Color, Source={StaticResource ButtonForegroundBrush}}"
+                            StrokeThickness="2"
+                            Shape="Cross"
+                            Size="5"
+                            Opacity="0.9"
+                            Text="{Binding CelestialPoleLabel}"
+                            TextColor="{Binding Path=Color, Source={StaticResource ButtonForegroundBrush}}"
+                            X="{Binding CelestialPoleAzimuth}"
+                            Y="{Binding CelestialPoleAltitude}"
+                            Visibility="{Binding ShowCelestialPole, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}" />
                         <oxy:LineAnnotation
                             MaximumY="90"
                             Type="Vertical"
@@ -1733,6 +1758,17 @@
          TextColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}"
          X="{Binding TelescopePositionInverted.Y}"
          Y="{Binding TelescopePositionInverted.X}" />
+                        <oxy:PointAnnotation
+         Stroke="{Binding Path=Color, Source={StaticResource ButtonForegroundBrush}}"
+         StrokeThickness="2"
+         Shape="Cross"
+         Size="5"
+         Opacity="0.9"
+         Text="{Binding CelestialPoleLabel}"
+         TextColor="{Binding Path=Color, Source={StaticResource ButtonForegroundBrush}}"
+         X="{Binding CelestialPoleInvertedAltitude}"
+         Y="{Binding CelestialPoleAzimuth}"
+         Visibility="{Binding ShowCelestialPole, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}" />
                     </oxy:Plot.Annotations>
                     </oxy:Plot>
                 </Grid>
