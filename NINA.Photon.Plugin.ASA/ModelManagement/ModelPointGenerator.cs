@@ -47,6 +47,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
         private const double AUTO_GRID_RING_SCALE_EXPONENT = 0.82d;
         private const double AUTO_GRID_RING_PHASE_STEP_DEGREES = 12.0d;
         private const int AUTO_GRID_SPARSE_RING_THRESHOLD = 8;
+        private const double AUTO_GRID_OVERLAP_MARGIN_MAX_DEGREES = 1.0d;
 
         public ModelPointGenerator(IProfileService profileService, ITelescopeMediator telescopeMediator, IWeatherDataMediator weatherDataMediator, IASAOptions options, IMountMediator mountMediator, IMount mount)
         {
@@ -197,7 +198,9 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 var ringPoints = new List<ModelPoint>(localHourAngles.Count * 2);
                 var ringPointCount = localHourAngles.Count;
                 var ringSpacingDegrees = localHourAngles.Count > 1 ? 360.0d / localHourAngles.Count : 0.0d;
-                var overlapSelectionDegrees = overlapMeridianDegrees;
+                var overlapMarginDegrees = Math.Min(AUTO_GRID_OVERLAP_MARGIN_MAX_DEGREES, ringSpacingDegrees / 6.0d);
+                var safeOverlapMeridianDegrees = Math.Max(0.0d, overlapMeridianDegrees - overlapMarginDegrees);
+
                 for (var sequenceIndex = 0; sequenceIndex < localHourAngles.Count; sequenceIndex++)
                 {
                     var hourAngleDegrees = localHourAngles[sequenceIndex];
@@ -210,49 +213,37 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                         hourAngleDegrees: hourAngleDegrees,
                         horizon: horizon);
 
-                    if (primaryPoint.ModelPointState == ModelPointStateEnum.Generated && overlapMeridianDegrees > 0.0d && Math.Abs(hourAngleDegrees) <= overlapSelectionDegrees)
+                    if (primaryPoint.ModelPointState == ModelPointStateEnum.Generated && safeOverlapMeridianDegrees > 0.0d && Math.Abs(hourAngleDegrees) <= safeOverlapMeridianDegrees)
                     {
-                        var eastOverlapPoint = CreateSeparatedOverlapPoint(
+                        var eastOverlapPoint = primaryPoint.Clone();
+                        eastOverlapPoint.DesiredPierSide = PierSide.pierEast;
+                        ringPoints.Add(eastOverlapPoint);
+
+                        var westHourAngle = hourAngleDegrees;
+                        if (ringSpacingDegrees > 0.0d)
+                        {
+                            var shiftedWestHourAngle = NormalizeHourAngleDegrees(hourAngleDegrees + (ringSpacingDegrees / 2.0d));
+                            if (Math.Abs(shiftedWestHourAngle) <= safeOverlapMeridianDegrees)
+                            {
+                                westHourAngle = shiftedWestHourAngle;
+                            }
+                        }
+
+                        var westOverlapPoint = CreateAutoGridPointFromHourAngle(
                             bandIndex: i,
                             sequenceIndex: sequenceIndex,
                             ringPointCount: ringPointCount,
                             latitudeDegrees: latitudeDegrees,
                             declinationDegrees: declinationDegrees,
-                            baseHourAngleDegrees: hourAngleDegrees,
-                            ringSpacingDegrees: ringSpacingDegrees,
-                            overlapMeridianDegrees: overlapMeridianDegrees,
-                            targetPierSide: PierSide.pierEast,
+                            hourAngleDegrees: westHourAngle,
                             horizon: horizon);
 
-                        var westOverlapPoint = CreateSeparatedOverlapPoint(
-                            bandIndex: i,
-                            sequenceIndex: sequenceIndex,
-                            ringPointCount: ringPointCount,
-                            latitudeDegrees: latitudeDegrees,
-                            declinationDegrees: declinationDegrees,
-                            baseHourAngleDegrees: hourAngleDegrees,
-                            ringSpacingDegrees: ringSpacingDegrees,
-                            overlapMeridianDegrees: overlapMeridianDegrees,
-                            targetPierSide: PierSide.pierWest,
-                            horizon: horizon);
-
-                        var addedOverlapPoint = false;
-                        if (eastOverlapPoint != null)
+                        if (westOverlapPoint.ModelPointState != ModelPointStateEnum.Generated)
                         {
-                            ringPoints.Add(eastOverlapPoint);
-                            addedOverlapPoint = true;
+                            westOverlapPoint = primaryPoint.Clone();
                         }
-
-                        if (westOverlapPoint != null)
-                        {
-                            ringPoints.Add(westOverlapPoint);
-                            addedOverlapPoint = true;
-                        }
-
-                        if (!addedOverlapPoint)
-                        {
-                            ringPoints.Add(primaryPoint);
-                        }
+                        westOverlapPoint.DesiredPierSide = PierSide.pierWest;
+                        ringPoints.Add(westOverlapPoint);
 
                         continue;
                     }
@@ -379,63 +370,6 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             };
         }
 
-        private ModelPoint CreateSeparatedOverlapPoint(
-            int bandIndex,
-            int sequenceIndex,
-            int ringPointCount,
-            double latitudeDegrees,
-            double declinationDegrees,
-            double baseHourAngleDegrees,
-            double ringSpacingDegrees,
-            double overlapMeridianDegrees,
-            PierSide targetPierSide,
-            CustomHorizon horizon)
-        {
-            var preferredDirection = targetPierSide == PierSide.pierWest ? 1.0d : -1.0d;
-            var separationDegrees = Math.Max(0.5d, ringSpacingDegrees / 4.0d);
-            var overlapSafetyMarginDegrees = Math.Min(2.0d, Math.Max(0.5d, separationDegrees / 2.0d));
-            var safeOverlapMeridianDegrees = Math.Max(0.0d, overlapMeridianDegrees - overlapSafetyMarginDegrees);
-
-            if (safeOverlapMeridianDegrees <= 0.0d)
-            {
-                return null;
-            }
-
-            var primaryCandidateHourAngle = NormalizeHourAngleDegrees(baseHourAngleDegrees + (preferredDirection * separationDegrees));
-            var alternateCandidateHourAngle = NormalizeHourAngleDegrees(baseHourAngleDegrees - (preferredDirection * separationDegrees));
-
-            var candidateHourAngles = new[]
-            {
-                primaryCandidateHourAngle,
-                alternateCandidateHourAngle,
-                baseHourAngleDegrees
-            };
-
-            foreach (var candidateHourAngle in candidateHourAngles)
-            {
-                if (Math.Abs(candidateHourAngle) > safeOverlapMeridianDegrees)
-                {
-                    continue;
-                }
-
-                var candidatePoint = CreateAutoGridPointFromHourAngle(
-                    bandIndex: bandIndex,
-                    sequenceIndex: sequenceIndex,
-                    ringPointCount: ringPointCount,
-                    latitudeDegrees: latitudeDegrees,
-                    declinationDegrees: declinationDegrees,
-                    hourAngleDegrees: candidateHourAngle,
-                    horizon: horizon);
-
-                if (candidatePoint.ModelPointState == ModelPointStateEnum.Generated)
-                {
-                    candidatePoint.DesiredPierSide = targetPierSide;
-                    return candidatePoint;
-                }
-            }
-
-            return null;
-        }
 
         public List<ModelPoint> GenerateAutoGridByPointCount(int desiredPointCount, CustomHorizon horizon)
         {
