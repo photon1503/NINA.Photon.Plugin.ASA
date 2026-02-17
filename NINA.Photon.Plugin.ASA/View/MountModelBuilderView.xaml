@@ -1099,9 +1099,8 @@
                     MinWidth="300"
                     MinHeight="50"
                     Width="Auto"
-                    Height="{Binding ActualWidth, RelativeSource={RelativeSource Self}, Converter={StaticResource TM_NumericToHalfConverter}}"
                     HorizontalAlignment="Stretch"
-                    VerticalAlignment="Top"
+                    VerticalAlignment="Stretch"
                     Background="{StaticResource BackgroundBrush}"
                     PlotAreaBackground="{StaticResource BackgroundBrush}"
                     PlotAreaBorderColor="Transparent">
@@ -1486,9 +1485,8 @@
                         Width="Auto"
                         MinWidth="300"
                         MinHeight="300"
-                     Height="{Binding ActualWidth, RelativeSource={RelativeSource Self}, Converter={StaticResource TM_NumericToHalfConverter}}"
                         HorizontalAlignment="Stretch"
-                        VerticalAlignment="Top"
+                    VerticalAlignment="Stretch"
                         Background="{StaticResource BackgroundBrush}"
                         PlotAreaBackground="{StaticResource BackgroundBrush}"
                         PlotAreaBorderColor="Transparent"
@@ -1526,25 +1524,6 @@
                                 StartPosition="0"
                                 TextColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}"
                                 TicklineColor="{Binding Path=Color, Source={StaticResource SecondaryBrush}}" />
-                        <oxy:LinearColorAxis
-                                Key="ErrorColorAxis"
-                                AxisDistance="50"
-                                HighColor="Transparent"
-                                InvalidNumberColor="Black"
-                                IsAxisVisible="{Binding DisplayModelPoints.AlignmentStars, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource CollectionContainsItemsToBooleanConverter}}"
-                                LowColor="Transparent"
-                                Maximum="{Binding DisplayModelPoints.MaxRMSError}"
-                                Minimum="0.0"
-                                PaletteSize="200"
-                                Position="Right">
-                            <oxy:LinearColorAxis.GradientStops>
-                                <swm:GradientStopCollection>
-                                    <swm:GradientStop Offset="0.0" Color="Green" />
-                                    <swm:GradientStop Offset="0.5" Color="#80FF00" />
-                                    <swm:GradientStop Offset="1.0" Color="Red" />
-                                </swm:GradientStopCollection>
-                            </oxy:LinearColorAxis.GradientStops>
-                        </oxy:LinearColorAxis>
                     </oxy:Plot.Axes>
                     <oxy:Plot.Series>
                         <oxy:LineSeries
@@ -1617,8 +1596,6 @@
             TrackerFormatString="Altitude: {2:0.00}&#176;&#x0a;Azimuth: {4:0.00}&#176;"
             Color="{Binding Path=Color, Source={StaticResource ButtonBackgroundBrush}}" /-->
                         <oxy:ScatterSeries
-                                ColorAxisKey="ErrorColorAxis"
-                                DataFieldValue="ModelPointState"
                                 DataFieldX="InvertedAltitude"
                                 DataFieldY="Azimuth"
                                 ItemsSource="{Binding DisplayModelPoints, UpdateSourceTrigger=PropertyChanged}"
