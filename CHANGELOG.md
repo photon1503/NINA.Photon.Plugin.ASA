@@ -3,6 +3,13 @@
 
 ## 3.2.7.x
 
+- AutoGrid now generates dual-side coverage around the meridian (ASA-style overlap), storing a desired pier side per point and duplicating overlap points for both east/west pier solutions.
+- Dual-side overlap points now use a display-only side offset in charts to avoid complete marker overlap while preserving true build coordinates.
+- Added east/west pier-side coloring for generated points in both model builder charts.
+- Model slews now enforce each point's stored desired pier side via ASCOM `forcenextpierside` before slewing.
+
+- Added ASA pier-side aware slew support in model building by calling ASCOM action `forcenextpierside` before slews (`0` east, `1` west, `-1` auto/reset), with automatic fallback if unsupported by the active driver.
+
 - Improved AutoGrid near-horizon coverage for sparse rings by anchoring candidate placement to the meridian and selecting a horizon-aware phase with best visible distribution.
 
 - Added celestial pole target marker (**NCP/SCP**) to both charts with hemisphere-aware label.

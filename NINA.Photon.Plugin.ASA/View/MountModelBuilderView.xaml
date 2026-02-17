@@ -1357,10 +1357,10 @@
                             MarkerType="Circle"
                             ItemsSource="{Binding DisplayModelPoints, UpdateSourceTrigger=PropertyChanged}"
                             ColorAxisKey="ModelPointStateColorAxis"
-                            DataFieldX="Azimuth"
+                            DataFieldX="PlotAzimuth"
                             DataFieldY="Altitude"
                             MarkerSize="{Binding ChartPointSize}"
-                            DataFieldValue="ModelPointState"
+                            DataFieldValue="PlotColorValue"
                             TrackerFormatString="{}Altitude: {Altitude:##0.00}&#176;&#x0a;Azimuth: {Azimuth:##0.00}&#176;&#x0a;State: {ModelPointStateString}&#x0a;RMS Error: {RMSErrorString}" />
                         <oxy:LineSeries
                             ItemsSource="{Binding DisplayPathPoints, UpdateSourceTrigger=PropertyChanged}"
@@ -1706,6 +1706,10 @@
                                 StartPosition="0"
                                 TextColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}"
                                 TicklineColor="{Binding Path=Color, Source={StaticResource SecondaryBrush}}" />
+                        <tmoxy:ModelPointStateColorAxis
+                            Key="ModelPointStateColorAxisPolar"
+                            Position="None"
+                            Visibility="Collapsed" />
                     </oxy:Plot.Axes>
                     <oxy:Plot.Series>
                         <oxy:LineSeries
@@ -1799,8 +1803,10 @@
                         </oxy:AreaSeries>
                         <oxy:ScatterSeries
                                 DataFieldX="InvertedAltitude"
-                                DataFieldY="Azimuth"
+                            DataFieldY="PlotAzimuth"
                                 ItemsSource="{Binding DisplayModelPoints, UpdateSourceTrigger=PropertyChanged}"
+                            ColorAxisKey="ModelPointStateColorAxisPolar"
+                            DataFieldValue="PlotColorValue"
                                 MarkerSize="{Binding ChartPointSize}"
                                 MarkerType="Circle"
                                 TrackerFormatString="{}Altitude: {Altitude:###.####}&#176;&#x0a;Azimuth: {Azimuth:###.####}&#176;&#x0a;RMS Error: {ErrorArcsec:###.##} arcsec"

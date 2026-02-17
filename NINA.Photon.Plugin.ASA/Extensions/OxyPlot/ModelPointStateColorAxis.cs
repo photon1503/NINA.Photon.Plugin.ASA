@@ -18,7 +18,20 @@ namespace NINA.Photon.Plugin.ASA.Extensions.OxyPlot {
 
     public class ModelPointStateColorAxis : LinearAxis, IColorAxis {
 
+        private const int GeneratedEastPaletteIndex = 1000;
+        private const int GeneratedWestPaletteIndex = 1001;
+
         public OxyColor GetColor(int paletteIndex) {
+            if (paletteIndex == GeneratedEastPaletteIndex)
+            {
+                return OxyColors.DeepSkyBlue;
+            }
+
+            if (paletteIndex == GeneratedWestPaletteIndex)
+            {
+                return OxyColors.Orange;
+            }
+
             var modelPointState = (ModelPointStateEnum)paletteIndex;
             switch (modelPointState) {
                 case ModelPointStateEnum.Generated:

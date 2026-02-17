@@ -60,6 +60,7 @@ namespace NINA.Photon.Plugin.ASA.Model
     public class ModelPoint : BaseINPC
     {
         private readonly ITelescopeMediator telescopeMediator;
+        private const double OVERLAP_DISPLAY_AZIMUTH_OFFSET_DEGREES = 2.0d;
 
         private static bool AreEqualOrBothNaN(double left, double right)
         {
@@ -217,6 +218,39 @@ namespace NINA.Photon.Plugin.ASA.Model
             }
         }
 
+        private PierSide desiredPierSide = PierSide.pierUnknown;
+
+        public PierSide DesiredPierSide
+        {
+            get => desiredPierSide;
+            set
+            {
+                if (desiredPierSide != value)
+                {
+                    desiredPierSide = value;
+                    RaisePropertyChanged();
+                    RaisePropertyChanged(nameof(PlotColorValue));
+                    RaisePropertyChanged(nameof(PlotAzimuth));
+                }
+            }
+        }
+
+        private bool isDualSideOverlapPoint = false;
+
+        public bool IsDualSideOverlapPoint
+        {
+            get => isDualSideOverlapPoint;
+            set
+            {
+                if (isDualSideOverlapPoint != value)
+                {
+                    isDualSideOverlapPoint = value;
+                    RaisePropertyChanged();
+                    RaisePropertyChanged(nameof(PlotAzimuth));
+                }
+            }
+        }
+
         public double InvertedAltitude => 90.0 - Altitude;
 
         private double altitude;
@@ -245,7 +279,28 @@ namespace NINA.Photon.Plugin.ASA.Model
                 {
                     azimuth = value;
                     RaisePropertyChanged();
+                    RaisePropertyChanged(nameof(PlotAzimuth));
                 }
+            }
+        }
+
+        public double PlotAzimuth
+        {
+            get
+            {
+                if (!IsDualSideOverlapPoint || ModelPointState != ModelPointStateEnum.Generated)
+                {
+                    return Azimuth;
+                }
+
+                var direction = DesiredPierSide switch
+                {
+                    PierSide.pierEast => -1.0d,
+                    PierSide.pierWest => 1.0d,
+                    _ => 0.0d
+                };
+
+                return AstroUtil.EuclidianModulus(Azimuth + (direction * OVERLAP_DISPLAY_AZIMUTH_OFFSET_DEGREES), 360.0d);
             }
         }
 
@@ -321,6 +376,8 @@ namespace NINA.Photon.Plugin.ASA.Model
                     modelPointState = value;
                     RaisePropertyChanged();
                     RaisePropertyChanged(nameof(ModelPointStateString));
+                    RaisePropertyChanged(nameof(PlotColorValue));
+                    RaisePropertyChanged(nameof(PlotAzimuth));
                 }
             }
         }
@@ -332,6 +389,24 @@ namespace NINA.Photon.Plugin.ASA.Model
                 var fi = typeof(ModelPointStateEnum).GetField(ModelPointState.ToString());
                 var attributes = (DescriptionAttribute[])fi.GetCustomAttributes(typeof(DescriptionAttribute), false);
                 return attributes[0].Description;
+            }
+        }
+
+        public double PlotColorValue
+        {
+            get
+            {
+                if (ModelPointState != ModelPointStateEnum.Generated)
+                {
+                    return (double)ModelPointState;
+                }
+
+                return DesiredPierSide switch
+                {
+                    PierSide.pierEast => 1000.0d,
+                    PierSide.pierWest => 1001.0d,
+                    _ => (double)ModelPointState
+                };
             }
         }
 
@@ -498,7 +573,7 @@ namespace NINA.Photon.Plugin.ASA.Model
 
         public override string ToString()
         {
-            return $"Alt={Altitude}, Az={Azimuth}, State={ModelPointState}, RMSError={RMSError}, ModelIndex={ModelIndex}, AutoGridBandIndex={AutoGridBandIndex}, AutoGridBandSequence={AutoGridBandSequence}, AutoGridBandPointCount={AutoGridBandPointCount}, AutoGridBandEastToWestOrder={AutoGridBandEastToWestOrder}, AutoGridRadialBandIndex={AutoGridRadialBandIndex}, AutoGridRadialBandEastToWestOrder={AutoGridRadialBandEastToWestOrder}, MountRA={MountReportedRightAscension}, MountDEC={MountReportedDeclination}, MountLST={MountReportedLocalSiderealTime}, MountPier={MountReportedSideOfPier}, SolvedCoordinates={PlateSolvedCoordinates}, CaptureTime={CaptureTime}, ExpectedDomeSideOfPier={ExpectedDomeSideOfPier}";
+            return $"Alt={Altitude}, Az={Azimuth}, PlotAz={PlotAzimuth}, State={ModelPointState}, RMSError={RMSError}, ModelIndex={ModelIndex}, AutoGridBandIndex={AutoGridBandIndex}, AutoGridBandSequence={AutoGridBandSequence}, AutoGridBandPointCount={AutoGridBandPointCount}, AutoGridBandEastToWestOrder={AutoGridBandEastToWestOrder}, AutoGridRadialBandIndex={AutoGridRadialBandIndex}, AutoGridRadialBandEastToWestOrder={AutoGridRadialBandEastToWestOrder}, MountRA={MountReportedRightAscension}, MountDEC={MountReportedDeclination}, MountLST={MountReportedLocalSiderealTime}, MountPier={MountReportedSideOfPier}, SolvedCoordinates={PlateSolvedCoordinates}, CaptureTime={CaptureTime}, ExpectedDomeSideOfPier={ExpectedDomeSideOfPier}, DesiredPierSide={DesiredPierSide}, IsDualSideOverlapPoint={IsDualSideOverlapPoint}";
         }
 
         public ModelPoint Clone()
@@ -513,6 +588,8 @@ namespace NINA.Photon.Plugin.ASA.Model
                 AutoGridRadialBandIndex = AutoGridRadialBandIndex,
                 AutoGridRadialBandEastToWestOrder = AutoGridRadialBandEastToWestOrder,
                 ExpectedDomeSideOfPier = ExpectedDomeSideOfPier,
+                DesiredPierSide = DesiredPierSide,
+                IsDualSideOverlapPoint = IsDualSideOverlapPoint,
                 Altitude = Altitude,
                 Azimuth = Azimuth,
                 MinDomeAzimuth = MinDomeAzimuth,
@@ -543,6 +620,8 @@ namespace NINA.Photon.Plugin.ASA.Model
             AutoGridRadialBandIndex = p.AutoGridRadialBandIndex;
             AutoGridRadialBandEastToWestOrder = p.AutoGridRadialBandEastToWestOrder;
             ExpectedDomeSideOfPier = p.ExpectedDomeSideOfPier;
+            DesiredPierSide = p.DesiredPierSide;
+            IsDualSideOverlapPoint = p.IsDualSideOverlapPoint;
             Altitude = p.Altitude;
             Azimuth = p.Azimuth;
             MinDomeAzimuth = p.MinDomeAzimuth;

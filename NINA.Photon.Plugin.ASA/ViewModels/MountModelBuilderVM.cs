@@ -14,6 +14,7 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
 using NINA.Astrometry;
 using NINA.Astrometry.Interfaces;
+using NINA.Core.Enum;
 using NINA.Core.Model;
 using NINA.Core.Utility;
 using NINA.Core.Utility.Notification;
@@ -1854,6 +1855,15 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                     double altitude = double.Parse(lines[lineNo + 1], CultureInfo.InvariantCulture);
                     bool onlySlew;
                     bool.TryParse(lines[lineNo + 3].Trim('"'), out onlySlew);
+                    int parsedPierSide;
+                    int.TryParse(lines[lineNo + 4].Trim('"'), NumberStyles.Integer, CultureInfo.InvariantCulture, out parsedPierSide);
+
+                    var desiredPierSide = parsedPierSide switch
+                    {
+                        0 => PierSide.pierEast,
+                        1 => PierSide.pierWest,
+                        _ => PierSide.pierUnknown
+                    };
 
                     double pointAzimuth = (azimuth * (180.0 / Math.PI)) % 360.0;
                     if (pointAzimuth < 0)
@@ -1872,9 +1882,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                            {
                                Altitude = pointAltitude,
                                Azimuth = pointAzimuth,
-
-                               //writer.WriteLine(point.MountReportedSideOfPier == PierSide.pierEast ? "\"1\"" : "\"-1\"");
-                               //MountReportedSideOfPier = pierSide == 1 ? PierSide.pierEast : PierSide.pierWest,
+                               DesiredPierSide = desiredPierSide,
                                ModelPointState = ModelPointStateEnum.Generated
                            });
                     }
@@ -1916,7 +1924,12 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                         writer.WriteLine(p.Altitude * (Math.PI / 180));
                         writer.WriteLine("\"false\"");
                         writer.WriteLine("\"False\"");
-                        writer.WriteLine(p.Azimuth < 180 ? "0" : "1");
+                        writer.WriteLine(p.DesiredPierSide switch
+                        {
+                            PierSide.pierEast => "0",
+                            PierSide.pierWest => "1",
+                            _ => "-1"
+                        });
                     }
                 }
             }

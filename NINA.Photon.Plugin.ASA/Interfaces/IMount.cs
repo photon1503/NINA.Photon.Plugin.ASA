@@ -111,6 +111,8 @@ namespace NINA.Photon.Plugin.ASA.Interfaces
 
         Response<bool> SetDualAxisTracking(bool enabled);
 
+        Response<bool> ForceNextPierSide(PierSide desiredPierSide);
+
         Response<DateTime> GetUTCTime();
 
         Response<MountIP> GetIPAddress();

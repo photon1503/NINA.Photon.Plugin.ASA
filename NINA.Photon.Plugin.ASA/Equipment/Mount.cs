@@ -638,5 +638,27 @@ namespace NINA.Photon.Plugin.ASA.Equipment
             var result = this.mountCommander.SendCommandBool(command, true);
             return new Response<bool>(result, "");
         }
+
+        public Response<bool> ForceNextPierSide(PierSide desiredPierSide)
+        {
+            int parameter = desiredPierSide switch
+            {
+                PierSide.pierEast => 0,
+                PierSide.pierWest => 1,
+                _ => -1
+            };
+
+            var rawParameter = parameter.ToString(CultureInfo.InvariantCulture);
+            try
+            {
+                this.mountCommander.Action("forcenextpierside", rawParameter);
+                return new Response<bool>(true, rawParameter);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning($"ASCOM action forcenextpierside({rawParameter}) failed: {ex.Message}");
+                return new Response<bool>(false, ex.Message);
+            }
+        }
     }
 }

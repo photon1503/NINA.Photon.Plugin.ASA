@@ -72,6 +72,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
         private readonly ICustomDateTime nowProvider = new SystemDateTime();
         private volatile int processingInProgressCount;
         private bool IsTelescopePositionRestored = false;
+        private bool forceNextPierSideAvailable = true;
 
         private List<ModelPoint> modelPoints1 = new List<ModelPoint>();
 
@@ -236,6 +237,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
         {
             ct.ThrowIfCancellationRequested();
             PreFlightChecks(modelPoints);
+            forceNextPierSideAvailable = true;
 
             var innerCts = new CancellationTokenSource();
             var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, innerCts.Token);
@@ -839,8 +841,34 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 nextPointCoordinates = nextPointCoordinatesAdjusted;
             }
 
+            TryForceNextPierSide(point, nextPointCoordinates);
+
             Logger.Info($"Slewing to {nextPointCoordinates} for point at Alt={point.Altitude:0.###}, Az={point.Azimuth:0.###}");
             return await this.telescopeMediator.SlewToCoordinatesAsync(nextPointCoordinates, ct);
+        }
+
+        private void TryForceNextPierSide(ModelPoint point, Coordinates targetCoordinates)
+        {
+            if (!forceNextPierSideAvailable)
+            {
+                return;
+            }
+
+            var desiredPierSide = point.DesiredPierSide;
+            if (desiredPierSide == PierSide.pierUnknown)
+            {
+                var longitudeDegrees = profileService.ActiveProfile.AstrometrySettings.Longitude;
+                var lst = AstroUtil.GetLocalSiderealTimeNow(longitudeDegrees);
+                desiredPierSide = MeridianFlip.ExpectedPierSide(targetCoordinates, Angle.ByHours(lst));
+                point.DesiredPierSide = desiredPierSide;
+            }
+
+            var forceNextSideResult = mount.ForceNextPierSide(desiredPierSide);
+            if (!forceNextSideResult)
+            {
+                forceNextPierSideAvailable = false;
+                Logger.Warning("Disabling forced pier-side slews for this build because ASCOM action forcenextpierside failed");
+            }
         }
 
         private async Task ProcessPoints(

@@ -13,6 +13,7 @@
 using Accord.Statistics;
 using Accord.Statistics.Distributions.Univariate;
 using NINA.Astrometry;
+using NINA.Core.Enum;
 using NINA.Core.Model;
 using NINA.Core.Utility;
 using NINA.Core.Utility.Notification;
@@ -179,9 +180,10 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 throw new Exception($"AutoGrid spacing produces {estimatedPoints} points, exceeding ASA limit of {MAX_POINTS}. Increase spacing.");
             }
 
-            var points = new List<ModelPoint>(estimatedPoints);
+            var points = new List<ModelPoint>(estimatedPoints * 2);
             var latitudeDegrees = profileService.ActiveProfile.AstrometrySettings.Latitude;
             var isNorthernHemisphere = latitudeDegrees >= 0.0d;
+            var overlapMeridianDegrees = GetAutoGridDualSideOverlapDegrees();
 
             for (var i = 0; i < ringDistances.Count; i++)
             {
@@ -204,16 +206,32 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                     var horizonAltitude = horizon.GetAltitude(azimuthDegrees);
                     var creationState = DeterminePointState(altitudeDegrees, azimuthDegrees, horizonAltitude, applyAzimuthBounds: false);
 
-                    ringPoints.Add(
-                        new ModelPoint(telescopeMediator)
+                    var desiredPierSide = GetExpectedPierSideFromHourAngle(declinationDegrees, hourAngleDegrees);
+                    var primaryPoint = new ModelPoint(telescopeMediator)
+                    {
+                        AutoGridBandIndex = i,
+                        AutoGridBandSequence = sequenceIndex,
+                        AutoGridBandPointCount = ringPointCount,
+                        Altitude = altitudeDegrees,
+                        Azimuth = azimuthDegrees,
+                        ModelPointState = creationState,
+                        DesiredPierSide = desiredPierSide
+                    };
+
+                    ringPoints.Add(primaryPoint);
+
+                    if (creationState == ModelPointStateEnum.Generated && overlapMeridianDegrees > 0.0d && Math.Abs(hourAngleDegrees) <= overlapMeridianDegrees)
+                    {
+                        var oppositePierSide = GetOppositePierSide(desiredPierSide);
+                        if (oppositePierSide != PierSide.pierUnknown)
                         {
-                            AutoGridBandIndex = i,
-                            AutoGridBandSequence = sequenceIndex,
-                            AutoGridBandPointCount = ringPointCount,
-                            Altitude = altitudeDegrees,
-                            Azimuth = azimuthDegrees,
-                            ModelPointState = creationState
-                        });
+                            var overlapPoint = primaryPoint.Clone();
+                            overlapPoint.DesiredPierSide = oppositePierSide;
+                            overlapPoint.IsDualSideOverlapPoint = true;
+
+                            ringPoints.Add(overlapPoint);
+                        }
+                    }
                 }
 
                 var eastToWestOrdered = ringPoints
@@ -227,6 +245,11 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 }
 
                 points.AddRange(ringPoints);
+            }
+
+            if (points.Count > MAX_POINTS)
+            {
+                throw new Exception($"AutoGrid produced {points.Count} points including dual-side overlap, exceeding ASA limit of {MAX_POINTS}. Increase spacing or reduce overlap.");
             }
 
             var radialBandWidthDegrees = Math.Max(1.0d, decSpacingDegrees);
@@ -251,6 +274,55 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             }
 
             return points;
+        }
+
+        private static double NormalizeHours(double hours)
+        {
+            var normalized = hours % 24.0d;
+            if (normalized < 0.0d)
+            {
+                normalized += 24.0d;
+            }
+
+            return normalized;
+        }
+
+        private static PierSide GetOppositePierSide(PierSide side)
+        {
+            return side switch
+            {
+                PierSide.pierEast => PierSide.pierWest,
+                PierSide.pierWest => PierSide.pierEast,
+                _ => PierSide.pierUnknown
+            };
+        }
+
+        private double GetAutoGridDualSideOverlapDegrees()
+        {
+            try
+            {
+                var overlapDegrees = (double)mount.MeridianFlipMaxAngle();
+                if (double.IsNaN(overlapDegrees) || overlapDegrees <= 0.0d)
+                {
+                    return 0.0d;
+                }
+
+                return Math.Min(90.0d, overlapDegrees);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning($"Unable to query meridian overlap for dual-side AutoGrid: {ex.Message}");
+                return 0.0d;
+            }
+        }
+
+        private PierSide GetExpectedPierSideFromHourAngle(double declinationDegrees, double hourAngleDegrees)
+        {
+            var longitudeDegrees = profileService.ActiveProfile.AstrometrySettings.Longitude;
+            var lstHours = AstroUtil.GetLocalSiderealTimeNow(longitudeDegrees);
+            var rightAscensionHours = NormalizeHours(lstHours - (hourAngleDegrees / 15.0d));
+            var coordinates = new Coordinates(Angle.ByHours(rightAscensionHours), Angle.ByDegree(declinationDegrees), Epoch.JNOW);
+            return MeridianFlip.ExpectedPierSide(coordinates, Angle.ByHours(lstHours));
         }
 
         public List<ModelPoint> GenerateAutoGridByPointCount(int desiredPointCount, CustomHorizon horizon)
