@@ -1,12 +1,33 @@
 
 # Changelog
 
+## 3.2.7.x
+
+- Improved AutoGrid near-horizon coverage for sparse rings by anchoring candidate placement to the meridian and selecting a horizon-aware phase with best visible distribution.
+
+- Added celestial pole target marker (**NCP/SCP**) to both charts with hemisphere-aware label.
+- Added chart option to show/hide celestial pole marker.
+- Fixed celestial pole marker visibility toggle in charts by using transparent color binding when hidden.
+- Updated mount position marker styling to a bright orange target-style marker (circle + crosshair) in both charts.
+
+- Added new global option: minimum distance to horizon (degrees).
+- Applied global minimum horizon distance consistently in point-state visibility checks.
+- Surfaced minimum horizon distance directly in chart options.
+
+- Added chart option to show/hide meridian limits in charts.
+- Made meridian limits chart visibility option persistent in plugin settings.
+
+
+## 3.2.7.1
+ - Fixed UI freeze when starting full sky model build
+  
 ## 3.2.7.0
 
 - Added **AutoGrid** as a first-class generator option and reordered generator list to: AutoGrid, MLPT, Golden Spiral.
 - Added selectable AutoGrid path ordering modes (legacy sweep vs ASA-style band traversal).
 - Added AutoGrid path preview toggle (**Show path**) with dotted path rendering in both main and radial/top-view plots.
 - Added AutoGrid input mode UX refinements:
+
 
 - Added MLPT diagnostics charts for RA/DE error progression (Image # vs arcsec).
 - Selecting MLPT generator now auto-imports current scope RA/Dec coordinates (same behavior as the scope import button).
