@@ -643,8 +643,8 @@ namespace NINA.Photon.Plugin.ASA.Equipment
         {
             int parameter = desiredPierSide switch
             {
-                PierSide.pierEast => 0,
-                PierSide.pierWest => 1,
+                PierSide.pierEast => 1,
+                PierSide.pierWest => 0,
                 _ => -1
             };
 

@@ -1368,6 +1368,7 @@
                             DataFieldY="Y"
                             LineStyle="Dot"
                             StrokeThickness="1.5"
+                            Color="#F6D94A"
                             TrackerFormatString="" />
                         <oxy:LineSeries
                             ItemsSource="{Binding MeridianLimitWestCurvePoints}"
@@ -1820,6 +1821,7 @@
                                 YAxisKey="AzimuthAxis"
                                 LineStyle="Dot"
                                 StrokeThickness="1.5"
+                                Color="#F6D94A"
                                 TrackerFormatString="" />
                     </oxy:Plot.Series>
                     <oxy:Plot.Annotations>
