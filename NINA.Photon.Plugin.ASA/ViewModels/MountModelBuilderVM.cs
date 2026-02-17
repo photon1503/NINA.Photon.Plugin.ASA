@@ -736,6 +736,12 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             {
                 RaisePropertyChanged(nameof(ShowCelestialPole));
             }
+
+            if (e.PropertyName == nameof(modelBuilderOptions.ShowMeridianLimitsInCharts))
+            {
+                RaisePropertyChanged(nameof(ShowMeridianLimitsInCharts));
+                RaisePropertyChanged(nameof(ShowMeridianLimitGuidesEffective));
+            }
         }
 
         private void UpdateDisplayModelPoints()
@@ -2099,6 +2105,22 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             }
         }
 
+        public bool ShowMeridianLimitsInCharts
+        {
+            get => this.modelBuilderOptions.ShowMeridianLimitsInCharts;
+            set
+            {
+                if (this.modelBuilderOptions.ShowMeridianLimitsInCharts != value)
+                {
+                    this.modelBuilderOptions.ShowMeridianLimitsInCharts = value;
+                    RaisePropertyChanged();
+                    RaisePropertyChanged(nameof(ShowMeridianLimitGuidesEffective));
+                }
+            }
+        }
+
+        public bool ShowMeridianLimitGuidesEffective => ShowMeridianLimitGuides && ShowMeridianLimitsInCharts;
+
         private bool IsNorthernHemisphere => this.profileService.ActiveProfile.AstrometrySettings.Latitude >= 0.0d;
 
         public string CelestialPoleLabel => IsNorthernHemisphere ? "NCP" : "SCP";
@@ -2474,6 +2496,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 {
                     showMeridianLimitGuides = value;
                     RaisePropertyChanged();
+                    RaisePropertyChanged(nameof(ShowMeridianLimitGuidesEffective));
                 }
             }
         }

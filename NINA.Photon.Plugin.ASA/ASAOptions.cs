@@ -103,6 +103,7 @@ namespace NINA.Photon.Plugin.ASA
             showHorizon = optionsAccessor.GetValueBoolean("ShowHorizon", true);
             showCardinalLabels = optionsAccessor.GetValueBoolean("ShowCardinalLabels", false);
             showCelestialPole = optionsAccessor.GetValueBoolean("ShowCelestialPole", true);
+            showMeridianLimitsInCharts = optionsAccessor.GetValueBoolean("ShowMeridianLimitsInCharts", true);
             horizonTransparencyPercent = optionsAccessor.GetValueInt32("HorizonTransparencyPercent", 65);
         }
 
@@ -166,6 +167,7 @@ namespace NINA.Photon.Plugin.ASA
             ShowHorizon = true;
             ShowCardinalLabels = false;
             ShowCelestialPole = true;
+            ShowMeridianLimitsInCharts = true;
             HorizonTransparencyPercent = 65;
 
             POXOutputDirectory = DefaultASAPointingPicsPath();
@@ -854,6 +856,22 @@ namespace NINA.Photon.Plugin.ASA
                 {
                     showCelestialPole = value;
                     optionsAccessor.SetValueBoolean("ShowCelestialPole", showCelestialPole);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private bool showMeridianLimitsInCharts;
+
+        public bool ShowMeridianLimitsInCharts
+        {
+            get => showMeridianLimitsInCharts;
+            set
+            {
+                if (showMeridianLimitsInCharts != value)
+                {
+                    showMeridianLimitsInCharts = value;
+                    optionsAccessor.SetValueBoolean("ShowMeridianLimitsInCharts", showMeridianLimitsInCharts);
                     RaisePropertyChanged();
                 }
             }

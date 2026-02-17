@@ -94,6 +94,8 @@ namespace NINA.Photon.Plugin.ASA.Interfaces
 
         bool ShowCelestialPole { get; set; }
 
+        bool ShowMeridianLimitsInCharts { get; set; }
+
         int HorizonTransparencyPercent { get; set; }
 
         bool RemoveHighRMSPointsAfterBuild { get; set; }

@@ -186,6 +186,7 @@
                             <RowDefinition />
                             <RowDefinition />
                             <RowDefinition />
+                            <RowDefinition />
                         </Grid.RowDefinitions>
                         <TextBlock
                               Grid.Row="0" Grid.Column="0"
@@ -888,6 +889,8 @@
                                 </Binding.ValidationRules>
                             </Binding>
                         </ninactrl:UnitTextBox>
+
+                
                     </Grid>
                 </GroupBox>
                 <GroupBox>
@@ -1074,6 +1077,7 @@
                             <RowDefinition />
                             <RowDefinition />
                             <RowDefinition />
+                            <RowDefinition />
                         </Grid.RowDefinitions>
 
                         <TextBlock
@@ -1186,6 +1190,19 @@
                                 </Binding.ValidationRules>
                             </Binding>
                         </ninactrl:UnitTextBox>
+
+                                <TextBlock
+                            Grid.Row="6" Grid.Column="0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Text="Show meridian limits"
+                            ToolTip="Show/hide meridian limit guides on both charts" />
+                        <CheckBox
+                            Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="2"
+                            Margin="10,5,0,0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            IsChecked="{Binding ShowMeridianLimitsInCharts}" />
                     </Grid>
                 </GroupBox>
 
@@ -1359,7 +1376,7 @@
                             LineStyle="Dot"
                             StrokeThickness="2"
                             TrackerFormatString=""
-                            Visibility="{Binding ShowMeridianLimitGuides, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"
+                            Visibility="{Binding ShowMeridianLimitGuidesEffective, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"
                             Color="#FFA500" />
                         <oxy:LineSeries
                             ItemsSource="{Binding MeridianLimitWestCurvePoints2}"
@@ -1368,7 +1385,7 @@
                             LineStyle="Dot"
                             StrokeThickness="2"
                             TrackerFormatString=""
-                            Visibility="{Binding ShowMeridianLimitGuides, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"
+                            Visibility="{Binding ShowMeridianLimitGuidesEffective, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"
                             Color="#FFA500" />
                         <oxy:LineSeries
                             ItemsSource="{Binding MeridianLimitEastCurvePoints}"
@@ -1377,7 +1394,7 @@
                             LineStyle="Dot"
                             StrokeThickness="2"
                             TrackerFormatString=""
-                            Visibility="{Binding ShowMeridianLimitGuides, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"
+                            Visibility="{Binding ShowMeridianLimitGuidesEffective, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"
                             Color="#FFA500" />
                         <oxy:LineSeries
                             ItemsSource="{Binding MeridianLimitEastCurvePoints2}"
@@ -1386,7 +1403,7 @@
                             LineStyle="Dot"
                             StrokeThickness="2"
                             TrackerFormatString=""
-                            Visibility="{Binding ShowMeridianLimitGuides, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"
+                            Visibility="{Binding ShowMeridianLimitGuidesEffective, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"
                             Color="#FFA500" />
                     </oxy:Plot.Series>
                     <oxy:Plot.Annotations>
@@ -1433,7 +1450,7 @@
                             LineStyle="Dot"
                             StrokeThickness="2"
                             X="{Binding MeridianLimitWestAzimuth}"
-                            Visibility="{Binding ShowMeridianLimitGuides, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"
+                            Visibility="{Binding ShowMeridianLimitGuidesEffective, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"
                             Color="#FFA500" />
                         <oxy:LineAnnotation
                             MaximumY="15"
@@ -1441,7 +1458,7 @@
                             LineStyle="Dot"
                             StrokeThickness="2"
                             X="{Binding MeridianLimitEastAzimuth}"
-                            Visibility="{Binding ShowMeridianLimitGuides, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"
+                            Visibility="{Binding ShowMeridianLimitGuidesEffective, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"
                             Color="#FFA500" />
                         <oxy:LineAnnotation
                             MaximumY="90"
@@ -1705,7 +1722,7 @@
                             LineStyle="Dot"
                             StrokeThickness="2"
                             TrackerFormatString=""
-                            Visibility="{Binding ShowMeridianLimitGuides, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"
+                            Visibility="{Binding ShowMeridianLimitGuidesEffective, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"
                             Color="#FFA500" />
                         <oxy:LineSeries
                             ItemsSource="{Binding MeridianLimitWestCurvePointsPolar2}"
@@ -1716,7 +1733,7 @@
                             LineStyle="Dot"
                             StrokeThickness="2"
                             TrackerFormatString=""
-                            Visibility="{Binding ShowMeridianLimitGuides, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"
+                            Visibility="{Binding ShowMeridianLimitGuidesEffective, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"
                             Color="#FFA500" />
                         <oxy:LineSeries
                             ItemsSource="{Binding MeridianLimitEastCurvePointsPolar}"
@@ -1727,7 +1744,7 @@
                             LineStyle="Dot"
                             StrokeThickness="2"
                             TrackerFormatString=""
-                            Visibility="{Binding ShowMeridianLimitGuides, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"
+                            Visibility="{Binding ShowMeridianLimitGuidesEffective, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"
                             Color="#FFA500" />
                         <oxy:LineSeries
                             ItemsSource="{Binding MeridianLimitEastCurvePointsPolar2}"
@@ -1738,7 +1755,7 @@
                             LineStyle="Dot"
                             StrokeThickness="2"
                             TrackerFormatString=""
-                            Visibility="{Binding ShowMeridianLimitGuides, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"
+                            Visibility="{Binding ShowMeridianLimitGuidesEffective, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"
                             Color="#FFA500" />
                         <oxy:AreaSeries
                             ItemsSource="{Binding HorizonDataPointsPolarArea}"
