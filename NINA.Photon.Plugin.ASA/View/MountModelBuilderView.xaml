@@ -1437,6 +1437,27 @@
                                 </MultiBinding>
                             </oxy:PointAnnotation.TextColor>
                         </oxy:PointAnnotation>
+                        <oxy:PointAnnotation
+                            StrokeThickness="2"
+                            Shape="Cross"
+                            Size="5"
+                            Opacity="0.9"
+                            Text="{Binding CelestialPoleLabel}"
+                            X="{Binding CelestialPoleAzimuthWrapped}"
+                            Y="{Binding CelestialPoleAltitude}">
+                            <oxy:PointAnnotation.Stroke>
+                                <MultiBinding Converter="{StaticResource TM_ColorAndBooleanToTransparentMultiBinding}">
+                                    <Binding Path="Color" Source="{StaticResource ButtonForegroundBrush}" />
+                                    <Binding Path="ShowCelestialPoleAt360" />
+                                </MultiBinding>
+                            </oxy:PointAnnotation.Stroke>
+                            <oxy:PointAnnotation.TextColor>
+                                <MultiBinding Converter="{StaticResource TM_ColorAndBooleanToTransparentMultiBinding}">
+                                    <Binding Path="Color" Source="{StaticResource ButtonForegroundBrush}" />
+                                    <Binding Path="ShowCelestialPoleAt360" />
+                                </MultiBinding>
+                            </oxy:PointAnnotation.TextColor>
+                        </oxy:PointAnnotation>
                         <oxy:LineAnnotation
                             MaximumY="90"
                             Type="Vertical"
@@ -1444,22 +1465,6 @@
                             StrokeThickness="3"
                             X="{Binding MeridianAzimuth}"
                             Color="{Binding Path=Color, Source={StaticResource PrimaryBrush}, Converter={StaticResource SetAlphaToColorConverter}, ConverterParameter=160}" />
-                        <oxy:LineAnnotation
-                            MaximumY="15"
-                            Type="Vertical"
-                            LineStyle="Dot"
-                            StrokeThickness="2"
-                            X="{Binding MeridianLimitWestAzimuth}"
-                            Visibility="{Binding ShowMeridianLimitGuidesEffective, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"
-                            Color="#FFA500" />
-                        <oxy:LineAnnotation
-                            MaximumY="15"
-                            Type="Vertical"
-                            LineStyle="Dot"
-                            StrokeThickness="2"
-                            X="{Binding MeridianLimitEastAzimuth}"
-                            Visibility="{Binding ShowMeridianLimitGuidesEffective, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"
-                            Color="#FFA500" />
                         <oxy:LineAnnotation
                             MaximumY="90"
                             Text="Dome Az"

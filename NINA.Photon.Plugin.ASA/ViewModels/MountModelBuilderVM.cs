@@ -735,6 +735,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             if (e.PropertyName == nameof(modelBuilderOptions.ShowCelestialPole))
             {
                 RaisePropertyChanged(nameof(ShowCelestialPole));
+                RaisePropertyChanged(nameof(ShowCelestialPoleAt360));
             }
 
             if (e.PropertyName == nameof(modelBuilderOptions.ShowMeridianLimitsInCharts))
@@ -856,8 +857,10 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             this.RaisePropertyChanged(nameof(IsNorthernHemisphere));
             this.RaisePropertyChanged(nameof(CelestialPoleLabel));
             this.RaisePropertyChanged(nameof(CelestialPoleAzimuth));
+            this.RaisePropertyChanged(nameof(CelestialPoleAzimuthWrapped));
             this.RaisePropertyChanged(nameof(CelestialPoleAltitude));
             this.RaisePropertyChanged(nameof(CelestialPoleInvertedAltitude));
+            this.RaisePropertyChanged(nameof(ShowCelestialPoleAt360));
         }
 
         private void LoadHorizon()
@@ -2127,9 +2130,13 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
 
         public double CelestialPoleAzimuth => IsNorthernHemisphere ? 0.0d : 180.0d;
 
+        public double CelestialPoleAzimuthWrapped => 360.0d;
+
         public double CelestialPoleAltitude => Math.Max(0.0d, Math.Min(90.0d, Math.Abs(this.profileService.ActiveProfile.AstrometrySettings.Latitude)));
 
         public double CelestialPoleInvertedAltitude => 90.0d - CelestialPoleAltitude;
+
+        public bool ShowCelestialPoleAt360 => ShowCelestialPole && IsNorthernHemisphere;
 
         public Func<double, string> CartesianAzimuthLabelFormatter =>
             ShowCardinalLabels
