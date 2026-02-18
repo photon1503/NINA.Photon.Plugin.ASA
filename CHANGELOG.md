@@ -1,7 +1,7 @@
 
 # Changelog
 
-## 3.2.8.x (unreleased)
+## 3.2.8.2 (2026-02-18)
 
 ### POX / Export
 
@@ -23,6 +23,7 @@
 - AutoGrid now generates ASA-style dual-side meridian overlap using separate east/west sampling, duplicates overlap points for both pier solutions, and stores a desired pier side per point.
 - Improved AutoGrid near-horizon coverage for sparse rings by anchoring candidate placement to the meridian and selecting a horizon-aware phase with the best visible distribution.
 - Model building now enforces each point’s desired pier side by calling ASA specific ASCOM action `forcenextpierside` before slews , with automatic fallback if unsupported by the active driver.
+- For MLPT/SiderealPath builds, model builder now skips `forcenextpierside` and preserves native mount pier-side behavior (including near meridian limits).
 
 ### Chart UI
 
