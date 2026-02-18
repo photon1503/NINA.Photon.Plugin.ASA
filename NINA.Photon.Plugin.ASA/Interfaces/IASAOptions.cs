@@ -53,6 +53,8 @@ namespace NINA.Photon.Plugin.ASA.Interfaces
 
         int SiderealTrackEndOffsetMinutes { get; set; }
 
+        int SiderealTrackPathOffsetMinutes { get; set; }
+
         double SiderealTrackRADeltaDegrees { get; set; }
 
         int DomeShutterWidth_mm { get; set; }
@@ -82,8 +84,21 @@ namespace NINA.Photon.Plugin.ASA.Interfaces
         int MaxPointAltitude { get; set; }
         double MinPointAzimuth { get; set; }
         double MaxPointAzimuth { get; set; }
+        double MinDistanceToHorizonDegrees { get; set; }
 
         bool ShowRemovedPoints { get; set; }
+
+        double ChartPointSize { get; set; }
+
+        bool ShowHorizon { get; set; }
+
+        bool ShowCardinalLabels { get; set; }
+
+        bool ShowCelestialPole { get; set; }
+
+        bool ShowMeridianLimitsInCharts { get; set; }
+
+        int HorizonTransparencyPercent { get; set; }
 
         bool RemoveHighRMSPointsAfterBuild { get; set; }
 

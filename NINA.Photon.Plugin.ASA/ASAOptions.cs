@@ -52,6 +52,7 @@ namespace NINA.Photon.Plugin.ASA
             autoGridDesiredPointCount = optionsAccessor.GetValueInt32("AutoGridDesiredPointCount", 195);
             siderealTrackStartOffsetMinutes = optionsAccessor.GetValueInt32("SiderealTrackStartOffsetMinutes", 0);
             siderealTrackEndOffsetMinutes = optionsAccessor.GetValueInt32("SiderealTrackEndOffsetMinutes", 0);
+            siderealTrackPathOffsetMinutes = optionsAccessor.GetValueInt32("SiderealTrackPathOffsetMinutes", 0);
             siderealTrackRADeltaDegrees = optionsAccessor.GetValueDouble("SiderealTrackRADeltaDegrees", 1.5d);
             domeShutterWidth_mm = optionsAccessor.GetValueInt32("DomeShutterWidth_mm", 0);
             minimizeDomeMovementEnabled = optionsAccessor.GetValueBoolean("MinimizeDomeMovementEnabled", true);
@@ -74,6 +75,7 @@ namespace NINA.Photon.Plugin.ASA
             alternateDirectionsBetweenIterations = optionsAccessor.GetValueBoolean("AlternateDirectionsBetweenIterations", true);
             minPointAzimuth = optionsAccessor.GetValueDouble("MinPointAzimuth", 0.5d);
             maxPointAzimuth = optionsAccessor.GetValueDouble("MaxPointAzimuth", 359.5d);
+            minDistanceToHorizonDegrees = optionsAccessor.GetValueDouble("MinDistanceToHorizonDegrees", 0.0d);
             disableRefractionCorrection = false; // optionsAccessor.GetValueBoolean("DisableRefractionCorrection", false);
             //ipAddress = optionsAccessor.GetValueString("IPAddress", "");
             //macAddress = optionsAccessor.GetValueString("MACAddress", "");
@@ -98,6 +100,12 @@ namespace NINA.Photon.Plugin.ASA
             refEastAzimuth = optionsAccessor.GetValueDouble("RefEastAzimuth", 90.0d);
             refWestAzimuth = optionsAccessor.GetValueDouble("RefWestAzimuth", 270.0d);
             poxOutputDirectory = optionsAccessor.GetValueString("POXOutputDirectory", DefaultASAPointingPicsPath());
+            chartPointSize = optionsAccessor.GetValueDouble("ChartPointSize", 2.8d);
+            showHorizon = optionsAccessor.GetValueBoolean("ShowHorizon", true);
+            showCardinalLabels = optionsAccessor.GetValueBoolean("ShowCardinalLabels", false);
+            showCelestialPole = optionsAccessor.GetValueBoolean("ShowCelestialPole", true);
+            showMeridianLimitsInCharts = optionsAccessor.GetValueBoolean("ShowMeridianLimitsInCharts", true);
+            horizonTransparencyPercent = optionsAccessor.GetValueInt32("HorizonTransparencyPercent", 65);
         }
 
         public void ResetDefaults()
@@ -110,6 +118,7 @@ namespace NINA.Photon.Plugin.ASA
             AutoGridDesiredPointCount = 195;
             SiderealTrackStartOffsetMinutes = 0;
             SiderealTrackEndOffsetMinutes = 0;
+            SiderealTrackPathOffsetMinutes = 0;
             SiderealTrackRADeltaDegrees = 1.5d;
             DomeShutterWidth_mm = 0;
             MinimizeDomeMovementEnabled = true;
@@ -132,6 +141,7 @@ namespace NINA.Photon.Plugin.ASA
             AlternateDirectionsBetweenIterations = true;
             MinPointAzimuth = 0.5d;
             MaxPointAzimuth = 359.5d;
+            MinDistanceToHorizonDegrees = 0.0d;
             DisableRefractionCorrection = false;
             IsLegacyDDM = true;
             DomeControlNINA = false;
@@ -155,6 +165,12 @@ namespace NINA.Photon.Plugin.ASA
             RefWestAltitude = 35.0d;
             RefEastAzimuth = 90.0d;
             RefWestAzimuth = 270.0d;
+            ChartPointSize = 2.8d;
+            ShowHorizon = true;
+            ShowCardinalLabels = false;
+            ShowCelestialPole = true;
+            ShowMeridianLimitsInCharts = true;
+            HorizonTransparencyPercent = 65;
 
             POXOutputDirectory = DefaultASAPointingPicsPath();
         }
@@ -349,6 +365,22 @@ namespace NINA.Photon.Plugin.ASA
                 {
                     siderealTrackEndOffsetMinutes = value;
                     optionsAccessor.SetValueInt32("SiderealTrackEndOffsetMinutes", siderealTrackEndOffsetMinutes);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private int siderealTrackPathOffsetMinutes;
+
+        public int SiderealTrackPathOffsetMinutes
+        {
+            get => siderealTrackPathOffsetMinutes;
+            set
+            {
+                if (siderealTrackPathOffsetMinutes != value)
+                {
+                    siderealTrackPathOffsetMinutes = value;
+                    optionsAccessor.SetValueInt32("SiderealTrackPathOffsetMinutes", siderealTrackPathOffsetMinutes);
                     RaisePropertyChanged();
                 }
             }
@@ -778,6 +810,112 @@ namespace NINA.Photon.Plugin.ASA
             }
         }
 
+        private double chartPointSize;
+
+        public double ChartPointSize
+        {
+            get => chartPointSize;
+            set
+            {
+                if (Math.Abs(chartPointSize - value) > double.Epsilon)
+                {
+                    if (value <= 0.0d || value > 20.0d)
+                    {
+                        throw new ArgumentException("ChartPointSize must be greater than 0 and no more than 20", nameof(ChartPointSize));
+                    }
+
+                    chartPointSize = value;
+                    optionsAccessor.SetValueDouble("ChartPointSize", chartPointSize);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private bool showHorizon;
+
+        public bool ShowHorizon
+        {
+            get => showHorizon;
+            set
+            {
+                if (showHorizon != value)
+                {
+                    showHorizon = value;
+                    optionsAccessor.SetValueBoolean("ShowHorizon", showHorizon);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private bool showCardinalLabels;
+
+        public bool ShowCardinalLabels
+        {
+            get => showCardinalLabels;
+            set
+            {
+                if (showCardinalLabels != value)
+                {
+                    showCardinalLabels = value;
+                    optionsAccessor.SetValueBoolean("ShowCardinalLabels", showCardinalLabels);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private bool showCelestialPole;
+
+        public bool ShowCelestialPole
+        {
+            get => showCelestialPole;
+            set
+            {
+                if (showCelestialPole != value)
+                {
+                    showCelestialPole = value;
+                    optionsAccessor.SetValueBoolean("ShowCelestialPole", showCelestialPole);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private bool showMeridianLimitsInCharts;
+
+        public bool ShowMeridianLimitsInCharts
+        {
+            get => showMeridianLimitsInCharts;
+            set
+            {
+                if (showMeridianLimitsInCharts != value)
+                {
+                    showMeridianLimitsInCharts = value;
+                    optionsAccessor.SetValueBoolean("ShowMeridianLimitsInCharts", showMeridianLimitsInCharts);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private int horizonTransparencyPercent;
+
+        public int HorizonTransparencyPercent
+        {
+            get => horizonTransparencyPercent;
+            set
+            {
+                if (horizonTransparencyPercent != value)
+                {
+                    if (value < 0 || value > 100)
+                    {
+                        throw new ArgumentException("HorizonTransparencyPercent must be between 0 and 100", nameof(HorizonTransparencyPercent));
+                    }
+
+                    horizonTransparencyPercent = value;
+                    optionsAccessor.SetValueInt32("HorizonTransparencyPercent", horizonTransparencyPercent);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
         private int maxFailedPoints;
 
         public int MaxFailedPoints
@@ -934,6 +1072,27 @@ namespace NINA.Photon.Plugin.ASA
                     }
 
                     optionsAccessor.SetValueDouble("MaxPointAzimuth", maxPointAzimuth);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private double minDistanceToHorizonDegrees;
+
+        public double MinDistanceToHorizonDegrees
+        {
+            get => minDistanceToHorizonDegrees;
+            set
+            {
+                if (Math.Abs(minDistanceToHorizonDegrees - value) > double.Epsilon)
+                {
+                    if (value < 0.0d || value > 90.0d)
+                    {
+                        throw new ArgumentException("MinDistanceToHorizonDegrees must be between 0 and 90, inclusive", nameof(MinDistanceToHorizonDegrees));
+                    }
+
+                    minDistanceToHorizonDegrees = value;
+                    optionsAccessor.SetValueDouble("MinDistanceToHorizonDegrees", minDistanceToHorizonDegrees);
                     RaisePropertyChanged();
                 }
             }

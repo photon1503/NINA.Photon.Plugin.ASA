@@ -270,12 +270,16 @@ namespace NINA.Photon.Plugin.ASA.Equipment
                 Logger.Error($"CommandString MeridianFlipMaxAngle: {ex.Message}");
             }
 
+            Logger.Info($"MeridianFlipMaxAngle: {rc}");
+            
             double result = 0;
-            rc = rc.Replace(',', '.');
-            if (double.TryParse(rc, NumberStyles.Float, CultureInfo.InvariantCulture, out result))
+            var normalizedResponse = rc?.Trim().TrimEnd('#').Replace(',', '.');
+            if (double.TryParse(normalizedResponse, NumberStyles.Float, CultureInfo.InvariantCulture, out result))
             {
                 return new Response<double>(result, rc);
             }
+
+            Logger.Warning($"Failed to parse MeridianFlipMaxAngle from response '{rc}'");
             return new Response<double>(0, rc);
         }
 
@@ -633,6 +637,28 @@ namespace NINA.Photon.Plugin.ASA.Equipment
 
             var result = this.mountCommander.SendCommandBool(command, true);
             return new Response<bool>(result, "");
+        }
+
+        public Response<bool> ForceNextPierSide(PierSide desiredPierSide)
+        {
+            int parameter = desiredPierSide switch
+            {
+                PierSide.pierEast => 1,
+                PierSide.pierWest => 0,
+                _ => -1
+            };
+
+            var rawParameter = parameter.ToString(CultureInfo.InvariantCulture);
+            try
+            {
+                this.mountCommander.Action("forcenextpierside", rawParameter);
+                return new Response<bool>(true, rawParameter);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning($"ASCOM action forcenextpierside({rawParameter}) failed: {ex.Message}");
+                return new Response<bool>(false, ex.Message);
+            }
         }
     }
 }

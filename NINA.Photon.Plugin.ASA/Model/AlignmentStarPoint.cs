@@ -50,7 +50,7 @@ namespace NINA.Photon.Plugin.ASA.Model {
                 Declination = alignmentStarDec,
                 Azimuth = topocentricCoordinates.Azimuth.Degree,
                 ErrorArcsec = (double)alignmentStarInfo.ErrorArcseconds,
-                ErrorPointRadius = 5.0 * Math.Max(1.0, 1.5 * errorRatio)
+                ErrorPointRadius = 1.5 * Math.Max(1.0, 1.5 * errorRatio)
             };
         }
     }

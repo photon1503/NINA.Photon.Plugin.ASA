@@ -1,15 +1,59 @@
 
 # Changelog
 
+## 3.2.8.2 (2026-02-18)
+
+### POX / Export
+
+- Fixed POX numbering text for non-legacy DDM output to increment correctly per exported point.
+
+### MLPT Diagnostics Charts
+
+- Added MLPT diagnostics chart option: **Relative** mode (anchors first solved point at 0 and shows subsequent RA/DE offsets relative to that baseline).
+- Added MLPT diagnostics chart option: **Match Y-axis scale** (forces RA/DE charts to use the same Y-axis limit based on the larger error range).
+
+### MLPT Offset / Path Start
+
+- Added a new MLPT **Offset** setting (signed RA-minutes) in the model builder MLPT options to shift the generated path start point (`-` = RA-, `+` = RA+ / future).
+- Added the same MLPT path offset setting to global plugin options and persisted it as a shared value.
+- Applied the shared MLPT path offset consistently across model builder generation, sequence item `MLPT Start`, and MLPT triggers (`MLPT Restart If Exceeds`, `MLPT After Time`, `MLPT After Flip`) for aligned calculations and previews.
+
+### AutoGrid / Pathing / Pier Side
+
+- AutoGrid now generates ASA-style dual-side meridian overlap using separate east/west sampling, duplicates overlap points for both pier solutions, and stores a desired pier side per point.
+- Improved AutoGrid near-horizon coverage for sparse rings by anchoring candidate placement to the meridian and selecting a horizon-aware phase with the best visible distribution.
+- Model building now enforces each point’s desired pier side by calling ASA specific ASCOM action `forcenextpierside` before slews , with automatic fallback if unsupported by the active driver.
+- For MLPT/SiderealPath builds, model builder now skips `forcenextpierside` and preserves native mount pier-side behavior (including near meridian limits).
+
+### Chart UI
+
+- Added east/west pier-side coloring for generated points in both model builder charts.
+- Added celestial pole target marker (**NCP/SCP**) to both charts with hemisphere-aware label.
+- Added chart option to show/hide celestial pole marker.
+- Updated mount position marker styling to a bright orange target-style marker (circle + crosshair) in both charts.
+- Added chart option to show/hide meridian limits in charts.
+- Made meridian limits chart visibility option persistent in plugin settings.
+- Flipped the polar chart azimuth orientation visually so **E** appears on the left and **W** on the right (visual/UI change only; backend logic unchanged).
+
+### Horizon Constraint
+
+- Added a global **Minimum distance to horizon (°)** setting to keep generated points safely above the horizon.
+- Applied this limit consistently in point visibility/state checks and exposed it directly in chart options.
+
+## 3.2.7.2
+ - Fixed minimum required NINA Version to 3.2.0.9001
+
+## 3.2.7.1
+
+ - Fixed UI freeze when starting full sky model build
+  
 ## 3.2.7.0
 
-- Added **AutoGrid** as a first-class generator option and reordered generator list to: AutoGrid, MLPT, Golden Spiral.
-- Added selectable AutoGrid path ordering modes (legacy sweep vs ASA-style band traversal).
-- Added AutoGrid path preview toggle (**Show path**) with dotted path rendering in both main and radial/top-view plots.
-- Added AutoGrid input mode UX refinements:
+- Added **AutoGrid** as a first-class generator and reordered the generator list to: AutoGrid, MLPT, Golden Spiral.
+- Added AutoGrid pathing options, including selectable ordering modes (legacy sweep vs ASA-style band traversal) and a **Show path** toggle with dotted rendering in both main and radial/top-view plots.
 
-- Added MLPT diagnostics charts for RA/DE error progression (Image # vs arcsec).
-- Selecting MLPT generator now auto-imports current scope RA/Dec coordinates (same behavior as the scope import button).
+- Added MLPT diagnostics charts for RA/DE error progression (Image # vs arcsec),
+- Selecting the MLPT generator now auto-imports current scope RA/Dec coordinates (same behavior as the scope import button).
 
 ## 3.2.6.4 (2025-11-29)
 

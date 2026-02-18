@@ -49,6 +49,7 @@
                             <RowDefinition />
                             <RowDefinition />
                             <RowDefinition />
+                            <RowDefinition />
                         </Grid.RowDefinitions>
                         <TextBlock
                             Grid.Row="0" Grid.Column="0"
@@ -179,6 +180,8 @@
                         </Grid.ColumnDefinitions>
 
                         <Grid.RowDefinitions>
+                            <RowDefinition />
+                            <RowDefinition />
                             <RowDefinition />
                             <RowDefinition />
                             <RowDefinition />
@@ -661,6 +664,8 @@
                             <RowDefinition />
                             <RowDefinition />
                             <RowDefinition />
+                              <RowDefinition />
+                            <RowDefinition />
                         </Grid.RowDefinitions>
                         <StackPanel
                             Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3"
@@ -887,6 +892,53 @@
                                 </Binding.ValidationRules>
                             </Binding>
                         </ninactrl:UnitTextBox>
+
+                        <TextBlock
+                            Grid.Row="6" Grid.Column="0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Text="Offset"
+                            ToolTip="{StaticResource SiderealTrackPathOffsetMinutes_Tooltip}" />
+                        <ninactrl:UnitTextBox
+                            Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="2"
+                            MinWidth="80"
+                            Margin="10,5,0,0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Unit="RA-minutes"
+                            ToolTip="{StaticResource SiderealTrackPathOffsetMinutes_Tooltip}">
+                            <Binding Path="SiderealTrackPathOffsetMinutes" UpdateSourceTrigger="LostFocus" />
+                        </ninactrl:UnitTextBox>
+
+                        <TextBlock
+                            Grid.Row="7" Grid.Column="0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Text="Relative"
+                            ToolTip="When enabled, uses the first solved point as zero reference for MLPT error charts" />
+                        <CheckBox
+                            Grid.Row="7" Grid.Column="1"
+                            Margin="10,0,0,0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            IsChecked="{Binding UseRelativeMlptErrors}"
+                            ToolTip="When enabled, uses the first solved point as zero reference for MLPT error charts" />
+
+                        <TextBlock
+                            Grid.Row="8" Grid.Column="0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Text="Match Y-axis scale"
+                            ToolTip="When enabled, both MLPT error charts use the same Y-axis limit based on the larger max error" />
+                        <CheckBox
+                            Grid.Row="8" Grid.Column="1"
+                            Margin="10,0,0,0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            IsChecked="{Binding UseUnifiedMlptErrorScale}"
+                            ToolTip="When enabled, both MLPT error charts use the same Y-axis limit based on the larger max error" />
+
+                
                     </Grid>
                 </GroupBox>
                 <GroupBox>
@@ -1057,6 +1109,157 @@
                             <TextBlock
                                 VerticalAlignment="Center"
                                 FontSize="18"
+                                Text="Chart options" />
+                        </Grid>
+                    </GroupBox.Header>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" SharedSizeGroup="SettingsCol0" />
+                            <ColumnDefinition Width="Auto" SharedSizeGroup="SettingsCol1" />
+                            <ColumnDefinition Width="Auto" SharedSizeGroup="SettingsCol2" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition />
+                            <RowDefinition />
+                            <RowDefinition />
+                            <RowDefinition />
+                            <RowDefinition />
+                            <RowDefinition />
+                            <RowDefinition />
+                        </Grid.RowDefinitions>
+
+                        <TextBlock
+                            Grid.Row="0" Grid.Column="0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Text="Point size"
+                            ToolTip="Size of chart points" />
+                        <ninactrl:UnitTextBox
+                            Grid.Row="0" Grid.Column="1" Grid.ColumnSpan="2"
+                            MinWidth="80"
+                            Margin="10,5,0,0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Unit="px"
+                            ToolTip="Size of chart points">
+                            <Binding Path="ChartPointSize" UpdateSourceTrigger="LostFocus">
+                                <Binding.ValidationRules>
+                                    <rules:GreaterThanZeroRule />
+                                </Binding.ValidationRules>
+                            </Binding>
+                        </ninactrl:UnitTextBox>
+
+                        <TextBlock
+                            Grid.Row="1" Grid.Column="0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Text="Show horizon"
+                            ToolTip="Show horizon on both charts" />
+                        <CheckBox
+                            Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"
+                            Margin="10,5,0,0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            IsChecked="{Binding ShowHorizon}" />
+
+                        <TextBlock
+                            Grid.Row="2" Grid.Column="0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Text="Horizon transparency"
+                            ToolTip="Horizon transparency percentage (0-100)" />
+                        <ninactrl:UnitTextBox
+                            Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2"
+                            MinWidth="80"
+                            Margin="10,5,0,0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Unit="%"
+                            ToolTip="Horizon transparency percentage (0-100)">
+                            <Binding Path="HorizonTransparencyPercent" UpdateSourceTrigger="LostFocus">
+                                <Binding.ValidationRules>
+                                    <rules:IntRangeRule>
+                                        <rules:IntRangeRule.ValidRange>
+                                            <rules:IntRangeChecker Maximum="100" Minimum="0" />
+                                        </rules:IntRangeRule.ValidRange>
+                                    </rules:IntRangeRule>
+                                </Binding.ValidationRules>
+                            </Binding>
+                        </ninactrl:UnitTextBox>
+
+                        <TextBlock
+                            Grid.Row="3" Grid.Column="0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Text="Cardinal directions"
+                            ToolTip="Toggle azimuth axis labels between degrees and cardinal directions" />
+                        <CheckBox
+                            Grid.Row="3" Grid.Column="1" Grid.ColumnSpan="2"
+                            Margin="10,5,0,0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Content="NSEW instead of degrees"
+                            IsChecked="{Binding ShowCardinalLabels}" />
+
+                        <TextBlock
+                            Grid.Row="4" Grid.Column="0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Text="Show celestial pole"
+                            ToolTip="Show celestial pole marker and NCP/SCP label on both charts" />
+                        <CheckBox
+                            Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2"
+                            Margin="10,5,0,0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            IsChecked="{Binding ShowCelestialPole}" />
+
+                        <TextBlock
+                            Grid.Row="5" Grid.Column="0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Text="Min horizon distance"
+                            ToolTip="Minimum clearance above horizon for generated points" />
+                        <ninactrl:UnitTextBox
+                            Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="2"
+                            MinWidth="80"
+                            Margin="10,5,0,0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Unit="°"
+                            ToolTip="Minimum clearance above horizon for generated points">
+                            <Binding Path="MinDistanceToHorizonDegrees" UpdateSourceTrigger="LostFocus">
+                                <Binding.ValidationRules>
+                                    <rules:DoubleRangeRule>
+                                        <rules:DoubleRangeRule.ValidRange>
+                                            <rules:DoubleRangeChecker Maximum="90" Minimum="0" />
+                                        </rules:DoubleRangeRule.ValidRange>
+                                    </rules:DoubleRangeRule>
+                                </Binding.ValidationRules>
+                            </Binding>
+                        </ninactrl:UnitTextBox>
+
+                                <TextBlock
+                            Grid.Row="6" Grid.Column="0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Text="Show meridian limits"
+                            ToolTip="Show/hide meridian limit guides on both charts" />
+                        <CheckBox
+                            Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="2"
+                            Margin="10,5,0,0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            IsChecked="{Binding ShowMeridianLimitsInCharts}" />
+                    </Grid>
+                </GroupBox>
+
+                <GroupBox>
+                    <GroupBox.Header>
+                        <Grid Height="36" Margin="5">
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                FontSize="18"
                                 Text="Checklist" />
                         </Grid>
                     </GroupBox.Header>
@@ -1091,6 +1294,7 @@
                     <RowDefinition Style="{StaticResource HideMlptChartsRowWhenHidden}" />
                     <RowDefinition Style="{StaticResource HideMlptChartsRowWhenHidden}" />
                     <RowDefinition Height="1*" />
+                    <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
                 <oxy:Plot
                     Grid.Row="0" Grid.Column="0"
@@ -1098,9 +1302,8 @@
                     MinWidth="300"
                     MinHeight="50"
                     Width="Auto"
-                    Height="{Binding ActualWidth, RelativeSource={RelativeSource Self}, Converter={StaticResource TM_NumericToHalfConverter}}"
                     HorizontalAlignment="Stretch"
-                    VerticalAlignment="Top"
+                    VerticalAlignment="Stretch"
                     Background="{StaticResource BackgroundBrush}"
                     PlotAreaBackground="{StaticResource BackgroundBrush}"
                     PlotAreaBorderColor="Transparent">
@@ -1117,6 +1320,7 @@
                         <oxy:LinearAxis
                             AxislineColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}"
                             IntervalLength="15"
+                            LabelFormatter="{Binding CartesianAzimuthLabelFormatter}"
                             IsPanEnabled="False"
                             IsZoomEnabled="False"
                             MajorGridlineColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}, Converter={StaticResource SetAlphaToColorConverter}, ConverterParameter=60}"
@@ -1161,7 +1365,22 @@
                             DataFieldY="Value"
                             ItemsSource="{Binding HorizonDataPoints}"
                             TrackerFormatString="Altitude: {2:0.00}&#176;&#x0a;Azimuth: {4:0.00}&#176;"
-                            Color="{Binding Path=Color, Source={StaticResource ButtonBackgroundBrush}}" />
+                            Visibility="{Binding ShowHorizon, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}">
+                            <oxy:AreaSeries.Color>
+                                <MultiBinding Converter="{StaticResource TM_ColorAndBooleanToTransparentMultiBinding}">
+                                    <Binding Path="Color" Source="{StaticResource ButtonBackgroundBrush}" />
+                                    <Binding Path="ShowHorizon" />
+                                    <Binding Path="HorizonTransparencyPercent" />
+                                </MultiBinding>
+                            </oxy:AreaSeries.Color>
+                            <oxy:AreaSeries.Fill>
+                                <MultiBinding Converter="{StaticResource TM_ColorAndBooleanToTransparentMultiBinding}">
+                                    <Binding Path="Color" Source="{StaticResource ButtonBackgroundBrush}" />
+                                    <Binding Path="ShowHorizon" />
+                                    <Binding Path="HorizonTransparencyPercent" />
+                                </MultiBinding>
+                            </oxy:AreaSeries.Fill>
+                        </oxy:AreaSeries>
                         <oxy:AreaSeries
                             Visibility="{Binding DomeControlEnabled, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"
                             Color2="{StaticResource DomeShutterColor}"
@@ -1188,8 +1407,8 @@
                             ColorAxisKey="ModelPointStateColorAxis"
                             DataFieldX="Azimuth"
                             DataFieldY="Altitude"
-                            MarkerSize="4"
-                            DataFieldValue="ModelPointState"
+                            MarkerSize="{Binding ChartPointSize}"
+                            DataFieldValue="PlotColorValue"
                             TrackerFormatString="{}Altitude: {Altitude:##0.00}&#176;&#x0a;Azimuth: {Azimuth:##0.00}&#176;&#x0a;State: {ModelPointStateString}&#x0a;RMS Error: {RMSErrorString}" />
                         <oxy:LineSeries
                             ItemsSource="{Binding DisplayPathPoints, UpdateSourceTrigger=PropertyChanged}"
@@ -1197,18 +1416,114 @@
                             DataFieldY="Y"
                             LineStyle="Dot"
                             StrokeThickness="1.5"
+                            Color="#F6D94A"
                             TrackerFormatString="" />
+                        <oxy:LineSeries
+                            ItemsSource="{Binding MeridianLimitWestCurvePoints}"
+                            DataFieldX="X"
+                            DataFieldY="Y"
+                            LineStyle="Dot"
+                            StrokeThickness="2"
+                            TrackerFormatString=""
+                            Visibility="{Binding ShowMeridianLimitGuidesEffective, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"
+                            Color="#FFA500" />
+                        <oxy:LineSeries
+                            ItemsSource="{Binding MeridianLimitWestCurvePoints2}"
+                            DataFieldX="X"
+                            DataFieldY="Y"
+                            LineStyle="Dot"
+                            StrokeThickness="2"
+                            TrackerFormatString=""
+                            Visibility="{Binding ShowMeridianLimitGuidesEffective, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"
+                            Color="#FFA500" />
+                        <oxy:LineSeries
+                            ItemsSource="{Binding MeridianLimitEastCurvePoints}"
+                            DataFieldX="X"
+                            DataFieldY="Y"
+                            LineStyle="Dot"
+                            StrokeThickness="2"
+                            TrackerFormatString=""
+                            Visibility="{Binding ShowMeridianLimitGuidesEffective, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"
+                            Color="#FFA500" />
+                        <oxy:LineSeries
+                            ItemsSource="{Binding MeridianLimitEastCurvePoints2}"
+                            DataFieldX="X"
+                            DataFieldY="Y"
+                            LineStyle="Dot"
+                            StrokeThickness="2"
+                            TrackerFormatString=""
+                            Visibility="{Binding ShowMeridianLimitGuidesEffective, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"
+                            Color="#FFA500" />
                     </oxy:Plot.Series>
                     <oxy:Plot.Annotations>
                         <oxy:PointAnnotation
-                            Stroke="{Binding Path=Color, Source={StaticResource PrimaryBrush}, Converter={StaticResource SetAlphaToColorConverter}, ConverterParameter=60}"
-                            StrokeThickness="3"
-                            Shape="Cross"
-                            Size="8"
-                            Opacity="0.6"
-                            TextColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}"
+                            Stroke="#FFA500"
+                            StrokeThickness="2"
+                            Fill="Transparent"
+                            Shape="Circle"
+                            Size="7"
+                            Opacity="0.95"
+                            TextColor="#FFA500"
                             X="{Binding TelescopePosition.X}"
                             Y="{Binding TelescopePosition.Y}" />
+                        <oxy:PointAnnotation
+                            Stroke="#FFA500"
+                            StrokeThickness="2"
+                            Shape="Cross"
+                            Size="8"
+                            Opacity="0.95"
+                            TextColor="#FFA500"
+                            X="{Binding TelescopePosition.X}"
+                            Y="{Binding TelescopePosition.Y}" />
+                        <oxy:PointAnnotation
+                            StrokeThickness="2"
+                            Shape="Cross"
+                            Size="5"
+                            Opacity="0.9"
+                            Text="{Binding CelestialPoleLabel}"
+                            X="{Binding CelestialPoleAzimuth}"
+                            Y="{Binding CelestialPoleAltitude}">
+                            <oxy:PointAnnotation.Stroke>
+                                <MultiBinding Converter="{StaticResource TM_ColorAndBooleanToTransparentMultiBinding}">
+                                    <Binding Path="Color" Source="{StaticResource ButtonForegroundBrush}" />
+                                    <Binding Path="ShowCelestialPole" />
+                                </MultiBinding>
+                            </oxy:PointAnnotation.Stroke>
+                            <oxy:PointAnnotation.TextColor>
+                                <MultiBinding Converter="{StaticResource TM_ColorAndBooleanToTransparentMultiBinding}">
+                                    <Binding Path="Color" Source="{StaticResource ButtonForegroundBrush}" />
+                                    <Binding Path="ShowCelestialPole" />
+                                </MultiBinding>
+                            </oxy:PointAnnotation.TextColor>
+                        </oxy:PointAnnotation>
+                        <oxy:PointAnnotation
+                            StrokeThickness="2"
+                            Shape="Cross"
+                            Size="5"
+                            Opacity="0.9"
+                            Text="{Binding CelestialPoleLabel}"
+                            X="{Binding CelestialPoleAzimuthWrapped}"
+                            Y="{Binding CelestialPoleAltitude}">
+                            <oxy:PointAnnotation.Stroke>
+                                <MultiBinding Converter="{StaticResource TM_ColorAndBooleanToTransparentMultiBinding}">
+                                    <Binding Path="Color" Source="{StaticResource ButtonForegroundBrush}" />
+                                    <Binding Path="ShowCelestialPoleAt360" />
+                                </MultiBinding>
+                            </oxy:PointAnnotation.Stroke>
+                            <oxy:PointAnnotation.TextColor>
+                                <MultiBinding Converter="{StaticResource TM_ColorAndBooleanToTransparentMultiBinding}">
+                                    <Binding Path="Color" Source="{StaticResource ButtonForegroundBrush}" />
+                                    <Binding Path="ShowCelestialPoleAt360" />
+                                </MultiBinding>
+                            </oxy:PointAnnotation.TextColor>
+                        </oxy:PointAnnotation>
+                        <oxy:LineAnnotation
+                            MaximumY="90"
+                            Type="Vertical"
+                            LineStyle="Solid"
+                            StrokeThickness="3"
+                            X="{Binding MeridianAzimuth}"
+                            Color="{Binding Path=Color, Source={StaticResource PrimaryBrush}, Converter={StaticResource SetAlphaToColorConverter}, ConverterParameter=160}" />
                         <oxy:LineAnnotation
                             MaximumY="90"
                             Text="Dome Az"
@@ -1231,7 +1546,6 @@
                             </oxy:LineAnnotation.TextColor>
                         </oxy:LineAnnotation>
                         <oxy:PointAnnotation
-                            StrokeThickness="2"
                             Shape="Plus"
                             Size="8"
                             Opacity="0.6"
@@ -1396,15 +1710,13 @@
                     </oxy:Plot>
                 </Grid>
 
-                <oxy:Plot
-                        Grid.Row="3"
-                        Grid.Column="0"
+                <Grid Grid.Row="3" Grid.Column="0">
+                    <oxy:Plot
                         Width="Auto"
                         MinWidth="300"
                         MinHeight="300"
-                     Height="{Binding ActualWidth, RelativeSource={RelativeSource Self}, Converter={StaticResource TM_NumericToHalfConverter}}"
                         HorizontalAlignment="Stretch"
-                        VerticalAlignment="Top"
+                        VerticalAlignment="Stretch"
                         Background="{StaticResource BackgroundBrush}"
                         PlotAreaBackground="{StaticResource BackgroundBrush}"
                         PlotAreaBorderColor="Transparent"
@@ -1428,9 +1740,10 @@
                         <oxy:AngleAxis
                                 Key="AzimuthAxis"
                                 AxislineColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}"
-                                EndAngle="90"
+                                EndAngle="450"
                                 EndPosition="1"
                                 IntervalLength="15"
+                            LabelFormatter="{Binding PolarAzimuthLabelFormatter}"
                                 IsPanEnabled="False"
                                 IsZoomEnabled="False"
                                 MajorGridlineColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}, Converter={StaticResource SetAlphaToColorConverter}, ConverterParameter=60}"
@@ -1438,43 +1751,112 @@
                                 MajorStep="30"
                                 Maximum="360"
                                 Minimum="0"
-                                StartAngle="450"
+                                StartAngle="90"
                                 StartPosition="0"
                                 TextColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}"
                                 TicklineColor="{Binding Path=Color, Source={StaticResource SecondaryBrush}}" />
-                        <oxy:LinearColorAxis
-                                Key="ErrorColorAxis"
-                                AxisDistance="50"
-                                HighColor="Transparent"
-                                InvalidNumberColor="Black"
-                                IsAxisVisible="{Binding DisplayModelPoints.AlignmentStars, UpdateSourceTrigger=PropertyChanged, Converter={StaticResource CollectionContainsItemsToBooleanConverter}}"
-                                LowColor="Transparent"
-                                Maximum="{Binding DisplayModelPoints.MaxRMSError}"
-                                Minimum="0.0"
-                                PaletteSize="200"
-                                Position="Right">
-                            <oxy:LinearColorAxis.GradientStops>
-                                <swm:GradientStopCollection>
-                                    <swm:GradientStop Offset="0.0" Color="Green" />
-                                    <swm:GradientStop Offset="0.5" Color="#80FF00" />
-                                    <swm:GradientStop Offset="1.0" Color="Red" />
-                                </swm:GradientStopCollection>
-                            </oxy:LinearColorAxis.GradientStops>
-                        </oxy:LinearColorAxis>
+                        <tmoxy:ModelPointStateColorAxis
+                            Key="ModelPointStateColorAxisPolar"
+                            Position="None"
+                            Visibility="Collapsed" />
                     </oxy:Plot.Axes>
                     <oxy:Plot.Series>
-                        <!-- oxy:LineSeries
-
-            ItemsSource="{Binding HorizonDataPointsPolar}"
-            TrackerFormatString="Altitude: {2:0.00}&#176;&#x0a;Azimuth: {4:0.00}&#176;"
-            Color="{Binding Path=Color, Source={StaticResource ButtonBackgroundBrush}}" /-->
+                        <oxy:LineSeries
+                            ItemsSource="{Binding MeridianPolarGuidePoints}"
+                            DataFieldX="X"
+                            DataFieldY="Y"
+                            XAxisKey="AltitudeAxis"
+                            YAxisKey="AzimuthAxis"
+                            LineStyle="Solid"
+                            StrokeThickness="2.5"
+                            TrackerFormatString=""
+                            Color="{Binding Path=Color, Source={StaticResource PrimaryBrush}, Converter={StaticResource SetAlphaToColorConverter}, ConverterParameter=160}" />
+                        <oxy:LineSeries
+                            ItemsSource="{Binding MeridianOppositePolarGuidePoints}"
+                            DataFieldX="X"
+                            DataFieldY="Y"
+                            XAxisKey="AltitudeAxis"
+                            YAxisKey="AzimuthAxis"
+                            LineStyle="Solid"
+                            StrokeThickness="2.5"
+                            TrackerFormatString=""
+                            Color="{Binding Path=Color, Source={StaticResource PrimaryBrush}, Converter={StaticResource SetAlphaToColorConverter}, ConverterParameter=160}" />
+                        <oxy:LineSeries
+                            ItemsSource="{Binding MeridianLimitWestCurvePointsPolar}"
+                            DataFieldX="X"
+                            DataFieldY="Y"
+                            XAxisKey="AltitudeAxis"
+                            YAxisKey="AzimuthAxis"
+                            LineStyle="Dot"
+                            StrokeThickness="2"
+                            TrackerFormatString=""
+                            Visibility="{Binding ShowMeridianLimitGuidesEffective, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"
+                            Color="#FFA500" />
+                        <oxy:LineSeries
+                            ItemsSource="{Binding MeridianLimitWestCurvePointsPolar2}"
+                            DataFieldX="X"
+                            DataFieldY="Y"
+                            XAxisKey="AltitudeAxis"
+                            YAxisKey="AzimuthAxis"
+                            LineStyle="Dot"
+                            StrokeThickness="2"
+                            TrackerFormatString=""
+                            Visibility="{Binding ShowMeridianLimitGuidesEffective, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"
+                            Color="#FFA500" />
+                        <oxy:LineSeries
+                            ItemsSource="{Binding MeridianLimitEastCurvePointsPolar}"
+                            DataFieldX="X"
+                            DataFieldY="Y"
+                            XAxisKey="AltitudeAxis"
+                            YAxisKey="AzimuthAxis"
+                            LineStyle="Dot"
+                            StrokeThickness="2"
+                            TrackerFormatString=""
+                            Visibility="{Binding ShowMeridianLimitGuidesEffective, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"
+                            Color="#FFA500" />
+                        <oxy:LineSeries
+                            ItemsSource="{Binding MeridianLimitEastCurvePointsPolar2}"
+                            DataFieldX="X"
+                            DataFieldY="Y"
+                            XAxisKey="AltitudeAxis"
+                            YAxisKey="AzimuthAxis"
+                            LineStyle="Dot"
+                            StrokeThickness="2"
+                            TrackerFormatString=""
+                            Visibility="{Binding ShowMeridianLimitGuidesEffective, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"
+                            Color="#FFA500" />
+                        <oxy:AreaSeries
+                            ItemsSource="{Binding HorizonDataPointsPolarArea}"
+                            DataFieldX="X"
+                            DataFieldY="Y"
+                            DataFieldX2="X2"
+                            DataFieldY2="Y2"
+                            XAxisKey="AltitudeAxis"
+                            YAxisKey="AzimuthAxis"
+                            TrackerFormatString="Altitude: {2:0.00}&#176;&#x0a;Azimuth: {4:0.00}&#176;"
+                            Visibility="{Binding ShowHorizon, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}">
+                            <oxy:AreaSeries.Color>
+                                <MultiBinding Converter="{StaticResource TM_ColorAndBooleanToTransparentMultiBinding}">
+                                    <Binding Path="Color" Source="{StaticResource ButtonBackgroundBrush}" />
+                                    <Binding Path="ShowHorizon" />
+                                    <Binding Path="HorizonTransparencyPercent" />
+                                </MultiBinding>
+                            </oxy:AreaSeries.Color>
+                            <oxy:AreaSeries.Fill>
+                                <MultiBinding Converter="{StaticResource TM_ColorAndBooleanToTransparentMultiBinding}">
+                                    <Binding Path="Color" Source="{StaticResource ButtonBackgroundBrush}" />
+                                    <Binding Path="ShowHorizon" />
+                                    <Binding Path="HorizonTransparencyPercent" />
+                                </MultiBinding>
+                            </oxy:AreaSeries.Fill>
+                        </oxy:AreaSeries>
                         <oxy:ScatterSeries
-                                ColorAxisKey="ErrorColorAxis"
-                                DataFieldSize="ErrorPointRadius"
-                                DataFieldValue="ModelPointState"
                                 DataFieldX="InvertedAltitude"
-                                DataFieldY="Azimuth"
+                            DataFieldY="Azimuth"
                                 ItemsSource="{Binding DisplayModelPoints, UpdateSourceTrigger=PropertyChanged}"
+                            ColorAxisKey="ModelPointStateColorAxisPolar"
+                            DataFieldValue="PlotColorValue"
+                                MarkerSize="{Binding ChartPointSize}"
                                 MarkerType="Circle"
                                 TrackerFormatString="{}Altitude: {Altitude:###.####}&#176;&#x0a;Azimuth: {Azimuth:###.####}&#176;&#x0a;RMS Error: {ErrorArcsec:###.##} arcsec"
                                 XAxisKey="AltitudeAxis"
@@ -1487,20 +1869,60 @@
                                 YAxisKey="AzimuthAxis"
                                 LineStyle="Dot"
                                 StrokeThickness="1.5"
+                                Color="#F6D94A"
                                 TrackerFormatString="" />
                     </oxy:Plot.Series>
                     <oxy:Plot.Annotations>
                         <oxy:PointAnnotation
-         Stroke="{Binding Path=Color, Source={StaticResource PrimaryBrush}, Converter={StaticResource SetAlphaToColorConverter}, ConverterParameter=60}"
-         StrokeThickness="3"
-         Shape="Cross"
-         Size="8"
-         Opacity="0.6"
-         TextColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}"
+         Stroke="#FFA500"
+         StrokeThickness="2"
+         Fill="Transparent"
+         Shape="Circle"
+         Size="7"
+         Opacity="0.95"
+         TextColor="#FFA500"
          X="{Binding TelescopePositionInverted.Y}"
          Y="{Binding TelescopePositionInverted.X}" />
+                        <oxy:PointAnnotation
+         Stroke="#FFA500"
+         StrokeThickness="2"
+         Shape="Cross"
+         Size="8"
+         Opacity="0.95"
+         TextColor="#FFA500"
+         X="{Binding TelescopePositionInverted.Y}"
+         Y="{Binding TelescopePositionInverted.X}" />
+                        <oxy:PointAnnotation
+         StrokeThickness="2"
+         Shape="Cross"
+         Size="5"
+         Opacity="0.9"
+         Text="{Binding CelestialPoleLabel}"
+         X="{Binding CelestialPoleInvertedAltitude}"
+         Y="{Binding CelestialPoleAzimuth}">
+                            <oxy:PointAnnotation.Stroke>
+                                <MultiBinding Converter="{StaticResource TM_ColorAndBooleanToTransparentMultiBinding}">
+                                    <Binding Path="Color" Source="{StaticResource ButtonForegroundBrush}" />
+                                    <Binding Path="ShowCelestialPole" />
+                                </MultiBinding>
+                            </oxy:PointAnnotation.Stroke>
+                            <oxy:PointAnnotation.TextColor>
+                                <MultiBinding Converter="{StaticResource TM_ColorAndBooleanToTransparentMultiBinding}">
+                                    <Binding Path="Color" Source="{StaticResource ButtonForegroundBrush}" />
+                                    <Binding Path="ShowCelestialPole" />
+                                </MultiBinding>
+                            </oxy:PointAnnotation.TextColor>
+                        </oxy:PointAnnotation>
                     </oxy:Plot.Annotations>
-                </oxy:Plot>
+                    </oxy:Plot>
+                </Grid>
+
+                <TextBlock
+                    Grid.Row="4"
+                    Grid.Column="0"
+                    Margin="8,4,8,8"
+                    HorizontalAlignment="Center"
+                    Text="{Binding MeridianFlipMaxAngleDisplay}" />
             </Grid>
         </Grid>
     </ScrollViewer>

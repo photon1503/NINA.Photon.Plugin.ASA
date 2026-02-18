@@ -14,6 +14,7 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
 using NINA.Astrometry;
 using NINA.Astrometry.Interfaces;
+using NINA.Core.Enum;
 using NINA.Core.Model;
 using NINA.Core.Utility;
 using NINA.Core.Utility.Notification;
@@ -60,6 +61,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
     {
         private static readonly CustomHorizon EMPTY_HORIZON = GetEmptyHorizon();
         private readonly IMountMediator mountMediator;
+        private readonly IMount mount;
         private readonly IApplicationStatusMediator applicationStatusMediator;
         private readonly ITelescopeMediator telescopeMediator;
         private readonly IDomeMediator domeMediator;
@@ -84,6 +86,9 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
         private bool mlptChartsRefreshPending;
 
         private bool hasValidGeneratedSiderealPath;
+        private DateTime lastMeridianFlipAngleRefreshUtc = DateTime.MinValue;
+        private static readonly TimeSpan MeridianFlipAngleRefreshInterval = TimeSpan.FromSeconds(10);
+        private bool shouldPollMeridianFlipMaxAngle = true;
 
         [ImportingConstructor]
         public MountModelBuilderVM(IProfileService profileService, IApplicationStatusMediator applicationStatusMediator, ITelescopeMediator telescopeMediator, IDomeMediator domeMediator, IFramingAssistantVM framingAssistant, INighttimeCalculator nighttimeCalculator) :
@@ -94,6 +99,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 domeMediator,
                 framingAssistant,
                 applicationStatusMediator,
+                ASAPlugin.Mount,
                 ASAPlugin.MountMediator,
                 ASAPlugin.ModelPointGenerator,
                 ASAPlugin.ModelBuilder,
@@ -109,6 +115,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             IDomeMediator domeMediator,
             IFramingAssistantVM framingAssistant,
             IApplicationStatusMediator applicationStatusMediator,
+            IMount mount,
             IMountMediator mountMediator,
             IModelPointGenerator modelPointGenerator,
             IModelBuilder modelBuilder,
@@ -125,6 +132,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
 
             this.modelBuilderOptions = modelBuilderOptions;
             this.applicationStatusMediator = applicationStatusMediator;
+            this.mount = mount;
             this.mountMediator = mountMediator;
             this.telescopeMediator = telescopeMediator;
             this.domeMediator = domeMediator;
@@ -196,6 +204,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
 
             SubscribeDisplayModelPoints(displayModelPoints);
             RefreshMlptErrorCharts();
+            RefreshMeridianLimitGuides();
         }
 
         private void SubscribeDisplayModelPoints(AsyncObservableCollection<ModelPoint> points)
@@ -351,6 +360,284 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             return normalized;
         }
 
+        private static double NormalizeAzimuthDegrees(double azimuth)
+        {
+            var normalized = azimuth % 360.0d;
+            if (normalized < 0.0d)
+            {
+                normalized += 360.0d;
+            }
+
+            return normalized;
+        }
+
+        private static List<DataPoint> BuildPolarGuideLine(double azimuth)
+        {
+            return new List<DataPoint>
+            {
+                new DataPoint(0.0d, NormalizeAzimuthDegrees(azimuth)),
+                new DataPoint(90.0d, NormalizeAzimuthDegrees(azimuth))
+            };
+        }
+
+        private static (double Azimuth, double Altitude) EquatorialToHorizontal(double hourAngleDegrees, double declinationDegrees, double latitudeDegrees)
+        {
+            var hourAngleRadians = hourAngleDegrees * Math.PI / 180.0d;
+            var declinationRadians = declinationDegrees * Math.PI / 180.0d;
+            var latitudeRadians = latitudeDegrees * Math.PI / 180.0d;
+
+            var sinAltitude = (Math.Sin(declinationRadians) * Math.Sin(latitudeRadians))
+                + (Math.Cos(declinationRadians) * Math.Cos(latitudeRadians) * Math.Cos(hourAngleRadians));
+            sinAltitude = Math.Max(-1.0d, Math.Min(1.0d, sinAltitude));
+            var altitudeRadians = Math.Asin(sinAltitude);
+
+            // Numerically stable azimuth computation that avoids tan(dec) singularities near +/-90 deg.
+            // Azimuth convention: 0 = North, 90 = East, 180 = South, 270 = West.
+            var cosAltitude = Math.Cos(altitudeRadians);
+            var sinAzimuth = 0.0d;
+            var cosAzimuth = 1.0d;
+            if (Math.Abs(cosAltitude) > 1e-12)
+            {
+                sinAzimuth = -(Math.Cos(declinationRadians) * Math.Sin(hourAngleRadians)) / cosAltitude;
+                cosAzimuth = ((Math.Sin(declinationRadians) * Math.Cos(latitudeRadians))
+                              - (Math.Cos(declinationRadians) * Math.Sin(latitudeRadians) * Math.Cos(hourAngleRadians))) / cosAltitude;
+
+                sinAzimuth = Math.Max(-1.0d, Math.Min(1.0d, sinAzimuth));
+                cosAzimuth = Math.Max(-1.0d, Math.Min(1.0d, cosAzimuth));
+            }
+
+            var azimuthDegrees = NormalizeAzimuthDegrees(Math.Atan2(sinAzimuth, cosAzimuth) * 180.0d / Math.PI);
+            var altitudeDegrees = altitudeRadians * 180.0d / Math.PI;
+            return (azimuthDegrees, altitudeDegrees);
+        }
+
+        private static List<List<DataPoint>> SplitCurveOnAzimuthWrap(List<DataPoint> points)
+        {
+            var segments = new List<List<DataPoint>>();
+            if (points == null || points.Count == 0)
+            {
+                return segments;
+            }
+
+            var currentSegment = new List<DataPoint>() { points[0] };
+            for (int index = 1; index < points.Count; index++)
+            {
+                var previous = points[index - 1];
+                var current = points[index];
+                if (Math.Abs(current.X - previous.X) > 180.0d)
+                {
+                    if (currentSegment.Count >= 2)
+                    {
+                        segments.Add(currentSegment);
+                    }
+                    currentSegment = new List<DataPoint>();
+                }
+
+                currentSegment.Add(current);
+            }
+
+            if (currentSegment.Count >= 2)
+            {
+                segments.Add(currentSegment);
+            }
+
+            return segments;
+        }
+
+        private static (List<DataPoint> SouthSegment, List<DataPoint> NorthSegment) SelectSouthAndNorthSegments(List<List<DataPoint>> segments)
+        {
+            if (segments == null || segments.Count == 0)
+            {
+                return (new List<DataPoint>(), new List<DataPoint>());
+            }
+
+            var validSegments = segments
+                .Where(segment => segment != null && segment.Count >= 3)
+                .ToList();
+
+            if (validSegments.Count == 0)
+            {
+                return (new List<DataPoint>(), new List<DataPoint>());
+            }
+
+            var southSegment = validSegments
+                .OrderBy(segment => segment.Min(point => AngularDistanceDegrees(point.X, 180.0d)))
+                .ThenByDescending(segment => segment.Count)
+                .FirstOrDefault();
+
+            var northSegment = validSegments
+                .Where(segment => !ReferenceEquals(segment, southSegment))
+                .OrderBy(segment => segment.Min(point => AngularDistanceDegrees(point.X, 0.0d)))
+                .ThenByDescending(segment => segment.Count)
+                .FirstOrDefault();
+
+            if (northSegment == null)
+            {
+                northSegment = new List<DataPoint>();
+            }
+
+            if (southSegment == null)
+            {
+                southSegment = new List<DataPoint>();
+            }
+
+            return (southSegment, northSegment);
+        }
+
+        private static List<DataPoint> ToPolarCurve(List<DataPoint> points)
+        {
+            return points.Select(point => new DataPoint(90.0d - point.Y, point.X)).ToList();
+        }
+
+        private static double AngularDistanceDegrees(double a, double b)
+        {
+            var diff = Math.Abs(NormalizeSignedDifference(a - b, 360.0d));
+            return diff;
+        }
+
+        private static bool IsMeridianBranchAzimuth(double azimuth)
+        {
+            const double maxDistanceToMeridianDegrees = 90.0d;
+            var distanceToNorth = AngularDistanceDegrees(azimuth, 0.0d);
+            var distanceToSouth = AngularDistanceDegrees(azimuth, 180.0d);
+            return distanceToNorth <= maxDistanceToMeridianDegrees || distanceToSouth <= maxDistanceToMeridianDegrees;
+        }
+
+        private void SetMeridianLimitCurveCollectionsToEmpty()
+        {
+            MeridianLimitWestCurvePoints = new AsyncObservableCollection<DataPoint>();
+            MeridianLimitWestCurvePoints2 = new AsyncObservableCollection<DataPoint>();
+            MeridianLimitEastCurvePoints = new AsyncObservableCollection<DataPoint>();
+            MeridianLimitEastCurvePoints2 = new AsyncObservableCollection<DataPoint>();
+            MeridianLimitWestCurvePointsPolar = new AsyncObservableCollection<DataPoint>();
+            MeridianLimitWestCurvePointsPolar2 = new AsyncObservableCollection<DataPoint>();
+            MeridianLimitEastCurvePointsPolar = new AsyncObservableCollection<DataPoint>();
+            MeridianLimitEastCurvePointsPolar2 = new AsyncObservableCollection<DataPoint>();
+        }
+
+        private void BuildAndAssignMeridianLimitCurveCollections(double hourAngleDegrees, bool isWestCurve)
+        {
+            var latitudeDegrees = this.profileService.ActiveProfile.AstrometrySettings.Latitude;
+            var curvePoints = new List<DataPoint>();
+
+            // Sweep the full hour-circle so both visible branches (south and north side) can appear.
+            var declinationStart = -180.0d;
+            var declinationEnd = 180.0d;
+            var declinationStep = 0.25d;
+
+            for (double declinationDegrees = declinationStart; declinationDegrees <= declinationEnd; declinationDegrees += declinationStep)
+            {
+                var horizontalCoordinates = EquatorialToHorizontal(hourAngleDegrees, declinationDegrees, latitudeDegrees);
+                if (double.IsNaN(horizontalCoordinates.Azimuth) || double.IsNaN(horizontalCoordinates.Altitude)
+                    || double.IsInfinity(horizontalCoordinates.Azimuth) || double.IsInfinity(horizontalCoordinates.Altitude))
+                {
+                    continue;
+                }
+
+                if (horizontalCoordinates.Altitude >= 0.0d && horizontalCoordinates.Altitude <= 90.0d)
+                {
+                    if (IsMeridianBranchAzimuth(horizontalCoordinates.Azimuth))
+                    {
+                        curvePoints.Add(new DataPoint(horizontalCoordinates.Azimuth, horizontalCoordinates.Altitude));
+                    }
+                }
+            }
+
+            var segments = SplitCurveOnAzimuthWrap(curvePoints);
+            var selectedSegments = SelectSouthAndNorthSegments(segments);
+            var southSegment = selectedSegments.SouthSegment;
+            var northSegment = selectedSegments.NorthSegment;
+
+            if ((northSegment == null || northSegment.Count < 2) && curvePoints.Count > 0)
+            {
+                southSegment = curvePoints
+                    .Where(point => point.X >= 90.0d && point.X <= 270.0d)
+                    .ToList();
+
+                northSegment = curvePoints
+                    .Where(point => point.X < 90.0d || point.X > 270.0d)
+                    .ToList();
+            }
+
+            if (isWestCurve)
+            {
+                MeridianLimitWestCurvePoints = new AsyncObservableCollection<DataPoint>(southSegment);
+                MeridianLimitWestCurvePoints2 = new AsyncObservableCollection<DataPoint>(northSegment);
+                MeridianLimitWestCurvePointsPolar = new AsyncObservableCollection<DataPoint>(ToPolarCurve(southSegment));
+                MeridianLimitWestCurvePointsPolar2 = new AsyncObservableCollection<DataPoint>(ToPolarCurve(northSegment));
+            }
+            else
+            {
+                MeridianLimitEastCurvePoints = new AsyncObservableCollection<DataPoint>(southSegment);
+                MeridianLimitEastCurvePoints2 = new AsyncObservableCollection<DataPoint>(northSegment);
+                MeridianLimitEastCurvePointsPolar = new AsyncObservableCollection<DataPoint>(ToPolarCurve(southSegment));
+                MeridianLimitEastCurvePointsPolar2 = new AsyncObservableCollection<DataPoint>(ToPolarCurve(northSegment));
+            }
+        }
+
+        private void RefreshMeridianLimitGuides()
+        {
+            var westLimit = 180.0d;
+            var eastLimit = 180.0d;
+            var showGuides = false;
+            var hasAngleValue = false;
+            SetMeridianLimitCurveCollectionsToEmpty();
+
+            var mediatorConnected = this.mountMediator?.GetInfo()?.Connected == true;
+            var isMountConnected = mediatorConnected || this.MountInfo?.Connected == true || Connected;
+
+            if (isMountConnected && mount != null)
+            {
+                var response = mount.MeridianFlipMaxAngle();
+                var maxAngleDegrees = Math.Abs(response.Value);
+                if (!double.IsNaN(maxAngleDegrees) && !double.IsInfinity(maxAngleDegrees))
+                {
+                    hasAngleValue = true;
+                    maxAngleDegrees = Math.Min(maxAngleDegrees, 180.0d);
+                    MeridianFlipMaxAngleDegrees = maxAngleDegrees;
+                    if (maxAngleDegrees > double.Epsilon)
+                    {
+                        shouldPollMeridianFlipMaxAngle = false;
+                        westLimit = NormalizeAzimuthDegrees(180.0d - maxAngleDegrees);
+                        eastLimit = NormalizeAzimuthDegrees(180.0d + maxAngleDegrees);
+                        BuildAndAssignMeridianLimitCurveCollections(-maxAngleDegrees, isWestCurve: true);
+                        BuildAndAssignMeridianLimitCurveCollections(maxAngleDegrees, isWestCurve: false);
+                        showGuides = true;
+                    }
+                }
+            }
+            else
+            {
+                Logger.Debug("Skipping MeridianFlipMaxAngle refresh because mount is not connected");
+            }
+
+            if (!hasAngleValue)
+            {
+                shouldPollMeridianFlipMaxAngle = true;
+                MeridianFlipMaxAngleDegrees = double.NaN;
+            }
+
+            MeridianLimitWestAzimuth = westLimit;
+            MeridianLimitEastAzimuth = eastLimit;
+            ShowMeridianLimitGuides = showGuides;
+        }
+
+        private void TryRefreshMeridianLimitGuides(bool force = false)
+        {
+            if (!force && !shouldPollMeridianFlipMaxAngle)
+            {
+                return;
+            }
+
+            if (!force && DateTime.UtcNow - lastMeridianFlipAngleRefreshUtc < MeridianFlipAngleRefreshInterval)
+            {
+                return;
+            }
+
+            lastMeridianFlipAngleRefreshUtc = DateTime.UtcNow;
+            RefreshMeridianLimitGuides();
+        }
+
         private void RefreshMlptErrorCharts()
         {
             var pointsWithSolveData = DisplayModelPoints
@@ -367,6 +654,8 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             var dePoints = new List<DataPoint>();
             double maxRaErrorArcsec = 0.0;
             double maxDeErrorArcsec = 0.0;
+            double? raBaselineArcsec = null;
+            double? deBaselineArcsec = null;
 
             for (int pointIndex = 0; pointIndex < pointsWithSolveData.Count; pointIndex++)
             {
@@ -382,6 +671,22 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                     360.0);
                 var deErrorArcsec = deDifferenceDegrees * 3600.0;
 
+                if (UseRelativeMlptErrors)
+                {
+                    if (!raBaselineArcsec.HasValue)
+                    {
+                        raBaselineArcsec = raErrorArcsec;
+                    }
+
+                    if (!deBaselineArcsec.HasValue)
+                    {
+                        deBaselineArcsec = deErrorArcsec;
+                    }
+
+                    raErrorArcsec -= raBaselineArcsec.Value;
+                    deErrorArcsec -= deBaselineArcsec.Value;
+                }
+
                 var imageNumber = pointIndex + 1;
                 raPoints.Add(new DataPoint(imageNumber, raErrorArcsec));
                 dePoints.Add(new DataPoint(imageNumber, deErrorArcsec));
@@ -396,8 +701,19 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             MaxMlptRaErrorArcsec = maxRaErrorArcsec;
             MaxMlptDeErrorArcsec = maxDeErrorArcsec;
 
-            MlptRaErrorAxisLimitArcsec = Math.Max(1.0, Math.Ceiling(maxRaErrorArcsec));
-            MlptDeErrorAxisLimitArcsec = Math.Max(1.0, Math.Ceiling(maxDeErrorArcsec));
+            var raAxisLimitArcsec = Math.Max(1.0, Math.Ceiling(maxRaErrorArcsec));
+            var deAxisLimitArcsec = Math.Max(1.0, Math.Ceiling(maxDeErrorArcsec));
+            if (UseUnifiedMlptErrorScale)
+            {
+                var sharedAxisLimitArcsec = Math.Max(raAxisLimitArcsec, deAxisLimitArcsec);
+                MlptRaErrorAxisLimitArcsec = sharedAxisLimitArcsec;
+                MlptDeErrorAxisLimitArcsec = sharedAxisLimitArcsec;
+            }
+            else
+            {
+                MlptRaErrorAxisLimitArcsec = raAxisLimitArcsec;
+                MlptDeErrorAxisLimitArcsec = deAxisLimitArcsec;
+            }
         }
 
         private void RefreshMlptPlannedImageCount()
@@ -417,6 +733,50 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             if (e.PropertyName == nameof(modelBuilderOptions.ShowRemovedPoints))
             {
                 UpdateDisplayModelPoints();
+            }
+
+            if (e.PropertyName == nameof(modelBuilderOptions.ChartPointSize))
+            {
+                RaisePropertyChanged(nameof(ChartPointSize));
+            }
+
+            if (e.PropertyName == nameof(modelBuilderOptions.ShowHorizon))
+            {
+                RaisePropertyChanged(nameof(ShowHorizon));
+            }
+
+            if (e.PropertyName == nameof(modelBuilderOptions.HorizonTransparencyPercent))
+            {
+                RaisePropertyChanged(nameof(HorizonTransparencyPercent));
+            }
+
+            if (e.PropertyName == nameof(modelBuilderOptions.MinDistanceToHorizonDegrees))
+            {
+                RaisePropertyChanged(nameof(MinDistanceToHorizonDegrees));
+            }
+
+            if (e.PropertyName == nameof(modelBuilderOptions.SiderealTrackPathOffsetMinutes))
+            {
+                RaisePropertyChanged(nameof(SiderealTrackPathOffsetMinutes));
+            }
+
+            if (e.PropertyName == nameof(modelBuilderOptions.ShowCardinalLabels))
+            {
+                RaisePropertyChanged(nameof(ShowCardinalLabels));
+                RaisePropertyChanged(nameof(CartesianAzimuthLabelFormatter));
+                RaisePropertyChanged(nameof(PolarAzimuthLabelFormatter));
+            }
+
+            if (e.PropertyName == nameof(modelBuilderOptions.ShowCelestialPole))
+            {
+                RaisePropertyChanged(nameof(ShowCelestialPole));
+                RaisePropertyChanged(nameof(ShowCelestialPoleAt360));
+            }
+
+            if (e.PropertyName == nameof(modelBuilderOptions.ShowMeridianLimitsInCharts))
+            {
+                RaisePropertyChanged(nameof(ShowMeridianLimitsInCharts));
+                RaisePropertyChanged(nameof(ShowMeridianLimitGuidesEffective));
             }
         }
 
@@ -502,6 +862,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             this.profileService.ActiveProfile.AstrometrySettings.PropertyChanged += AstrometrySettings_PropertyChanged;
             this.profileService.ActiveProfile.DomeSettings.PropertyChanged += DomeSettings_PropertyChanged;
             this.LoadHorizon();
+            this.RaiseCelestialPolePropertiesChanged();
         }
 
         private void DomeSettings_PropertyChanged(object sender, PropertyChangedEventArgs e)
@@ -518,6 +879,23 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             {
                 this.LoadHorizon();
             }
+
+            if (string.IsNullOrWhiteSpace(e.PropertyName)
+                || e.PropertyName == nameof(this.profileService.ActiveProfile.AstrometrySettings.Latitude))
+            {
+                this.RaiseCelestialPolePropertiesChanged();
+            }
+        }
+
+        private void RaiseCelestialPolePropertiesChanged()
+        {
+            this.RaisePropertyChanged(nameof(IsNorthernHemisphere));
+            this.RaisePropertyChanged(nameof(CelestialPoleLabel));
+            this.RaisePropertyChanged(nameof(CelestialPoleAzimuth));
+            this.RaisePropertyChanged(nameof(CelestialPoleAzimuthWrapped));
+            this.RaisePropertyChanged(nameof(CelestialPoleAltitude));
+            this.RaisePropertyChanged(nameof(CelestialPoleInvertedAltitude));
+            this.RaisePropertyChanged(nameof(ShowCelestialPoleAt360));
         }
 
         private void LoadHorizon()
@@ -554,6 +932,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
         public void UpdateDeviceInfo(TelescopeInfo deviceInfo)
         {
             this.TelescopeInfo = deviceInfo;
+            TryRefreshMeridianLimitGuides();
 
             TelescopePosition = new DataPoint(deviceInfo.Azimuth, deviceInfo.Altitude);
             RaisePropertyChanged(nameof(TelescopeInfo2));
@@ -583,10 +962,12 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             if (this.MountInfo.Connected)
             {
                 Connect();
+                TryRefreshMeridianLimitGuides(force: true);
             }
             else
             {
                 Disconnect();
+                TryRefreshMeridianLimitGuides(force: true);
             }
         }
 
@@ -707,6 +1088,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             this.BuildInProgress = false;
             this.TelescopeInfo = telescopeMediator.GetInfo();
             Connected = true;
+            TryRefreshMeridianLimitGuides(force: true);
         }
 
         private void Disconnect()
@@ -718,6 +1100,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
 
             this.disconnectCts?.Cancel();
             Connected = false;
+            TryRefreshMeridianLimitGuides(force: true);
         }
 
         private Task<bool> GeneratePoints()
@@ -949,12 +1332,14 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
 
             startTime += TimeSpan.FromMinutes(SiderealTrackStartOffsetMinutes);
             endTime += TimeSpan.FromMinutes(SiderealTrackEndOffsetMinutes);
+            startTime += TimeSpan.FromMinutes(SiderealTrackPathOffsetMinutes);
+            endTime += TimeSpan.FromMinutes(SiderealTrackPathOffsetMinutes);
             if (endTime < startTime)
             {
                 endTime += TimeSpan.FromDays(1);
             }
 
-            Logger.Info($"Generating MLTP path. Coordinates={SiderealPathObjectCoordinates.Coordinates}, RADelta={SiderealTrackRADeltaDegrees}, StartTime={startTime}, EndTime={endTime}");
+            Logger.Info($"Generating MLTP path. Coordinates={SiderealPathObjectCoordinates.Coordinates}, RADelta={SiderealTrackRADeltaDegrees}, StartTime={startTime}, EndTime={endTime}, PathOffsetMinutes={SiderealTrackPathOffsetMinutes}");
             try
             {
                 var localModelPoints = this.modelPointGenerator.GenerateSiderealPath(SiderealPathObjectCoordinates.Coordinates, Angle.ByDegree(SiderealTrackRADeltaDegrees), startTime, endTime, CustomHorizon);
@@ -1506,6 +1891,15 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                     double altitude = double.Parse(lines[lineNo + 1], CultureInfo.InvariantCulture);
                     bool onlySlew;
                     bool.TryParse(lines[lineNo + 3].Trim('"'), out onlySlew);
+                    int parsedPierSide;
+                    int.TryParse(lines[lineNo + 4].Trim('"'), NumberStyles.Integer, CultureInfo.InvariantCulture, out parsedPierSide);
+
+                    var desiredPierSide = parsedPierSide switch
+                    {
+                        0 => PierSide.pierEast,
+                        1 => PierSide.pierWest,
+                        _ => PierSide.pierUnknown
+                    };
 
                     double pointAzimuth = (azimuth * (180.0 / Math.PI)) % 360.0;
                     if (pointAzimuth < 0)
@@ -1524,9 +1918,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                            {
                                Altitude = pointAltitude,
                                Azimuth = pointAzimuth,
-
-                               //writer.WriteLine(point.MountReportedSideOfPier == PierSide.pierEast ? "\"1\"" : "\"-1\"");
-                               //MountReportedSideOfPier = pierSide == 1 ? PierSide.pierEast : PierSide.pierWest,
+                               DesiredPierSide = desiredPierSide,
                                ModelPointState = ModelPointStateEnum.Generated
                            });
                     }
@@ -1568,7 +1960,12 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                         writer.WriteLine(p.Altitude * (Math.PI / 180));
                         writer.WriteLine("\"false\"");
                         writer.WriteLine("\"False\"");
-                        writer.WriteLine(p.Azimuth < 180 ? "0" : "1");
+                        writer.WriteLine(p.DesiredPierSide switch
+                        {
+                            PierSide.pierEast => "0",
+                            PierSide.pierWest => "1",
+                            _ => "-1"
+                        });
                     }
                 }
             }
@@ -1702,6 +2099,201 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                     showDisplayPath = value;
                     RaisePropertyChanged();
                     RefreshDisplayPathPoints();
+                }
+            }
+        }
+
+        private bool useRelativeMlptErrors = true;
+
+        public bool UseRelativeMlptErrors
+        {
+            get => useRelativeMlptErrors;
+            set
+            {
+                if (useRelativeMlptErrors != value)
+                {
+                    useRelativeMlptErrors = value;
+                    RaisePropertyChanged();
+                    RefreshMlptErrorCharts();
+                }
+            }
+        }
+
+        private bool useUnifiedMlptErrorScale = true;
+
+        public bool UseUnifiedMlptErrorScale
+        {
+            get => useUnifiedMlptErrorScale;
+            set
+            {
+                if (useUnifiedMlptErrorScale != value)
+                {
+                    useUnifiedMlptErrorScale = value;
+                    RaisePropertyChanged();
+                    RefreshMlptErrorCharts();
+                }
+            }
+        }
+
+        public double ChartPointSize
+        {
+            get => this.modelBuilderOptions.ChartPointSize;
+            set
+            {
+                if (Math.Abs(this.modelBuilderOptions.ChartPointSize - value) > double.Epsilon)
+                {
+                    this.modelBuilderOptions.ChartPointSize = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        public bool ShowHorizon
+        {
+            get => this.modelBuilderOptions.ShowHorizon;
+            set
+            {
+                if (this.modelBuilderOptions.ShowHorizon != value)
+                {
+                    this.modelBuilderOptions.ShowHorizon = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        public bool ShowCardinalLabels
+        {
+            get => this.modelBuilderOptions.ShowCardinalLabels;
+            set
+            {
+                if (this.modelBuilderOptions.ShowCardinalLabels != value)
+                {
+                    this.modelBuilderOptions.ShowCardinalLabels = value;
+                    RaisePropertyChanged();
+                    RaisePropertyChanged(nameof(CartesianAzimuthLabelFormatter));
+                    RaisePropertyChanged(nameof(PolarAzimuthLabelFormatter));
+                }
+            }
+        }
+
+        public bool ShowCelestialPole
+        {
+            get => this.modelBuilderOptions.ShowCelestialPole;
+            set
+            {
+                if (this.modelBuilderOptions.ShowCelestialPole != value)
+                {
+                    this.modelBuilderOptions.ShowCelestialPole = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        public bool ShowMeridianLimitsInCharts
+        {
+            get => this.modelBuilderOptions.ShowMeridianLimitsInCharts;
+            set
+            {
+                if (this.modelBuilderOptions.ShowMeridianLimitsInCharts != value)
+                {
+                    this.modelBuilderOptions.ShowMeridianLimitsInCharts = value;
+                    RaisePropertyChanged();
+                    RaisePropertyChanged(nameof(ShowMeridianLimitGuidesEffective));
+                }
+            }
+        }
+
+        public bool ShowMeridianLimitGuidesEffective => ShowMeridianLimitGuides && ShowMeridianLimitsInCharts;
+
+        private bool IsNorthernHemisphere => this.profileService.ActiveProfile.AstrometrySettings.Latitude >= 0.0d;
+
+        public string CelestialPoleLabel => IsNorthernHemisphere ? "NCP" : "SCP";
+
+        public double CelestialPoleAzimuth => IsNorthernHemisphere ? 0.0d : 180.0d;
+
+        public double CelestialPoleAzimuthWrapped => 360.0d;
+
+        public double CelestialPoleAltitude => Math.Max(0.0d, Math.Min(90.0d, Math.Abs(this.profileService.ActiveProfile.AstrometrySettings.Latitude)));
+
+        public double CelestialPoleInvertedAltitude => 90.0d - CelestialPoleAltitude;
+
+        public bool ShowCelestialPoleAt360 => ShowCelestialPole && IsNorthernHemisphere;
+
+        public Func<double, string> CartesianAzimuthLabelFormatter =>
+            ShowCardinalLabels
+                ? value => CardinalDirectionLabel(value, include360North: true)
+                : DegreesLabel;
+
+        public Func<double, string> PolarAzimuthLabelFormatter =>
+            ShowCardinalLabels
+                ? value => CardinalDirectionLabel(value, include360North: false)
+                : DegreesLabel;
+
+        private static string DegreesLabel(double value)
+        {
+            if (IsNear(value, 360.0d))
+            {
+                return "360";
+            }
+
+            if (IsNear(value, 0.0d))
+            {
+                return "0";
+            }
+
+            var rounded = Math.Round(value);
+            return rounded.ToString(CultureInfo.InvariantCulture);
+        }
+
+        private static string CardinalDirectionLabel(double value, bool include360North)
+        {
+            if (IsNear(value, 0.0d) || (include360North && IsNear(value, 360.0d)))
+            {
+                return "N";
+            }
+
+            if (IsNear(value, 90.0d))
+            {
+                return "E";
+            }
+
+            if (IsNear(value, 180.0d))
+            {
+                return "S";
+            }
+
+            if (IsNear(value, 270.0d))
+            {
+                return "W";
+            }
+
+            return string.Empty;
+        }
+
+        private static bool IsNear(double value, double expected) => Math.Abs(value - expected) <= 0.25d;
+
+        public int HorizonTransparencyPercent
+        {
+            get => this.modelBuilderOptions.HorizonTransparencyPercent;
+            set
+            {
+                if (this.modelBuilderOptions.HorizonTransparencyPercent != value)
+                {
+                    this.modelBuilderOptions.HorizonTransparencyPercent = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        public double MinDistanceToHorizonDegrees
+        {
+            get => this.modelBuilderOptions.MinDistanceToHorizonDegrees;
+            set
+            {
+                if (Math.Abs(this.modelBuilderOptions.MinDistanceToHorizonDegrees - value) > double.Epsilon)
+                {
+                    this.modelBuilderOptions.MinDistanceToHorizonDegrees = value;
+                    RaisePropertyChanged();
                 }
             }
         }
@@ -1914,6 +2506,19 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             }
         }
 
+        public int SiderealTrackPathOffsetMinutes
+        {
+            get => this.modelBuilderOptions.SiderealTrackPathOffsetMinutes;
+            set
+            {
+                if (this.modelBuilderOptions.SiderealTrackPathOffsetMinutes != value)
+                {
+                    this.modelBuilderOptions.SiderealTrackPathOffsetMinutes = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
         public double SiderealTrackRADeltaDegrees
         {
             get => this.modelBuilderOptions.SiderealTrackRADeltaDegrees;
@@ -1981,6 +2586,188 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             }
         }
 
+        private bool showMeridianLimitGuides;
+
+        public bool ShowMeridianLimitGuides
+        {
+            get => showMeridianLimitGuides;
+            private set
+            {
+                if (showMeridianLimitGuides != value)
+                {
+                    showMeridianLimitGuides = value;
+                    RaisePropertyChanged();
+                    RaisePropertyChanged(nameof(ShowMeridianLimitGuidesEffective));
+                }
+            }
+        }
+
+        private double meridianFlipMaxAngleDegrees = double.NaN;
+
+        public double MeridianFlipMaxAngleDegrees
+        {
+            get => meridianFlipMaxAngleDegrees;
+            private set
+            {
+                if ((double.IsNaN(meridianFlipMaxAngleDegrees) && double.IsNaN(value))
+                    || Math.Abs(meridianFlipMaxAngleDegrees - value) <= double.Epsilon)
+                {
+                    return;
+                }
+
+                meridianFlipMaxAngleDegrees = value;
+                RaisePropertyChanged();
+                RaisePropertyChanged(nameof(MeridianFlipMaxAngleHours));
+                RaisePropertyChanged(nameof(MeridianFlipMaxAngleDisplay));
+            }
+        }
+
+        public double MeridianFlipMaxAngleHours => double.IsNaN(MeridianFlipMaxAngleDegrees) ? double.NaN : MeridianFlipMaxAngleDegrees / 15.0d;
+
+        public string MeridianFlipMaxAngleDisplay => double.IsNaN(MeridianFlipMaxAngleDegrees)
+            ? "Meridian flip max angle: n/a"
+            : $"Meridian flip max angle: {MeridianFlipMaxAngleDegrees:0.##}° ({MeridianFlipMaxAngleHours:0.##}h)";
+
+        public double MeridianAzimuth => 180.0d;
+
+        private double meridianLimitWestAzimuth = 180.0d;
+
+        public double MeridianLimitWestAzimuth
+        {
+            get => meridianLimitWestAzimuth;
+            private set
+            {
+                if (Math.Abs(meridianLimitWestAzimuth - value) > double.Epsilon)
+                {
+                    meridianLimitWestAzimuth = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private double meridianLimitEastAzimuth = 180.0d;
+
+        public double MeridianLimitEastAzimuth
+        {
+            get => meridianLimitEastAzimuth;
+            private set
+            {
+                if (Math.Abs(meridianLimitEastAzimuth - value) > double.Epsilon)
+                {
+                    meridianLimitEastAzimuth = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        public List<DataPoint> MeridianPolarGuidePoints => BuildPolarGuideLine(180.0d);
+
+        public List<DataPoint> MeridianOppositePolarGuidePoints => BuildPolarGuideLine(0.0d);
+
+        public List<DataPoint> MeridianLimitWestPolarGuidePoints => BuildPolarGuideLine(MeridianLimitWestAzimuth);
+
+        public List<DataPoint> MeridianLimitWestOppositePolarGuidePoints => BuildPolarGuideLine(MeridianLimitWestAzimuth + 180.0d);
+
+        public List<DataPoint> MeridianLimitEastPolarGuidePoints => BuildPolarGuideLine(MeridianLimitEastAzimuth);
+
+        public List<DataPoint> MeridianLimitEastOppositePolarGuidePoints => BuildPolarGuideLine(MeridianLimitEastAzimuth + 180.0d);
+
+        private AsyncObservableCollection<DataPoint> meridianLimitWestCurvePoints = new AsyncObservableCollection<DataPoint>();
+
+        public AsyncObservableCollection<DataPoint> MeridianLimitWestCurvePoints
+        {
+            get => meridianLimitWestCurvePoints;
+            private set
+            {
+                meridianLimitWestCurvePoints = value;
+                RaisePropertyChanged();
+            }
+        }
+
+        private AsyncObservableCollection<DataPoint> meridianLimitWestCurvePoints2 = new AsyncObservableCollection<DataPoint>();
+
+        public AsyncObservableCollection<DataPoint> MeridianLimitWestCurvePoints2
+        {
+            get => meridianLimitWestCurvePoints2;
+            private set
+            {
+                meridianLimitWestCurvePoints2 = value;
+                RaisePropertyChanged();
+            }
+        }
+
+        private AsyncObservableCollection<DataPoint> meridianLimitEastCurvePoints = new AsyncObservableCollection<DataPoint>();
+
+        public AsyncObservableCollection<DataPoint> MeridianLimitEastCurvePoints
+        {
+            get => meridianLimitEastCurvePoints;
+            private set
+            {
+                meridianLimitEastCurvePoints = value;
+                RaisePropertyChanged();
+            }
+        }
+
+        private AsyncObservableCollection<DataPoint> meridianLimitEastCurvePoints2 = new AsyncObservableCollection<DataPoint>();
+
+        public AsyncObservableCollection<DataPoint> MeridianLimitEastCurvePoints2
+        {
+            get => meridianLimitEastCurvePoints2;
+            private set
+            {
+                meridianLimitEastCurvePoints2 = value;
+                RaisePropertyChanged();
+            }
+        }
+
+        private AsyncObservableCollection<DataPoint> meridianLimitWestCurvePointsPolar = new AsyncObservableCollection<DataPoint>();
+
+        public AsyncObservableCollection<DataPoint> MeridianLimitWestCurvePointsPolar
+        {
+            get => meridianLimitWestCurvePointsPolar;
+            private set
+            {
+                meridianLimitWestCurvePointsPolar = value;
+                RaisePropertyChanged();
+            }
+        }
+
+        private AsyncObservableCollection<DataPoint> meridianLimitWestCurvePointsPolar2 = new AsyncObservableCollection<DataPoint>();
+
+        public AsyncObservableCollection<DataPoint> MeridianLimitWestCurvePointsPolar2
+        {
+            get => meridianLimitWestCurvePointsPolar2;
+            private set
+            {
+                meridianLimitWestCurvePointsPolar2 = value;
+                RaisePropertyChanged();
+            }
+        }
+
+        private AsyncObservableCollection<DataPoint> meridianLimitEastCurvePointsPolar = new AsyncObservableCollection<DataPoint>();
+
+        public AsyncObservableCollection<DataPoint> MeridianLimitEastCurvePointsPolar
+        {
+            get => meridianLimitEastCurvePointsPolar;
+            private set
+            {
+                meridianLimitEastCurvePointsPolar = value;
+                RaisePropertyChanged();
+            }
+        }
+
+        private AsyncObservableCollection<DataPoint> meridianLimitEastCurvePointsPolar2 = new AsyncObservableCollection<DataPoint>();
+
+        public AsyncObservableCollection<DataPoint> MeridianLimitEastCurvePointsPolar2
+        {
+            get => meridianLimitEastCurvePointsPolar2;
+            private set
+            {
+                meridianLimitEastCurvePointsPolar2 = value;
+                RaisePropertyChanged();
+            }
+        }
+
         private CustomHorizon customHorizon = EMPTY_HORIZON;
 
         public CustomHorizon CustomHorizon
@@ -2009,6 +2796,8 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             {
                 horizonDataPoints = value;
                 RaisePropertyChanged();
+                RaisePropertyChanged(nameof(HorizonDataPointsPolar));
+                RaisePropertyChanged(nameof(HorizonDataPointsPolarArea));
             }
         }
 
@@ -2016,15 +2805,34 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
         {
             get
             {
-                return HorizonDataPoints.Select(p =>
-                {
-                    double radius = p.Y; // Altitude becomes radius
-                    double angle = p.X;   // Azimuth is angle
-                    double x = radius * Math.Cos(angle * Math.PI / 180);
-                    double y = radius * Math.Sin(angle * Math.PI / 180);
-                    return new DataPoint(x, y);
-                }).ToList();
+                return HorizonDataPoints
+                    .Select(point => new DataPoint(90.0d - point.Y, point.X))
+                    .ToList();
             }
+        }
+
+        public List<PolarAreaDataPoint> HorizonDataPointsPolarArea
+        {
+            get
+            {
+                return HorizonDataPoints
+                    .Select(point => new PolarAreaDataPoint
+                    {
+                        X = 90.0d - point.Y,
+                        Y = point.X,
+                        X2 = 90.0d,
+                        Y2 = point.X
+                    })
+                    .ToList();
+            }
+        }
+
+        public class PolarAreaDataPoint
+        {
+            public double X { get; set; }
+            public double Y { get; set; }
+            public double X2 { get; set; }
+            public double Y2 { get; set; }
         }
 
         private Angle domeShutterAzimuthForOpening;

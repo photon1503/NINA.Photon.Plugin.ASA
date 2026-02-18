@@ -72,6 +72,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
         private readonly ICustomDateTime nowProvider = new SystemDateTime();
         private volatile int processingInProgressCount;
         private bool IsTelescopePositionRestored = false;
+        private bool forceNextPierSideAvailable = true;
 
         private List<ModelPoint> modelPoints1 = new List<ModelPoint>();
 
@@ -236,6 +237,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
         {
             ct.ThrowIfCancellationRequested();
             PreFlightChecks(modelPoints);
+            forceNextPierSideAvailable = true;
 
             var innerCts = new CancellationTokenSource();
             var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, innerCts.Token);
@@ -663,56 +665,57 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 using (StreamWriter writer = new StreamWriter(filePath))
                 {
                     int points = 1;
-                    // get number of validpoints with modelpointsate == AddedToModel
+                    var exportedPoints = state.ValidPoints
+                        .Where(p =>
+                            p.ModelPointState == ModelPointStateEnum.AddedToModel &&
+                            !double.IsNaN(p.PlateSolvedRightAscension) && !double.IsInfinity(p.PlateSolvedRightAscension) &&
+                            !double.IsNaN(p.PlateSolvedDeclination) && !double.IsInfinity(p.PlateSolvedDeclination))
+                        .ToList();
 
-                    int numPoints = state.ValidPoints.Count(p => p.ModelPointState == ModelPointStateEnum.AddedToModel);
-                    writer.WriteLine(numPoints); // Total Number of images
-                    foreach (var point in state.ValidPoints)
+                    writer.WriteLine(exportedPoints.Count); // Total Number of images
+                    foreach (var point in exportedPoints)
                     {
-                        if (point.ModelPointState == ModelPointStateEnum.AddedToModel)
+                        string text;
+                        if (!state.Options.IsLegacyDDM)
                         {
-                            string text = $"\"Number {points++}\"";
-                            if (!state.Options.IsLegacyDDM)
-                                if (point.IsSyncPoint)
-                                    text = $"\"Number {points++} sync point\"";
-                                else
-                                    text = $"\"Number {points++} no pointing correction\"";
-
-                            /* convert MountReportedRightAscension to J2000 */
-
-                            /*
-                            Coordinates mnt = new Coordinates(point.MountReportedRightAscension, point.MountReportedDeclination, Epoch.JNOW, Coordinates.RAType.Hours);
-                            mnt = mnt.Transform(Epoch.J2000);
-                            point.MountReportedRightAscension = mnt.RA;
-                            point.MountReportedDeclination = mnt.Dec;
-                            */
-
-                            writer.WriteLine(text);
-                            writer.WriteLine($"\"'{point.CaptureTime:yyyy-MM-ddTHH:mm:ss.ff}'\"");
-                            writer.WriteLine($"\"{point.CaptureTime:mm:ss.ff}\"");
-
-                            writer.WriteLine($"\"{profileService.ActiveProfile.PlateSolveSettings.ExposureTime}\"");
-
-                            string psRA = point.PlateSolvedRightAscension.ToString().Replace(",", ".");
-                            string psDEC = point.PlateSolvedDeclination.ToString().Replace(",", ".");
-
-                            if (point.IsSyncPoint)
-                                writer.WriteLine(psRA);
-                            else
-                                writer.WriteLine(point.MountReportedRightAscension.ToString().Replace(",", "."));
-
-                            writer.WriteLine(psRA);
-
-                            if (point.IsSyncPoint)
-                                writer.WriteLine(psDEC);
-                            else
-                                writer.WriteLine(point.MountReportedDeclination.ToString().Replace(",", "."));
-
-                            writer.WriteLine(psDEC);
-
-                            writer.WriteLine(point.MountReportedSideOfPier == PierSide.pierEast ? "\"1\"" : "\"-1\"");
-                            writer.WriteLine("**************************");
+                            text = point.IsSyncPoint
+                                ? $"\"Number {points} sync point\""
+                                : $"\"Number {points} no pointing correction\"";
                         }
+                        else
+                        {
+                            text = $"\"Number {points}\"";
+                        }
+
+                        points++;
+
+                        // MountReportedRightAscension / MountReportedDeclination are already converted to J2000 during capture.
+
+                        writer.WriteLine(text);
+                        writer.WriteLine($"\"'{point.CaptureTime:yyyy-MM-ddTHH:mm:ss.ff}'\"");
+                        writer.WriteLine($"\"{point.CaptureTime:mm:ss.ff}\"");
+
+                        writer.WriteLine($"\"{profileService.ActiveProfile.PlateSolveSettings.ExposureTime}\"");
+
+                        string psRA = point.PlateSolvedRightAscension.ToString().Replace(",", ".");
+                        string psDEC = point.PlateSolvedDeclination.ToString().Replace(",", ".");
+
+                        if (point.IsSyncPoint)
+                            writer.WriteLine(psRA);
+                        else
+                            writer.WriteLine(point.MountReportedRightAscension.ToString().Replace(",", "."));
+
+                        writer.WriteLine(psRA);
+
+                        if (point.IsSyncPoint)
+                            writer.WriteLine(psDEC);
+                        else
+                            writer.WriteLine(point.MountReportedDeclination.ToString().Replace(",", "."));
+
+                        writer.WriteLine(psDEC);
+
+                        writer.WriteLine(point.MountReportedSideOfPier == PierSide.pierEast ? "\"1\"" : "\"-1\"");
+                        writer.WriteLine("**************************");
                     }
                 }
 
@@ -839,8 +842,41 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 nextPointCoordinates = nextPointCoordinatesAdjusted;
             }
 
+            if (state.Options.ModelPointGenerationType != ModelPointGenerationTypeEnum.SiderealPath)
+            {
+                TryForceNextPierSide(point, nextPointCoordinates);
+            }
+            else
+            {
+                Logger.Debug("Skipping forced pier-side for SiderealPath point");
+            }
+
             Logger.Info($"Slewing to {nextPointCoordinates} for point at Alt={point.Altitude:0.###}, Az={point.Azimuth:0.###}");
             return await this.telescopeMediator.SlewToCoordinatesAsync(nextPointCoordinates, ct);
+        }
+
+        private void TryForceNextPierSide(ModelPoint point, Coordinates targetCoordinates)
+        {
+            if (!forceNextPierSideAvailable)
+            {
+                return;
+            }
+
+            var desiredPierSide = point.DesiredPierSide;
+            if (desiredPierSide == PierSide.pierUnknown)
+            {
+                var longitudeDegrees = profileService.ActiveProfile.AstrometrySettings.Longitude;
+                var lst = AstroUtil.GetLocalSiderealTimeNow(longitudeDegrees);
+                desiredPierSide = MeridianFlip.ExpectedPierSide(targetCoordinates, Angle.ByHours(lst));
+                point.DesiredPierSide = desiredPierSide;
+            }
+
+            var forceNextSideResult = mount.ForceNextPierSide(desiredPierSide);
+            if (!forceNextSideResult)
+            {
+                forceNextPierSideAvailable = false;
+                Logger.Warning("Disabling forced pier-side slews for this build because ASCOM action forcenextpierside failed");
+            }
         }
 
         private async Task ProcessPoints(
@@ -1251,12 +1287,61 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             var ordered = new List<ModelPoint>(points.Count);
             foreach (var band in groupedBands)
             {
-                var bandPath = OrderBandPointsFromFarEast(band.Points);
+                var bandPath = OrderBandPointsAsaSidePasses(band.Points);
 
                 ordered.AddRange(bandPath);
             }
 
             Logger.Info($"Using ASA AutoGrid band ordering. Ordered {ordered.Count} points across {groupedBands.Count} bands.");
+            return ordered;
+        }
+
+        private static PierSide GetAsaOrderingPierSide(ModelPoint point)
+        {
+            if (point.DesiredPierSide != PierSide.pierUnknown)
+            {
+                return point.DesiredPierSide;
+            }
+
+            if (point.ExpectedDomeSideOfPier != PierSide.pierUnknown)
+            {
+                return point.ExpectedDomeSideOfPier;
+            }
+
+            return point.Azimuth <= 180.0d ? PierSide.pierEast : PierSide.pierWest;
+        }
+
+        private static List<ModelPoint> OrderBandPointsAsaSidePasses(List<ModelPoint> bandPoints)
+        {
+            if (bandPoints == null || bandPoints.Count <= 1)
+            {
+                return bandPoints ?? new List<ModelPoint>();
+            }
+
+            var eastPoints = OrderBandPointsFromFarEast(
+                bandPoints
+                    .Where(point => GetAsaOrderingPierSide(point) == PierSide.pierEast)
+                    .ToList());
+
+            var westPoints = OrderBandPointsFromFarEast(
+                bandPoints
+                    .Where(point => GetAsaOrderingPierSide(point) == PierSide.pierWest)
+                    .ToList());
+
+            var unknownSidePoints = bandPoints
+                .Where(point =>
+                {
+                    var side = GetAsaOrderingPierSide(point);
+                    return side != PierSide.pierEast && side != PierSide.pierWest;
+                })
+                .ToList();
+
+            unknownSidePoints = OrderBandPointsFromFarEast(unknownSidePoints);
+
+            var ordered = new List<ModelPoint>(bandPoints.Count);
+            ordered.AddRange(eastPoints);
+            ordered.AddRange(westPoints);
+            ordered.AddRange(unknownSidePoints);
             return ordered;
         }
 

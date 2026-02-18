@@ -101,4 +101,13 @@
   <PropertyGroup>
     <PostBuildEvent>call postbuild.bat</PostBuildEvent>
   </PropertyGroup>
+
+  <Target Name="EnsureDebugOutputMirror" AfterTargets="Build" Condition="'$(Configuration)' == 'Debug'">
+    <PropertyGroup>
+      <DebugOutputMirrorDir>$(MSBuildProjectDirectory)\bin\Debug\net8.0-windows\</DebugOutputMirrorDir>
+    </PropertyGroup>
+    <MakeDir Directories="$(DebugOutputMirrorDir)" />
+    <Copy SourceFiles="$(TargetPath)" DestinationFiles="$(DebugOutputMirrorDir)$(TargetFileName)" SkipUnchangedFiles="true" Condition="Exists('$(TargetPath)')" />
+    <Copy SourceFiles="$(TargetDir)$(AssemblyName).pdb" DestinationFiles="$(DebugOutputMirrorDir)$(AssemblyName).pdb" SkipUnchangedFiles="true" Condition="Exists('$(TargetDir)$(AssemblyName).pdb')" />
+  </Target>
 </Project>
