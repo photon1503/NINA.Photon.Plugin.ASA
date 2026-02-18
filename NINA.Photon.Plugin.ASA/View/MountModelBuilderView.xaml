@@ -664,6 +664,7 @@
                             <RowDefinition />
                             <RowDefinition />
                             <RowDefinition />
+                              <RowDefinition />
                         </Grid.RowDefinitions>
                         <StackPanel
                             Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3"
@@ -1721,7 +1722,7 @@
                         <oxy:AngleAxis
                                 Key="AzimuthAxis"
                                 AxislineColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}"
-                                EndAngle="90"
+                                EndAngle="450"
                                 EndPosition="1"
                                 IntervalLength="15"
                             LabelFormatter="{Binding PolarAzimuthLabelFormatter}"
@@ -1732,7 +1733,7 @@
                                 MajorStep="30"
                                 Maximum="360"
                                 Minimum="0"
-                                StartAngle="450"
+                                StartAngle="90"
                                 StartPosition="0"
                                 TextColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}"
                                 TicklineColor="{Binding Path=Color, Source={StaticResource SecondaryBrush}}" />
