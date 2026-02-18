@@ -654,6 +654,8 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             var dePoints = new List<DataPoint>();
             double maxRaErrorArcsec = 0.0;
             double maxDeErrorArcsec = 0.0;
+            double? raBaselineArcsec = null;
+            double? deBaselineArcsec = null;
 
             for (int pointIndex = 0; pointIndex < pointsWithSolveData.Count; pointIndex++)
             {
@@ -669,6 +671,22 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                     360.0);
                 var deErrorArcsec = deDifferenceDegrees * 3600.0;
 
+                if (UseRelativeMlptErrors)
+                {
+                    if (!raBaselineArcsec.HasValue)
+                    {
+                        raBaselineArcsec = raErrorArcsec;
+                    }
+
+                    if (!deBaselineArcsec.HasValue)
+                    {
+                        deBaselineArcsec = deErrorArcsec;
+                    }
+
+                    raErrorArcsec -= raBaselineArcsec.Value;
+                    deErrorArcsec -= deBaselineArcsec.Value;
+                }
+
                 var imageNumber = pointIndex + 1;
                 raPoints.Add(new DataPoint(imageNumber, raErrorArcsec));
                 dePoints.Add(new DataPoint(imageNumber, deErrorArcsec));
@@ -683,8 +701,19 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             MaxMlptRaErrorArcsec = maxRaErrorArcsec;
             MaxMlptDeErrorArcsec = maxDeErrorArcsec;
 
-            MlptRaErrorAxisLimitArcsec = Math.Max(1.0, Math.Ceiling(maxRaErrorArcsec));
-            MlptDeErrorAxisLimitArcsec = Math.Max(1.0, Math.Ceiling(maxDeErrorArcsec));
+            var raAxisLimitArcsec = Math.Max(1.0, Math.Ceiling(maxRaErrorArcsec));
+            var deAxisLimitArcsec = Math.Max(1.0, Math.Ceiling(maxDeErrorArcsec));
+            if (UseUnifiedMlptErrorScale)
+            {
+                var sharedAxisLimitArcsec = Math.Max(raAxisLimitArcsec, deAxisLimitArcsec);
+                MlptRaErrorAxisLimitArcsec = sharedAxisLimitArcsec;
+                MlptDeErrorAxisLimitArcsec = sharedAxisLimitArcsec;
+            }
+            else
+            {
+                MlptRaErrorAxisLimitArcsec = raAxisLimitArcsec;
+                MlptDeErrorAxisLimitArcsec = deAxisLimitArcsec;
+            }
         }
 
         private void RefreshMlptPlannedImageCount()
@@ -2063,6 +2092,38 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                     showDisplayPath = value;
                     RaisePropertyChanged();
                     RefreshDisplayPathPoints();
+                }
+            }
+        }
+
+        private bool useRelativeMlptErrors;
+
+        public bool UseRelativeMlptErrors
+        {
+            get => useRelativeMlptErrors;
+            set
+            {
+                if (useRelativeMlptErrors != value)
+                {
+                    useRelativeMlptErrors = value;
+                    RaisePropertyChanged();
+                    RefreshMlptErrorCharts();
+                }
+            }
+        }
+
+        private bool useUnifiedMlptErrorScale;
+
+        public bool UseUnifiedMlptErrorScale
+        {
+            get => useUnifiedMlptErrorScale;
+            set
+            {
+                if (useUnifiedMlptErrorScale != value)
+                {
+                    useUnifiedMlptErrorScale = value;
+                    RaisePropertyChanged();
+                    RefreshMlptErrorCharts();
                 }
             }
         }

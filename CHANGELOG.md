@@ -3,26 +3,36 @@
 
 ## 3.2.7.x
 
+### POX / Export
+
+- Fixed POX numbering text for non-legacy DDM output to increment correctly per exported point.
+
+### MLPT Diagnostics Charts
+
+- Added MLPT diagnostics chart option: **Relative** mode (anchors first solved point at 0 and shows subsequent RA/DE offsets relative to that baseline).
+- Added MLPT diagnostics chart option: **Match Y-axis scale** (forces RA/DE charts to use the same Y-axis limit based on the larger error range).
+
+### AutoGrid / Pathing / Pier Side
+
 - AutoGrid now generates dual-side coverage around the meridian (ASA-style overlap), storing a desired pier side per point and duplicating overlap points for both east/west pier solutions.
-- Dual-side overlap points are now generated via separate east/west sampling in the meridian overlap zone (ASA-style), improving distribution instead of cloning identical coordinates.
-- Added east/west pier-side coloring for generated points in both model builder charts.
+- Dual-side overlap points are generated via separate east/west sampling in the meridian overlap zone (ASA-style), improving distribution.
+- Improved AutoGrid near-horizon coverage for sparse rings by anchoring candidate placement to the meridian and selecting a horizon-aware phase with best visible distribution.
+- Added ASA pier-side aware slew support in model building by calling ASCOM action `forcenextpierside` before slews (`0` east, `1` west, `-1` auto/reset), with automatic fallback if unsupported by the active driver.
 - Model slews now enforce each point's stored desired pier side via ASCOM `forcenextpierside` before slewing.
 
-- Added ASA pier-side aware slew support in model building by calling ASCOM action `forcenextpierside` before slews (`0` east, `1` west, `-1` auto/reset), with automatic fallback if unsupported by the active driver.
+### Chart UI
 
-- Improved AutoGrid near-horizon coverage for sparse rings by anchoring candidate placement to the meridian and selecting a horizon-aware phase with best visible distribution.
-
+- Added east/west pier-side coloring for generated points in both model builder charts.
 - Added celestial pole target marker (**NCP/SCP**) to both charts with hemisphere-aware label.
 - Added chart option to show/hide celestial pole marker.
-- Fixed celestial pole marker visibility toggle in charts by using transparent color binding when hidden.
 - Updated mount position marker styling to a bright orange target-style marker (circle + crosshair) in both charts.
-
-- Added new global option: minimum distance to horizon (degrees).
-- Applied global minimum horizon distance consistently in point-state visibility checks.
-- Surfaced minimum horizon distance directly in chart options.
-
 - Added chart option to show/hide meridian limits in charts.
 - Made meridian limits chart visibility option persistent in plugin settings.
+
+### Horizon Constraint
+
+- Added a global **Minimum distance to horizon (°)** setting to keep generated points safely above the horizon.
+- Applied this limit consistently in point visibility/state checks and exposed it directly in chart options.
 
 
 ## 3.2.7.1
