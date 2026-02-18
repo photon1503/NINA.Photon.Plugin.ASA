@@ -12,6 +12,12 @@
 - Added MLPT diagnostics chart option: **Relative** mode (anchors first solved point at 0 and shows subsequent RA/DE offsets relative to that baseline).
 - Added MLPT diagnostics chart option: **Match Y-axis scale** (forces RA/DE charts to use the same Y-axis limit based on the larger error range).
 
+### MLPT Offset / Path Start
+
+- Added a new MLPT **Offset** setting (signed RA-minutes) in the model builder MLPT options to shift the generated path start point (`-` = RA-, `+` = RA+ / future).
+- Added the same MLPT path offset setting to global plugin options and persisted it as a shared value.
+- Applied the shared MLPT path offset consistently across model builder generation, sequence item `MLPT Start`, and MLPT triggers (`MLPT Restart If Exceeds`, `MLPT After Time`, `MLPT After Flip`) for aligned calculations and previews.
+
 ### AutoGrid / Pathing / Pier Side
 
 - AutoGrid now generates ASA-style dual-side meridian overlap using separate east/west sampling, duplicates overlap points for both pier solutions, and stores a desired pier side per point.
@@ -26,6 +32,7 @@
 - Updated mount position marker styling to a bright orange target-style marker (circle + crosshair) in both charts.
 - Added chart option to show/hide meridian limits in charts.
 - Made meridian limits chart visibility option persistent in plugin settings.
+- Flipped the polar chart azimuth orientation visually so **E** appears on the left and **W** on the right (visual/UI change only; backend logic unchanged).
 
 ### Horizon Constraint
 

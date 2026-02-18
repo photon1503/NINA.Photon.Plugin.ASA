@@ -53,6 +53,8 @@ namespace NINA.Photon.Plugin.ASA.Interfaces
 
         int SiderealTrackEndOffsetMinutes { get; set; }
 
+        int SiderealTrackPathOffsetMinutes { get; set; }
+
         double SiderealTrackRADeltaDegrees { get; set; }
 
         int DomeShutterWidth_mm { get; set; }

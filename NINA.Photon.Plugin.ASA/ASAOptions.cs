@@ -52,6 +52,7 @@ namespace NINA.Photon.Plugin.ASA
             autoGridDesiredPointCount = optionsAccessor.GetValueInt32("AutoGridDesiredPointCount", 195);
             siderealTrackStartOffsetMinutes = optionsAccessor.GetValueInt32("SiderealTrackStartOffsetMinutes", 0);
             siderealTrackEndOffsetMinutes = optionsAccessor.GetValueInt32("SiderealTrackEndOffsetMinutes", 0);
+            siderealTrackPathOffsetMinutes = optionsAccessor.GetValueInt32("SiderealTrackPathOffsetMinutes", 0);
             siderealTrackRADeltaDegrees = optionsAccessor.GetValueDouble("SiderealTrackRADeltaDegrees", 1.5d);
             domeShutterWidth_mm = optionsAccessor.GetValueInt32("DomeShutterWidth_mm", 0);
             minimizeDomeMovementEnabled = optionsAccessor.GetValueBoolean("MinimizeDomeMovementEnabled", true);
@@ -117,6 +118,7 @@ namespace NINA.Photon.Plugin.ASA
             AutoGridDesiredPointCount = 195;
             SiderealTrackStartOffsetMinutes = 0;
             SiderealTrackEndOffsetMinutes = 0;
+            SiderealTrackPathOffsetMinutes = 0;
             SiderealTrackRADeltaDegrees = 1.5d;
             DomeShutterWidth_mm = 0;
             MinimizeDomeMovementEnabled = true;
@@ -363,6 +365,22 @@ namespace NINA.Photon.Plugin.ASA
                 {
                     siderealTrackEndOffsetMinutes = value;
                     optionsAccessor.SetValueInt32("SiderealTrackEndOffsetMinutes", siderealTrackEndOffsetMinutes);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private int siderealTrackPathOffsetMinutes;
+
+        public int SiderealTrackPathOffsetMinutes
+        {
+            get => siderealTrackPathOffsetMinutes;
+            set
+            {
+                if (siderealTrackPathOffsetMinutes != value)
+                {
+                    siderealTrackPathOffsetMinutes = value;
+                    optionsAccessor.SetValueInt32("SiderealTrackPathOffsetMinutes", siderealTrackPathOffsetMinutes);
                     RaisePropertyChanged();
                 }
             }

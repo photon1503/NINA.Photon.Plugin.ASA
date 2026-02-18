@@ -665,6 +665,7 @@
                             <RowDefinition />
                             <RowDefinition />
                               <RowDefinition />
+                            <RowDefinition />
                         </Grid.RowDefinitions>
                         <StackPanel
                             Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="3"
@@ -896,10 +897,27 @@
                             Grid.Row="6" Grid.Column="0"
                             HorizontalAlignment="Left"
                             VerticalAlignment="Center"
+                            Text="Offset"
+                            ToolTip="{StaticResource SiderealTrackPathOffsetMinutes_Tooltip}" />
+                        <ninactrl:UnitTextBox
+                            Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="2"
+                            MinWidth="80"
+                            Margin="10,5,0,0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Unit="RA-minutes"
+                            ToolTip="{StaticResource SiderealTrackPathOffsetMinutes_Tooltip}">
+                            <Binding Path="SiderealTrackPathOffsetMinutes" UpdateSourceTrigger="LostFocus" />
+                        </ninactrl:UnitTextBox>
+
+                        <TextBlock
+                            Grid.Row="7" Grid.Column="0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
                             Text="Relative"
                             ToolTip="When enabled, uses the first solved point as zero reference for MLPT error charts" />
                         <CheckBox
-                            Grid.Row="6" Grid.Column="1"
+                            Grid.Row="7" Grid.Column="1"
                             Margin="10,0,0,0"
                             HorizontalAlignment="Left"
                             VerticalAlignment="Center"
@@ -907,13 +925,13 @@
                             ToolTip="When enabled, uses the first solved point as zero reference for MLPT error charts" />
 
                         <TextBlock
-                            Grid.Row="7" Grid.Column="0"
+                            Grid.Row="8" Grid.Column="0"
                             HorizontalAlignment="Left"
                             VerticalAlignment="Center"
                             Text="Match Y-axis scale"
                             ToolTip="When enabled, both MLPT error charts use the same Y-axis limit based on the larger max error" />
                         <CheckBox
-                            Grid.Row="7" Grid.Column="1"
+                            Grid.Row="8" Grid.Column="1"
                             Margin="10,0,0,0"
                             HorizontalAlignment="Left"
                             VerticalAlignment="Center"

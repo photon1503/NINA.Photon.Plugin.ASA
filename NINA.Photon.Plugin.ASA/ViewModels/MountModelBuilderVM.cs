@@ -755,6 +755,11 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 RaisePropertyChanged(nameof(MinDistanceToHorizonDegrees));
             }
 
+            if (e.PropertyName == nameof(modelBuilderOptions.SiderealTrackPathOffsetMinutes))
+            {
+                RaisePropertyChanged(nameof(SiderealTrackPathOffsetMinutes));
+            }
+
             if (e.PropertyName == nameof(modelBuilderOptions.ShowCardinalLabels))
             {
                 RaisePropertyChanged(nameof(ShowCardinalLabels));
@@ -1327,12 +1332,14 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
 
             startTime += TimeSpan.FromMinutes(SiderealTrackStartOffsetMinutes);
             endTime += TimeSpan.FromMinutes(SiderealTrackEndOffsetMinutes);
+            startTime += TimeSpan.FromMinutes(SiderealTrackPathOffsetMinutes);
+            endTime += TimeSpan.FromMinutes(SiderealTrackPathOffsetMinutes);
             if (endTime < startTime)
             {
                 endTime += TimeSpan.FromDays(1);
             }
 
-            Logger.Info($"Generating MLTP path. Coordinates={SiderealPathObjectCoordinates.Coordinates}, RADelta={SiderealTrackRADeltaDegrees}, StartTime={startTime}, EndTime={endTime}");
+            Logger.Info($"Generating MLTP path. Coordinates={SiderealPathObjectCoordinates.Coordinates}, RADelta={SiderealTrackRADeltaDegrees}, StartTime={startTime}, EndTime={endTime}, PathOffsetMinutes={SiderealTrackPathOffsetMinutes}");
             try
             {
                 var localModelPoints = this.modelPointGenerator.GenerateSiderealPath(SiderealPathObjectCoordinates.Coordinates, Angle.ByDegree(SiderealTrackRADeltaDegrees), startTime, endTime, CustomHorizon);
@@ -2494,6 +2501,19 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 if (this.modelBuilderOptions.SiderealTrackEndOffsetMinutes != value)
                 {
                     this.modelBuilderOptions.SiderealTrackEndOffsetMinutes = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        public int SiderealTrackPathOffsetMinutes
+        {
+            get => this.modelBuilderOptions.SiderealTrackPathOffsetMinutes;
+            set
+            {
+                if (this.modelBuilderOptions.SiderealTrackPathOffsetMinutes != value)
+                {
+                    this.modelBuilderOptions.SiderealTrackPathOffsetMinutes = value;
                     RaisePropertyChanged();
                 }
             }

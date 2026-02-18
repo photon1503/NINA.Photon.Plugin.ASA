@@ -637,11 +637,14 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             }
         }
 
+        private int EffectiveSiderealTrackPathOffsetMinutes => options?.SiderealTrackPathOffsetMinutes ?? 0;
+
         private void UpdateStartTime()
         {
             if (SelectedSiderealPathStartDateTimeProvider != null)
             {
-                var t = SelectedSiderealPathStartDateTimeProvider.GetDateTime(this) + TimeSpan.FromMinutes(SiderealTrackStartOffsetMinutes);
+                var t = SelectedSiderealPathStartDateTimeProvider.GetDateTime(this)
+                    + TimeSpan.FromMinutes(SiderealTrackStartOffsetMinutes + EffectiveSiderealTrackPathOffsetMinutes);
                 StartHours = t.Hour;
                 StartMinutes = t.Minute;
                 StartSeconds = t.Second;
@@ -654,7 +657,8 @@ namespace NINA.Photon.Plugin.ASA.MLTP
         {
             if (SelectedSiderealPathEndDateTimeProvider != null)
             {
-                var t = SelectedSiderealPathEndDateTimeProvider.GetDateTime(this) + TimeSpan.FromMinutes(SiderealTrackEndOffsetMinutes);
+                var t = SelectedSiderealPathEndDateTimeProvider.GetDateTime(this)
+                    + TimeSpan.FromMinutes(SiderealTrackEndOffsetMinutes + EffectiveSiderealTrackPathOffsetMinutes);
                 EndHours = t.Hour;
                 EndMinutes = t.Minute;
                 EndSeconds = t.Second;
@@ -798,7 +802,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
 
         public override string ToString()
         {
-            return $"Category: {Category}, Item: {nameof(MLPTafterTime)}, Coordinates: {Coordinates?.Coordinates}, Inherited: {Inherited}, RADelta: {SiderealTrackRADeltaDegrees}, Start: {SelectedSiderealPathStartDateTimeProvider?.Name} ({SiderealTrackStartOffsetMinutes} minutes), Start: {SelectedSiderealPathEndDateTimeProvider?.Name} ({SiderealTrackEndOffsetMinutes} minutes), NumRetries: {BuilderNumRetries}, MaxFailedPoints: {MaxFailedPoints}, MaxPointRMS: {MaxPointRMS}";
+            return $"Category: {Category}, Item: {nameof(MLPTafterTime)}, Coordinates: {Coordinates?.Coordinates}, Inherited: {Inherited}, RADelta: {SiderealTrackRADeltaDegrees}, PathOffset: {EffectiveSiderealTrackPathOffsetMinutes} minutes, Start: {SelectedSiderealPathStartDateTimeProvider?.Name} ({SiderealTrackStartOffsetMinutes} minutes), Start: {SelectedSiderealPathEndDateTimeProvider?.Name} ({SiderealTrackEndOffsetMinutes} minutes), NumRetries: {BuilderNumRetries}, MaxFailedPoints: {MaxFailedPoints}, MaxPointRMS: {MaxPointRMS}";
         }
 
         public InputTarget DSOProxyTarget()

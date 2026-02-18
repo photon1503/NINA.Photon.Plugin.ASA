@@ -34,6 +34,7 @@
     <TextBlock x:Key="SiderealTrackEndTime_Tooltip" Text="The object's location at this time is used as the last point. Points are added along the way over the RA Delta interval" />
     <TextBlock x:Key="SiderealTrackStartTimeOffset_Tooltip" Text="Offset, in minutes, relative to the selected time provider to start point generation for the target object" />
     <TextBlock x:Key="SiderealTrackEndTimeOffset_Tooltip" Text="Offset, in minutes, relative to the selected time provider to end point generation for the target object" />
+    <TextBlock x:Key="SiderealTrackPathOffsetMinutes_Tooltip" Text="Offset, in RA-minutes, used to shift the MLPT path start point. Negative values start in RA-, positive values start in RA+ (future)." />
     <TextBlock x:Key="SiderealTrackRADeltaDegrees_Tooltip" Text="Interval, in degrees, to place points along the target's MLTP track. If this is too small, an interval is chosen that will produce 90 points" />
     <TextBlock x:Key="BuilderRetries_Tooltip" Text="How many time to retry model building when individual points fail. This will only reprocess failed points by re-using previous successful solves" />
     <TextBlock x:Key="MaxFailedPoints_Tooltip" Text="After a build iteration, another iteration isn't attempted if there are more than this many failed points" />
@@ -57,6 +58,7 @@
                 <RowDefinition />
                 <!--  Hidden until this works  -->
                 <RowDefinition Height="0" />
+                <RowDefinition />
                 <RowDefinition />
                 <RowDefinition />
                 <RowDefinition />
@@ -516,6 +518,23 @@
                         UseLayoutRounding="True" />
                 </Button>
             </Grid>
+
+            <TextBlock
+                Grid.Row="20"
+                Grid.Column="0"
+                VerticalAlignment="Center"
+                Text="MLPT Path Offset"
+                ToolTip="{StaticResource SiderealTrackPathOffsetMinutes_Tooltip}" />
+            <ninactrl:UnitTextBox
+                Grid.Row="20"
+                Grid.Column="1"
+                MinWidth="80"
+                Margin="5,5,0,0"
+                HorizontalAlignment="Left"
+                ToolTip="{StaticResource SiderealTrackPathOffsetMinutes_Tooltip}"
+                Unit="RA-minutes">
+                <Binding Path="SiderealTrackPathOffsetMinutes" UpdateSourceTrigger="LostFocus" />
+            </ninactrl:UnitTextBox>
         </Grid>
     </DataTemplate>
 </ResourceDictionary>
