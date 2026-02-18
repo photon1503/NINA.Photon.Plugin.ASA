@@ -665,56 +665,57 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 using (StreamWriter writer = new StreamWriter(filePath))
                 {
                     int points = 1;
-                    // get number of validpoints with modelpointsate == AddedToModel
+                    var exportedPoints = state.ValidPoints
+                        .Where(p =>
+                            p.ModelPointState == ModelPointStateEnum.AddedToModel &&
+                            !double.IsNaN(p.PlateSolvedRightAscension) && !double.IsInfinity(p.PlateSolvedRightAscension) &&
+                            !double.IsNaN(p.PlateSolvedDeclination) && !double.IsInfinity(p.PlateSolvedDeclination))
+                        .ToList();
 
-                    int numPoints = state.ValidPoints.Count(p => p.ModelPointState == ModelPointStateEnum.AddedToModel);
-                    writer.WriteLine(numPoints); // Total Number of images
-                    foreach (var point in state.ValidPoints)
+                    writer.WriteLine(exportedPoints.Count); // Total Number of images
+                    foreach (var point in exportedPoints)
                     {
-                        if (point.ModelPointState == ModelPointStateEnum.AddedToModel)
+                        string text;
+                        if (!state.Options.IsLegacyDDM)
                         {
-                            string text = $"\"Number {points++}\"";
-                            if (!state.Options.IsLegacyDDM)
-                                if (point.IsSyncPoint)
-                                    text = $"\"Number {points++} sync point\"";
-                                else
-                                    text = $"\"Number {points++} no pointing correction\"";
-
-                            /* convert MountReportedRightAscension to J2000 */
-
-                            /*
-                            Coordinates mnt = new Coordinates(point.MountReportedRightAscension, point.MountReportedDeclination, Epoch.JNOW, Coordinates.RAType.Hours);
-                            mnt = mnt.Transform(Epoch.J2000);
-                            point.MountReportedRightAscension = mnt.RA;
-                            point.MountReportedDeclination = mnt.Dec;
-                            */
-
-                            writer.WriteLine(text);
-                            writer.WriteLine($"\"'{point.CaptureTime:yyyy-MM-ddTHH:mm:ss.ff}'\"");
-                            writer.WriteLine($"\"{point.CaptureTime:mm:ss.ff}\"");
-
-                            writer.WriteLine($"\"{profileService.ActiveProfile.PlateSolveSettings.ExposureTime}\"");
-
-                            string psRA = point.PlateSolvedRightAscension.ToString().Replace(",", ".");
-                            string psDEC = point.PlateSolvedDeclination.ToString().Replace(",", ".");
-
-                            if (point.IsSyncPoint)
-                                writer.WriteLine(psRA);
-                            else
-                                writer.WriteLine(point.MountReportedRightAscension.ToString().Replace(",", "."));
-
-                            writer.WriteLine(psRA);
-
-                            if (point.IsSyncPoint)
-                                writer.WriteLine(psDEC);
-                            else
-                                writer.WriteLine(point.MountReportedDeclination.ToString().Replace(",", "."));
-
-                            writer.WriteLine(psDEC);
-
-                            writer.WriteLine(point.MountReportedSideOfPier == PierSide.pierEast ? "\"1\"" : "\"-1\"");
-                            writer.WriteLine("**************************");
+                            text = point.IsSyncPoint
+                                ? $"\"Number {points} sync point\""
+                                : $"\"Number {points} no pointing correction\"";
                         }
+                        else
+                        {
+                            text = $"\"Number {points}\"";
+                        }
+
+                        points++;
+
+                        // MountReportedRightAscension / MountReportedDeclination are already converted to J2000 during capture.
+
+                        writer.WriteLine(text);
+                        writer.WriteLine($"\"'{point.CaptureTime:yyyy-MM-ddTHH:mm:ss.ff}'\"");
+                        writer.WriteLine($"\"{point.CaptureTime:mm:ss.ff}\"");
+
+                        writer.WriteLine($"\"{profileService.ActiveProfile.PlateSolveSettings.ExposureTime}\"");
+
+                        string psRA = point.PlateSolvedRightAscension.ToString().Replace(",", ".");
+                        string psDEC = point.PlateSolvedDeclination.ToString().Replace(",", ".");
+
+                        if (point.IsSyncPoint)
+                            writer.WriteLine(psRA);
+                        else
+                            writer.WriteLine(point.MountReportedRightAscension.ToString().Replace(",", "."));
+
+                        writer.WriteLine(psRA);
+
+                        if (point.IsSyncPoint)
+                            writer.WriteLine(psDEC);
+                        else
+                            writer.WriteLine(point.MountReportedDeclination.ToString().Replace(",", "."));
+
+                        writer.WriteLine(psDEC);
+
+                        writer.WriteLine(point.MountReportedSideOfPier == PierSide.pierEast ? "\"1\"" : "\"-1\"");
+                        writer.WriteLine("**************************");
                     }
                 }
 
