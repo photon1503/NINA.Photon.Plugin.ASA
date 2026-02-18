@@ -842,7 +842,14 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 nextPointCoordinates = nextPointCoordinatesAdjusted;
             }
 
-            TryForceNextPierSide(point, nextPointCoordinates);
+            if (state.Options.ModelPointGenerationType != ModelPointGenerationTypeEnum.SiderealPath)
+            {
+                TryForceNextPierSide(point, nextPointCoordinates);
+            }
+            else
+            {
+                Logger.Debug("Skipping forced pier-side for SiderealPath point");
+            }
 
             Logger.Info($"Slewing to {nextPointCoordinates} for point at Alt={point.Altitude:0.###}, Az={point.Azimuth:0.###}");
             return await this.telescopeMediator.SlewToCoordinatesAsync(nextPointCoordinates, ct);
