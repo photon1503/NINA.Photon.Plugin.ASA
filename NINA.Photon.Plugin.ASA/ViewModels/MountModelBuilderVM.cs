@@ -2096,7 +2096,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             }
         }
 
-        private bool useRelativeMlptErrors;
+        private bool useRelativeMlptErrors = true;
 
         public bool UseRelativeMlptErrors
         {
@@ -2112,7 +2112,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             }
         }
 
-        private bool useUnifiedMlptErrorScale;
+        private bool useUnifiedMlptErrorScale = true;
 
         public bool UseUnifiedMlptErrorScale
         {

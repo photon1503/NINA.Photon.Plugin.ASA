@@ -1,7 +1,7 @@
 
 # Changelog
 
-## 3.2.7.x
+## 3.2.8.x (unreleased)
 
 ### POX / Export
 
@@ -14,11 +14,9 @@
 
 ### AutoGrid / Pathing / Pier Side
 
-- AutoGrid now generates dual-side coverage around the meridian (ASA-style overlap), storing a desired pier side per point and duplicating overlap points for both east/west pier solutions.
-- Dual-side overlap points are generated via separate east/west sampling in the meridian overlap zone (ASA-style), improving distribution.
-- Improved AutoGrid near-horizon coverage for sparse rings by anchoring candidate placement to the meridian and selecting a horizon-aware phase with best visible distribution.
-- Added ASA pier-side aware slew support in model building by calling ASCOM action `forcenextpierside` before slews (`0` east, `1` west, `-1` auto/reset), with automatic fallback if unsupported by the active driver.
-- Model slews now enforce each point's stored desired pier side via ASCOM `forcenextpierside` before slewing.
+- AutoGrid now generates ASA-style dual-side meridian overlap using separate east/west sampling, duplicates overlap points for both pier solutions, and stores a desired pier side per point.
+- Improved AutoGrid near-horizon coverage for sparse rings by anchoring candidate placement to the meridian and selecting a horizon-aware phase with the best visible distribution.
+- Model building now enforces each point’s desired pier side by calling ASA specific ASCOM action `forcenextpierside` before slews , with automatic fallback if unsupported by the active driver.
 
 ### Chart UI
 
@@ -34,6 +32,8 @@
 - Added a global **Minimum distance to horizon (°)** setting to keep generated points safely above the horizon.
 - Applied this limit consistently in point visibility/state checks and exposed it directly in chart options.
 
+## 3.2.7.2
+ - Fixed minimum required NINA Version to 3.2.0.9001
 
 ## 3.2.7.1
 
@@ -41,14 +41,11 @@
   
 ## 3.2.7.0
 
-- Added **AutoGrid** as a first-class generator option and reordered generator list to: AutoGrid, MLPT, Golden Spiral.
-- Added selectable AutoGrid path ordering modes (legacy sweep vs ASA-style band traversal).
-- Added AutoGrid path preview toggle (**Show path**) with dotted path rendering in both main and radial/top-view plots.
-- Added AutoGrid input mode UX refinements:
+- Added **AutoGrid** as a first-class generator and reordered the generator list to: AutoGrid, MLPT, Golden Spiral.
+- Added AutoGrid pathing options, including selectable ordering modes (legacy sweep vs ASA-style band traversal) and a **Show path** toggle with dotted rendering in both main and radial/top-view plots.
 
-
-- Added MLPT diagnostics charts for RA/DE error progression (Image # vs arcsec).
-- Selecting MLPT generator now auto-imports current scope RA/Dec coordinates (same behavior as the scope import button).
+- Added MLPT diagnostics charts for RA/DE error progression (Image # vs arcsec),
+- Selecting the MLPT generator now auto-imports current scope RA/Dec coordinates (same behavior as the scope import button).
 
 ## 3.2.6.4 (2025-11-29)
 
