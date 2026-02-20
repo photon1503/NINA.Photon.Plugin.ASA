@@ -171,20 +171,15 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             }
 
             var ringDistances = BuildPolarRingDistances(decSpacingDegrees);
-            var estimatedPoints = 0;
-            for (var i = 0; i < ringDistances.Count; i++)
-            {
-                estimatedPoints += GetAutoGridRaValuesForRing(ringDistances[i], raSpacingDegrees, i).Count;
-            }
-            if (estimatedPoints > MAX_POINTS)
-            {
-                throw new Exception($"AutoGrid spacing produces {estimatedPoints} points, exceeding ASA limit of {MAX_POINTS}. Increase spacing.");
-            }
-
-            var points = new List<ModelPoint>(estimatedPoints * 2);
+            var points = new List<ModelPoint>();
             var latitudeDegrees = profileService.ActiveProfile.AstrometrySettings.Latitude;
             var isNorthernHemisphere = latitudeDegrees >= 0.0d;
-            var overlapMeridianDegrees = GetAutoGridDualSideOverlapDegrees();
+            var meridianLimitDegrees = GetAutoGridDualSideOverlapDegrees();
+            var sideConfigurations = new[]
+            {
+                (side: PierSide.pierEast, hourAngleOffset: 0.0d),
+                (side: PierSide.pierWest, hourAngleOffset: raSpacingDegrees / 2.0d)
+            };
 
             for (var i = 0; i < ringDistances.Count; i++)
             {
@@ -193,80 +188,67 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                     ? 90.0d - ringDistanceDegrees
                     : -90.0d + ringDistanceDegrees;
 
-                var localHourAngles = GetAutoGridRaValuesForRing(ringDistanceDegrees, raSpacingDegrees, i);
-                localHourAngles = OptimizeAutoGridRingHourAnglesForHorizon(localHourAngles, latitudeDegrees, declinationDegrees, horizon);
-                var ringPoints = new List<ModelPoint>(localHourAngles.Count * 2);
-                var ringPointCount = localHourAngles.Count;
-                var ringSpacingDegrees = localHourAngles.Count > 1 ? 360.0d / localHourAngles.Count : 0.0d;
-                var overlapMarginDegrees = Math.Min(AUTO_GRID_OVERLAP_MARGIN_MAX_DEGREES, ringSpacingDegrees / 6.0d);
-                var safeOverlapMeridianDegrees = Math.Max(0.0d, overlapMeridianDegrees - overlapMarginDegrees);
-
-                for (var sequenceIndex = 0; sequenceIndex < localHourAngles.Count; sequenceIndex++)
+                var ringHourAngles = BuildUniformHourAnglesForRing(ringDistanceDegrees, raSpacingDegrees);
+                if (ringHourAngles.Count == 0)
                 {
-                    var hourAngleDegrees = localHourAngles[sequenceIndex];
-                    var primaryPoint = CreateAutoGridPointFromHourAngle(
-                        bandIndex: i,
-                        sequenceIndex: sequenceIndex,
-                        ringPointCount: ringPointCount,
-                        latitudeDegrees: latitudeDegrees,
-                        declinationDegrees: declinationDegrees,
-                        hourAngleDegrees: hourAngleDegrees,
-                        horizon: horizon);
-
-                    if (primaryPoint.ModelPointState == ModelPointStateEnum.Generated && safeOverlapMeridianDegrees > 0.0d && Math.Abs(hourAngleDegrees) <= safeOverlapMeridianDegrees)
-                    {
-                        var eastOverlapPoint = primaryPoint.Clone();
-                        eastOverlapPoint.DesiredPierSide = PierSide.pierEast;
-                        ringPoints.Add(eastOverlapPoint);
-
-                        var westHourAngle = hourAngleDegrees;
-                        if (ringSpacingDegrees > 0.0d)
-                        {
-                            var shiftedWestHourAngle = NormalizeHourAngleDegrees(hourAngleDegrees + (ringSpacingDegrees / 2.0d));
-                            if (Math.Abs(shiftedWestHourAngle) <= safeOverlapMeridianDegrees)
-                            {
-                                westHourAngle = shiftedWestHourAngle;
-                            }
-                        }
-
-                        var westOverlapPoint = CreateAutoGridPointFromHourAngle(
-                            bandIndex: i,
-                            sequenceIndex: sequenceIndex,
-                            ringPointCount: ringPointCount,
-                            latitudeDegrees: latitudeDegrees,
-                            declinationDegrees: declinationDegrees,
-                            hourAngleDegrees: westHourAngle,
-                            horizon: horizon);
-
-                        if (westOverlapPoint.ModelPointState != ModelPointStateEnum.Generated)
-                        {
-                            westOverlapPoint = primaryPoint.Clone();
-                        }
-                        westOverlapPoint.DesiredPierSide = PierSide.pierWest;
-                        ringPoints.Add(westOverlapPoint);
-
-                        continue;
-                    }
-
-                    ringPoints.Add(primaryPoint);
+                    continue;
                 }
 
-                var eastToWestOrdered = ringPoints
-                    .OrderBy(p => ClockwiseDistanceDegrees(90.0d, p.Azimuth))
-                    .ThenByDescending(p => p.Altitude)
-                    .ToList();
-
-                for (var eastToWestIndex = 0; eastToWestIndex < eastToWestOrdered.Count; eastToWestIndex++)
+                var ringPoints = new List<ModelPoint>(ringHourAngles.Count * sideConfigurations.Length);
+                foreach (var sideConfiguration in sideConfigurations)
                 {
-                    eastToWestOrdered[eastToWestIndex].AutoGridBandEastToWestOrder = eastToWestIndex;
+                    var sidePoints = new List<(ModelPoint Point, double HourAngleDegrees)>(ringHourAngles.Count);
+                    for (var sequenceIndex = 0; sequenceIndex < ringHourAngles.Count; sequenceIndex++)
+                    {
+                        var shiftedHourAngleDegrees = NormalizeHourAngleDegrees(ringHourAngles[sequenceIndex] + sideConfiguration.hourAngleOffset);
+                        var point = CreateAutoGridPointFromHourAngle(
+                            bandIndex: i,
+                            sequenceIndex: sequenceIndex,
+                            ringPointCount: 0,
+                            latitudeDegrees: latitudeDegrees,
+                            declinationDegrees: declinationDegrees,
+                            hourAngleDegrees: shiftedHourAngleDegrees,
+                            horizon: horizon,
+                            desiredPierSide: GetExpectedPierSideFromHourAngle(shiftedHourAngleDegrees));
+
+                        var inMeridianOverlapZone = meridianLimitDegrees > 0.0d && Math.Abs(shiftedHourAngleDegrees) <= meridianLimitDegrees;
+                        if (!inMeridianOverlapZone && point.DesiredPierSide != sideConfiguration.side)
+                        {
+                            continue;
+                        }
+
+                        point.DesiredPierSide = sideConfiguration.side;
+                        point.AutoGridHourAngleDegrees = shiftedHourAngleDegrees;
+
+                        if (point.ModelPointState != ModelPointStateEnum.Generated)
+                        {
+                            continue;
+                        }
+
+                        sidePoints.Add((point, shiftedHourAngleDegrees));
+                    }
+
+                    var sideEastToWestOrdered = sidePoints
+                        .OrderBy(entry => CounterClockwiseDistanceDegrees(90.0d, entry.Point.Azimuth))
+                        .ThenByDescending(entry => entry.Point.Altitude)
+                        .ToList();
+
+                    for (var sideEastToWestIndex = 0; sideEastToWestIndex < sideEastToWestOrdered.Count; sideEastToWestIndex++)
+                    {
+                        sideEastToWestOrdered[sideEastToWestIndex].Point.AutoGridBandEastToWestOrder = sideEastToWestIndex;
+                        sideEastToWestOrdered[sideEastToWestIndex].Point.AutoGridBandSequence = -1;
+                        sideEastToWestOrdered[sideEastToWestIndex].Point.AutoGridBandPointCount = 0;
+                    }
+
+                    ringPoints.AddRange(sideEastToWestOrdered.Select(entry => entry.Point));
                 }
 
                 points.AddRange(ringPoints);
-            }
 
-            if (points.Count > MAX_POINTS)
-            {
-                throw new Exception($"AutoGrid produced {points.Count} points including dual-side overlap, exceeding ASA limit of {MAX_POINTS}. Increase spacing or reduce overlap.");
+                if (points.Count > MAX_POINTS)
+                {
+                    throw new Exception($"AutoGrid produced {points.Count} points, exceeding ASA limit of {MAX_POINTS}. Increase spacing.");
+                }
             }
 
             var radialBandWidthDegrees = Math.Max(1.0d, decSpacingDegrees);
@@ -293,25 +275,44 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             return points;
         }
 
-        private static double NormalizeHours(double hours)
+        private List<double> BuildUniformHourAnglesForRing(double ringDistanceDegrees, double raSpacingDegrees)
         {
-            var normalized = hours % 24.0d;
-            if (normalized < 0.0d)
+            if (Math.Abs(ringDistanceDegrees) < 0.0001d || Math.Abs(ringDistanceDegrees - 180.0d) < 0.0001d)
             {
-                normalized += 24.0d;
+                return new List<double>();
             }
 
-            return normalized;
+            var baseHourAngleCount = Math.Max(1, (int)Math.Round(360.0d / raSpacingDegrees));
+            var ringScale = Math.Abs(Math.Sin(Angle.ByDegree(ringDistanceDegrees).Radians));
+            var hourAngleCount = Math.Max(1, (int)Math.Round(baseHourAngleCount * ringScale));
+            var hourAngleStep = 360.0d / hourAngleCount;
+            var hourAngles = new List<double>(hourAngleCount);
+            for (var i = 0; i < hourAngleCount; i++)
+            {
+                hourAngles.Add(NormalizeHourAngleDegrees(-180.0d + (i * hourAngleStep)));
+            }
+
+            return hourAngles;
         }
 
-        private static PierSide GetOppositePierSide(PierSide side)
+        private static bool IsHourAngleWithinMeridianLimit(double hourAngleDegrees, PierSide side, double meridianLimitDegrees)
         {
+            if (double.IsNaN(meridianLimitDegrees) || meridianLimitDegrees <= 0.0d)
+            {
+                return true;
+            }
+
             return side switch
             {
-                PierSide.pierEast => PierSide.pierWest,
-                PierSide.pierWest => PierSide.pierEast,
-                _ => PierSide.pierUnknown
+                PierSide.pierEast => hourAngleDegrees <= meridianLimitDegrees,
+                PierSide.pierWest => hourAngleDegrees >= -meridianLimitDegrees,
+                _ => Math.Abs(hourAngleDegrees) <= meridianLimitDegrees
             };
+        }
+
+        private static PierSide GetExpectedPierSideFromHourAngle(double hourAngleDegrees)
+        {
+            return hourAngleDegrees <= 0.0d ? PierSide.pierEast : PierSide.pierWest;
         }
 
         private double GetAutoGridDualSideOverlapDegrees()
@@ -333,15 +334,6 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             }
         }
 
-        private PierSide GetExpectedPierSideFromHourAngle(double declinationDegrees, double hourAngleDegrees)
-        {
-            var longitudeDegrees = profileService.ActiveProfile.AstrometrySettings.Longitude;
-            var lstHours = AstroUtil.GetLocalSiderealTimeNow(longitudeDegrees);
-            var rightAscensionHours = NormalizeHours(lstHours - (hourAngleDegrees / 15.0d));
-            var coordinates = new Coordinates(Angle.ByHours(rightAscensionHours), Angle.ByDegree(declinationDegrees), Epoch.JNOW);
-            return MeridianFlip.ExpectedPierSide(coordinates, Angle.ByHours(lstHours));
-        }
-
         private ModelPoint CreateAutoGridPointFromHourAngle(
             int bandIndex,
             int sequenceIndex,
@@ -349,20 +341,21 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             double latitudeDegrees,
             double declinationDegrees,
             double hourAngleDegrees,
-            CustomHorizon horizon)
+            CustomHorizon horizon,
+            PierSide desiredPierSide)
         {
             var destination = ToHorizontalFromDeclinationHourAngle(latitudeDegrees, declinationDegrees, hourAngleDegrees);
             var azimuthDegrees = AstroUtil.EuclidianModulus(720.0d - destination.azimuthDegrees, 360.0d);
             var altitudeDegrees = destination.altitudeDegrees;
             var horizonAltitude = horizon.GetAltitude(azimuthDegrees);
             var creationState = DeterminePointState(altitudeDegrees, azimuthDegrees, horizonAltitude, applyAzimuthBounds: false);
-            var desiredPierSide = GetExpectedPierSideFromHourAngle(declinationDegrees, hourAngleDegrees);
 
             return new ModelPoint(telescopeMediator)
             {
                 AutoGridBandIndex = bandIndex,
-                AutoGridBandSequence = sequenceIndex,
+                AutoGridBandSequence = -1,
                 AutoGridBandPointCount = ringPointCount,
+                AutoGridBandEastToWestOrder = -1,
                 Altitude = altitudeDegrees,
                 Azimuth = azimuthDegrees,
                 ModelPointState = creationState,
@@ -386,78 +379,84 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             var guessSpacing = Math.Sqrt(HEMISPHERE_SURFACE_DEGREES2 / desiredPointCount);
             guessSpacing = Math.Max(0.5d, Math.Min(90.0d, guessSpacing));
 
+            var lowerSpacing = 0.5d;
+            var upperSpacing = 90.0d;
             var bestSpacing = guessSpacing;
-            var maxGenerated = 0;
-            var candidates = new List<(double spacing, int generated, int difference, int stabilityPenalty)>();
+            var bestDifference = int.MaxValue;
+            var bestGenerated = 0;
 
-            void EvaluateScalar(double spacing)
+            void EvaluateSpacing(double spacing)
             {
                 if (spacing <= 0.0d || spacing > 90.0d)
                 {
                     return;
                 }
 
-                var generatedCount = EstimateGeneratedAutoGridCount(spacing, spacing, horizon);
-                if (generatedCount <= 0)
+                var generated = EstimateGeneratedAutoGridCount(spacing, spacing, horizon);
+                if (generated <= 0)
                 {
                     return;
                 }
 
-                maxGenerated = Math.Max(maxGenerated, generatedCount);
-
-                var difference = Math.Abs(generatedCount - desiredPointCount);
-                var stabilityPenalty = EstimateAutoGridCountStabilityPenalty(spacing, spacing, horizon, generatedCount);
-                candidates.Add((spacing, generatedCount, difference, stabilityPenalty));
+                var difference = Math.Abs(generated - desiredPointCount);
+                if (difference < bestDifference || (difference == bestDifference && generated >= desiredPointCount && bestGenerated < desiredPointCount))
+                {
+                    bestDifference = difference;
+                    bestGenerated = generated;
+                    bestSpacing = spacing;
+                }
             }
 
-            for (var spacing = 0.5d; spacing <= 90.0d; spacing += 0.25d)
+            for (var iteration = 0; iteration < 36; iteration++)
             {
-                EvaluateScalar(spacing);
+                var spacing = (lowerSpacing + upperSpacing) / 2.0d;
+                var generated = EstimateGeneratedAutoGridCount(spacing, spacing, horizon);
+
+                if (generated > 0)
+                {
+                    var difference = Math.Abs(generated - desiredPointCount);
+                    if (difference < bestDifference || (difference == bestDifference && generated >= desiredPointCount && bestGenerated < desiredPointCount))
+                    {
+                        bestDifference = difference;
+                        bestGenerated = generated;
+                        bestSpacing = spacing;
+                    }
+                }
+
+                if (generated == desiredPointCount)
+                {
+                    bestSpacing = spacing;
+                    break;
+                }
+
+                if (generated > desiredPointCount)
+                {
+                    lowerSpacing = spacing;
+                }
+                else
+                {
+                    upperSpacing = spacing;
+                }
             }
 
-            for (var spacing = Math.Max(0.5d, bestSpacing - 2.0d); spacing <= Math.Min(90.0d, bestSpacing + 2.0d); spacing += 0.05d)
+            var localScanStart = Math.Max(0.5d, bestSpacing - 3.0d);
+            var localScanEnd = Math.Min(90.0d, bestSpacing + 3.0d);
+            for (var spacing = localScanStart; spacing <= localScanEnd; spacing += 0.05d)
             {
-                EvaluateScalar(spacing);
+                EvaluateSpacing(spacing);
+                if (bestDifference == 0)
+                {
+                    break;
+                }
             }
-
-            if (candidates.Count == 0)
-            {
-                return GenerateAutoGrid(guessSpacing, guessSpacing, horizon);
-            }
-
-            var minDifference = candidates.Min(c => c.difference);
-            var proximityWindow = Math.Max(4, (int)Math.Round(desiredPointCount * 0.12d));
-            var allowedDifference = Math.Max(minDifference, proximityWindow);
-            var minimumReasonableGenerated = maxGenerated >= desiredPointCount
-                ? Math.Max(3, (int)Math.Round(desiredPointCount * 0.75d))
-                : 0;
-
-            var shortlist = candidates
-                .Where(c => c.difference <= allowedDifference && c.generated >= minimumReasonableGenerated)
-                .ToList();
-
-            if (shortlist.Count == 0)
-            {
-                shortlist = candidates
-                    .Where(c => c.difference == minDifference)
-                    .ToList();
-            }
-
-            var bestCandidate = shortlist
-                .OrderBy(c => c.stabilityPenalty)
-                .ThenBy(c => c.difference)
-                .ThenBy(c => c.generated > desiredPointCount ? 1 : 0)
-                .ThenBy(c => c.spacing)
-                .First();
-
-            bestSpacing = bestCandidate.spacing;
 
             var points = GenerateAutoGrid(bestSpacing, bestSpacing, horizon);
-            var generated = points.Count(p => p.ModelPointState == ModelPointStateEnum.Generated);
-            if (generated != desiredPointCount)
+            var generatedCount = points.Count(p => p.ModelPointState == ModelPointStateEnum.Generated);
+            if (generatedCount != desiredPointCount)
             {
-                Logger.Info($"AutoGrid requested {desiredPointCount} points; selected equidistant spacing {bestSpacing:F2}° with {generated} points (±{Math.Abs(generated - desiredPointCount)}). Max found during search: {maxGenerated}.");
+                Logger.Info($"AutoGrid requested {desiredPointCount} valid points; selected spacing {bestSpacing:F2}° yielding {generatedCount} valid points (±{Math.Abs(generatedCount - desiredPointCount)}).");
             }
+
             return points;
         }
 
