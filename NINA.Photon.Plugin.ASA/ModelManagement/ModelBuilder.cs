@@ -1320,20 +1320,16 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
 
             var eastPoints = OrderBandPointsFromFarEast(
                 bandPoints
-                    .Where(point => GetAsaOrderingPierSide(point) == PierSide.pierEast)
+                    .Where(point => point.DesiredPierSide == PierSide.pierWest)
                     .ToList());
 
             var westPoints = OrderBandPointsFromFarEast(
                 bandPoints
-                    .Where(point => GetAsaOrderingPierSide(point) == PierSide.pierWest)
+                    .Where(point => point.DesiredPierSide == PierSide.pierEast)
                     .ToList());
 
             var unknownSidePoints = bandPoints
-                .Where(point =>
-                {
-                    var side = GetAsaOrderingPierSide(point);
-                    return side != PierSide.pierEast && side != PierSide.pierWest;
-                })
+                .Where(point => point.DesiredPierSide != PierSide.pierEast && point.DesiredPierSide != PierSide.pierWest)
                 .ToList();
 
             unknownSidePoints = OrderBandPointsFromFarEast(unknownSidePoints);
@@ -1395,6 +1391,26 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 return bandPoints ?? new List<ModelPoint>();
             }
 
+            var pointsWithHourAngle = bandPoints
+                .Where(p => !double.IsNaN(p.AutoGridHourAngleDegrees))
+                .ToList();
+            if (pointsWithHourAngle.Count == bandPoints.Count)
+            {
+                return pointsWithHourAngle
+                    .OrderByDescending(p => p.AutoGridHourAngleDegrees)
+                    .ThenByDescending(p => p.Altitude)
+                    .ToList();
+            }
+
+            var pointsWithEastWestOrder = bandPoints.Where(p => p.AutoGridBandEastToWestOrder >= 0).ToList();
+            if (pointsWithEastWestOrder.Count == bandPoints.Count)
+            {
+                return pointsWithEastWestOrder
+                    .OrderBy(p => p.AutoGridBandEastToWestOrder)
+                    .ThenByDescending(p => p.Altitude)
+                    .ToList();
+            }
+
             var pointsWithSequenceAndCount = bandPoints
                 .Where(p => p.AutoGridBandSequence >= 0 && p.AutoGridBandPointCount > 0)
                 .ToList();
@@ -1439,15 +1455,6 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                     var reverseScore = (2.0d * CircularDistanceDegrees(reverse.First().Azimuth, 90.0d)) + CircularDistanceDegrees(reverse.Last().Azimuth, 270.0d);
                     return forwardScore <= reverseScore ? forward : reverse;
                 }
-            }
-
-            var pointsWithEastWestOrder = bandPoints.Where(p => p.AutoGridBandEastToWestOrder >= 0).ToList();
-            if (pointsWithEastWestOrder.Count == bandPoints.Count)
-            {
-                return pointsWithEastWestOrder
-                    .OrderBy(p => p.AutoGridBandEastToWestOrder)
-                    .ThenByDescending(p => p.Altitude)
-                    .ToList();
             }
 
             var pointsWithSequence = bandPoints.Where(p => p.AutoGridBandSequence >= 0).OrderBy(p => p.AutoGridBandSequence).ToList();

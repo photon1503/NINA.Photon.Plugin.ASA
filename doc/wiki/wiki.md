@@ -628,9 +628,6 @@ A consolidated reference of all configurable options. Options are set in the **A
 | Dome shutter width (mm) | 0 | Override dome opening size for visibility checks. |
 | West to East | Off | Reverse the default east-to-west slew order. |
 | Show removed points | On | Display failed/removed points on the chart. |
-| Remove high RMS points after build | On | Automatically cull outlier points after a build. |
-| Max point RMS (arcsec) | — | RMS threshold above which points are removed. |
-| Dec jitter sigma (°) | 1.0 | Gaussian jitter applied to Dec positions during generation. |
 
 ## POX / Output
 

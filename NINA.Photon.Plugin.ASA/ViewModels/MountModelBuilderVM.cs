@@ -178,7 +178,11 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             this.ImportCommand = new AsyncRelayCommand(ImportPoints);
             this.ExportCommand = new AsyncRelayCommand(ExportPoints);
 
-            this.ModelPointGenerationType = ModelPointGenerationTypeEnum.GoldenSpiral;
+            this.ModelPointGenerationType = ModelPointGenerationTypeEnum.AutoGrid;
+            if (this.AutoGridPathOrderingMode == AutoGridPathOrderingModeEnum.LegacyAzimuthSweep)
+            {
+                this.AutoGridPathOrderingMode = AutoGridPathOrderingModeEnum.ASABandPath;
+            }
 
             // progress
 

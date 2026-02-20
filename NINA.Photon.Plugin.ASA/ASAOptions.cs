@@ -48,8 +48,8 @@ namespace NINA.Photon.Plugin.ASA
             autoGridRASpacingDegrees = optionsAccessor.GetValueDouble("AutoGridRASpacingDegrees", 10.0d);
             autoGridDecSpacingDegrees = optionsAccessor.GetValueDouble("AutoGridDecSpacingDegrees", 10.0d);
             autoGridInputMode = optionsAccessor.GetValueEnum("AutoGridInputMode", AutoGridInputModeEnum.Spacing);
-            autoGridPathOrderingMode = optionsAccessor.GetValueEnum("AutoGridPathOrderingMode", AutoGridPathOrderingModeEnum.LegacyAzimuthSweep);
-            autoGridDesiredPointCount = optionsAccessor.GetValueInt32("AutoGridDesiredPointCount", 195);
+            autoGridPathOrderingMode = optionsAccessor.GetValueEnum("AutoGridPathOrderingMode", AutoGridPathOrderingModeEnum.ASABandPath);
+            autoGridDesiredPointCount = optionsAccessor.GetValueInt32("AutoGridDesiredPointCount", 50);
             siderealTrackStartOffsetMinutes = optionsAccessor.GetValueInt32("SiderealTrackStartOffsetMinutes", 0);
             siderealTrackEndOffsetMinutes = optionsAccessor.GetValueInt32("SiderealTrackEndOffsetMinutes", 0);
             siderealTrackPathOffsetMinutes = optionsAccessor.GetValueInt32("SiderealTrackPathOffsetMinutes", 0);
@@ -57,7 +57,7 @@ namespace NINA.Photon.Plugin.ASA
             domeShutterWidth_mm = optionsAccessor.GetValueInt32("DomeShutterWidth_mm", 0);
             minimizeDomeMovementEnabled = optionsAccessor.GetValueBoolean("MinimizeDomeMovementEnabled", true);
             minimizeMeridianFlipsEnabled = optionsAccessor.GetValueBoolean("MinimizeMeridianFlipsEnabled", true);
-            modelPointGenerationType = optionsAccessor.GetValueEnum("ModelPointGenerationType", ModelPointGenerationTypeEnum.GoldenSpiral);
+            modelPointGenerationType = optionsAccessor.GetValueEnum("ModelPointGenerationType", ModelPointGenerationTypeEnum.AutoGrid);
             builderNumRetries = optionsAccessor.GetValueInt32("BuilderNumRetries", 0);
             westToEastSorting = optionsAccessor.GetValueBoolean("WestToEastSorting", false);
             maxPointRMS = optionsAccessor.GetValueDouble("MaxPointRMS", double.NaN);
@@ -114,8 +114,8 @@ namespace NINA.Photon.Plugin.ASA
             AutoGridRASpacingDegrees = 10.0d;
             AutoGridDecSpacingDegrees = 10.0d;
             AutoGridInputMode = AutoGridInputModeEnum.Spacing;
-            AutoGridPathOrderingMode = AutoGridPathOrderingModeEnum.LegacyAzimuthSweep;
-            AutoGridDesiredPointCount = 195;
+            AutoGridPathOrderingMode = AutoGridPathOrderingModeEnum.ASABandPath;
+            AutoGridDesiredPointCount = 50;
             SiderealTrackStartOffsetMinutes = 0;
             SiderealTrackEndOffsetMinutes = 0;
             SiderealTrackPathOffsetMinutes = 0;
@@ -123,7 +123,7 @@ namespace NINA.Photon.Plugin.ASA
             DomeShutterWidth_mm = 0;
             MinimizeDomeMovementEnabled = true;
             MinimizeMeridianFlipsEnabled = true;
-            ModelPointGenerationType = ModelPointGenerationTypeEnum.GoldenSpiral;
+            ModelPointGenerationType = ModelPointGenerationTypeEnum.AutoGrid;
             BuilderNumRetries = 0;
             WestToEastSorting = false;
             MaxPointRMS = double.NaN;

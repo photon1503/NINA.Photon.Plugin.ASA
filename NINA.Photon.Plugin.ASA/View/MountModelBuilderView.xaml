@@ -1254,25 +1254,6 @@
                     </Grid>
                 </GroupBox>
 
-                <GroupBox>
-                    <GroupBox.Header>
-                        <Grid Height="36" Margin="5">
-                            <TextBlock
-                                VerticalAlignment="Center"
-                                FontSize="18"
-                                Text="Checklist" />
-                        </Grid>
-                    </GroupBox.Header>
-
-                    <TextBlock>
-                        Checklist<LineBreak />
-                        - Focus<LineBreak />
-                                   - Clear old Config<LineBreak />
-                                   - Sync your scope<LineBreak />
-                        - Set new home position<LineBreak />
-                        - Save config<LineBreak />
-                    </TextBlock>
-                </GroupBox>
             </StackPanel>
             <Separator Grid.Column="1" Margin="10,5,5,10" Style="{StaticResource {x:Static ToolBar.SeparatorStyleKey}}" />
             <Grid Grid.Column="2" Grid.Row="0" Grid.RowSpan="2">

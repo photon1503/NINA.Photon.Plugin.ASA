@@ -1,6 +1,22 @@
 
 # Changelog
 
+## 3.2.8.3 (2026-02-20)
+
+### AutoGrid / Band Path Simplification
+
+- Improved AutoGrid generation and band-ordering performance by building each pier side separately and applying a half-spacing HA offset to the second side.
+
+- Desired-point mode now tunes spacing directly against the number of valid generated points.
+
+- Fixed `forcenextpierside` parameter mapping in mount communication (`pierEast=0`, `pierWest=1`) to match ASA action semantics.
+
+### Defaults / UX
+
+- Changed default model builder generator from **Golden Spiral** to **AutoGrid**.
+- Changed default AutoGrid path ordering mode from **Legacy Azimuth Sweep** to **ASA Band Path**.
+- Changed default AutoGrid desired-point count from **195** to **50**.
+
 ## 3.2.8.2 (2026-02-18)
 
 ### POX / Export
