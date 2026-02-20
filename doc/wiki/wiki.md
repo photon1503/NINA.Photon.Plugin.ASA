@@ -129,11 +129,13 @@ The model builder tab provides an interactive environment for generating sky cov
 
 The model builder provides the following point generation modes:
 
-
 * **AutoGrid** — see below
 * **Golden Spiral** — Classic full-sky spiral distribution
 
 For MLPT (Sidereal Path) point generation, see [MLPT Integration](#mlpt-integration).
+
+> [!TIP]
+> **AutoGrid with ASA Band Path** is the recommended approach for building high-quality pointing models. It closely replicates the grid layout and slew strategy used by ASA Sequence, so the resulting models are comparable in accuracy and coverage.
 
 ## AutoGrid
 
