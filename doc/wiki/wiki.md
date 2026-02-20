@@ -72,8 +72,8 @@ ASCOM is the standard interface between astronomy software and mount hardware on
 ## Manual Installation
 
 1. Download latest version from https://github.com/photon1503/NINA.Photon.Plugin.ASA/releases
-1. Close NINA
-2. Copy DLLs to: %localappdata%\NINA\Plugins\3.0.0\ASA Tools
+2. Close NINA
+3. Copy DLLs to: %localappdata%\NINA\Plugins\3.0.0\ASA Tools
 
 ---
 
@@ -122,7 +122,7 @@ Before using this plugin, confirm the following are in place:
 
 The model builder tab provides an interactive environment for generating sky coverage points and building a full-sky pointing model.
 
-![alt text](image-3.png)
+![Mount Model Builder Tab](image-3.png)
 
 ## Point Generators
 
@@ -152,7 +152,7 @@ AutoGrid supports two slew ordering modes:
 
 Enable **Show path** to visualize the planned slew order as a dotted line in both charts.
 
-![alt text](image-5.png)
+![AutoGrid Path Visualization](image-5.png)
 
 
 ## Pier Side Enforcement
@@ -256,23 +256,25 @@ MLPT (Multiple Local Pointing Tracking) generates a local pointing correction al
 
 > Make sure to check your star eccentricity (using Hocus Focus) before and after running MLPT.
 
-![alt text](image-6.png)
+![MLPT Interactive Mode](image-6.png)
 
 
 
 1. **Initial Setup**  
 Select MLPT as your tracking generator and synchronize with your telescope's current coordinates.
 
-1. **Time Configuration**  
+2. **Time Configuration**  
 - **Start Time**: Typically set to "Now" with zero offset  
 - **End Time**: "Now" plus your desired tracking duration (30-120 minutes usually)
-1. **Spatial Parameters**  
+
+3. **Spatial Parameters**  
 Configure the Right Ascension interval spacing (3-5° recommended for most use cases).
 Optionally set **Path Offset** (in RA-minutes) to shift the generated sidereal path start. Negative values shift towards RA−, positive values shift towards RA+ (future).
 
-1. **Execution**  
+4. **Execution**  
 Generate and validate your tracking points before final implementation.
-1. **Status Monitoring**
+
+5. **Status Monitoring**
 Successful data transfer from the plugin to Autoslew is visually confirmed within the Autoslew application. A yellow indicator on the LPT button signifies that the MLPT data has been received and is being actively used by the mount's tracking model.
 
 
@@ -292,7 +294,7 @@ Following the calculation, the mount performs a preparatory movement. It first s
 > During MLPT builds, pier-side forcing is not used. The mount keeps its native pier-side behaviour, which is important when tracking near the meridian limits.
 
 #### Performance and Monitoring
-A typical path generation for a 90-minute tracking duration is generally completed within otwo to three minutes. Once initiated, the progress of the MLPT tracking path can be monitored in real-time through the ASA Tools tab, regardless of whether the process was started via the Advanced Sequencer or interactively.
+A typical path generation for a 90-minute tracking duration is generally completed within two to three minutes. Once initiated, the progress of the MLPT tracking path can be monitored in real-time through the ASA Tools tab, regardless of whether the process was started via the Advanced Sequencer or interactively.
 
 #### MLPT Diagnostics Charts
 
@@ -312,7 +314,7 @@ All MLPT triggers and sequence items include a **Re-center** toggle. When enable
 ### MLPT Automation Triggers
 
 #### MLPT After Flip
-![alt text](image-19.png)
+![MLPT After Flip Trigger](image-19.png)
 
 This trigger initiates the creation and execution of a new MLPT model immediately following a meridian flip. This ensures pointing accuracy is maintained on the new side of the pier.
 
@@ -321,7 +323,7 @@ NINA 3.2 and above: The plugin integrates directly with NINA's internal event sy
 Legacy NINA versions (Pre-3.2): The plugin employs a manual detection method to identify a flip event and activate the process.
 
 #### MLPT If Exceeds
-![alt text](image-18.png)
+![MLPT If Exceeds Trigger](image-18.png)
 > [!TIP] 
 > In the NINA sequencer this item is listed as **"MLPT Restart If Exceeds"**.
 
@@ -329,7 +331,7 @@ Legacy NINA versions (Pre-3.2): The plugin employs a manual detection method to 
 This trigger performs a proactive check before each exposure to ensure data integrity. It reads the "Remaining MLPT Time" value from Autoslew. If the duration of the next planned exposure is longer than this remaining time, the trigger will automatically start a new MLPT. This prevents a situation where the guiding model expires mid-exposure, which could compromise image quality.
 
 #### MLPT After Time
-![alt text](image-17.png)
+![MLPT After Time Trigger](image-17.png)
 
 As the name implies, this trigger will regenerate the MLPT tracking model after a user-defined time interval has elapsed. This is used to periodically refresh the model to account for gradual changes in the mount's alignment or atmospheric conditions.
 
@@ -340,7 +342,7 @@ As the name implies, this trigger will regenerate the MLPT tracking model after 
 ### MLPT Sequence Items
 
 #### MLPT Start
-![alt text](image-15.png)
+![MLPT Start Instruction](image-15.png)
 
 This instruction initiates the Model Local Pointing Test (MLPT) process. It should be executed immediately before your first imaging exposure to ensure the highest possible tracking accuracy from the start of your data acquisition.
 
@@ -351,7 +353,7 @@ This instruction initiates the Model Local Pointing Test (MLPT) process. It shou
 > The mount must already be slewed and settled on the intended target before the sequence reaches this instruction.
 
 #### MLPT Stop
-![alt text](image-16.png)
+![MLPT Stop Instruction](image-16.png)
 
 This instruction provides a method to manually terminate the MLPT process before the end of a sequence. It is useful for advanced sequencing or troubleshooting.
 
@@ -418,11 +420,11 @@ This section walks through a complete automated imaging session using the plugin
 # Enhanced Plugin Tools
 
 ## Motor Power
-![alt text](image-7.png)
+![Motor Power Instruction](image-7.png)
 A dedicated instruction to power the ASA mount motors on or off. This can be used to conserve power when the mount is not in active use or as part of a safe shutdown procedure.
 
 ## Fan Speed Control
-![alt text](image-8.png)
+![Fan Speed Control Instruction](image-8.png)
 A dedicated instruction to manage the cooling fan speed.
 Sets the fan to a specific speed level, typically from 1 (lowest) to 9 (highest).
 
@@ -430,7 +432,7 @@ Sets the fan to a specific speed level, typically from 1 (lowest) to 9 (highest)
 > This command is only functional when the fans are connected to and managed directly by Autoslew. It does not work if the fans are controlled via ASA ACC.
 
 ## Covers Control
-![alt text](image-9.png)
+![Covers Control Instruction](image-9.png)
 
 Dedicated instructions to open or close the ASA telescope covers.
 
@@ -440,8 +442,8 @@ Provides automated control to open covers at the start of a session and close th
 > This command is only functional when the covers are connected to and managed directly by Autoslew. It does not work if the covers are controlled via ASA ACC.
 
 ## Weather Data Update for Refraction Calculation
-![alt text](image-10.png)
-![alt text](image-11.png)
+![Weather Data Update Instruction](image-10.png)
+![Weather Data Trigger](image-11.png)
 
 To ensure the highest pointing and tracking accuracy, Autoslew requires current atmospheric data to calculate refraction. You can automate this process within the plugin.
 * Instruction: Weather Update
@@ -452,7 +454,7 @@ To ensure the highest pointing and tracking accuracy, Autoslew requires current 
 > The weather data should *NOT* be updated during an imaging session. The mount *WILL* move when sending new refraction data. Best practice is to send new data only before each imaging session.
 
 ## Rotator Limit Avoidance Trigger
-![alt text](image-12.png)
+![Rotator Limit Avoidance Trigger](image-12.png)
 
 > [!NOTE] 
 > In the NINA sequencer this item is listed as **"Flip Rotator If Needed"**.
@@ -465,7 +467,7 @@ This advanced trigger is essential for Alt-Az mount users where the rotator also
 * Applicability: Required only for Alt-Az mounts with an integrated derotator.
 
 ## Mount-Based Dithering Trigger
-![alt text](image-13.png)
+![Mount Dither Trigger](image-13.png)
 > [!NOTE] 
 > In the NINA sequencer this item is listed as **"Mount Dither After"**.
 
@@ -486,7 +488,7 @@ This trigger provides continuous monitoring for ASA mounts, specifically watchin
 Its purpose is to serve as a condition within a DIY Trigger block. When a motor error is detected, the trigger activates, allowing you to define a fully customized response.
 
 ## Relax Slew After Time
-![alt text](image-14.png)
+![Relax Slew Trigger](image-14.png)
 This trigger periodically performs a **relax slew** to reduce mechanical hysteresis that can build up in the drive system over the course of a session.
 
 * **Function**: At a configurable interval (in minutes), the mount briefly slews away from the target along the RA axis by a small offset, then immediately returns to the target position. This "stretch and return" motion exercises the drive mechanics and helps keep both RA and Dec drives properly loaded.
@@ -578,7 +580,7 @@ Recommended settings for Autoslew
 * Control > ASCOM Alpaca > Enable Ascom to Homefind
   - needs to be enabled in order to use the NINA Homefind command
 * Mount > Track loop and Slew Settle Settings
- - set to your desired value, and set Slew Settle time in NINA to zero. 
+  - set to your desired value, and set Slew Settle time in NINA to zero. 
   
 ---
 
