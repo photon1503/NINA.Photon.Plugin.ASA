@@ -1,0 +1,82 @@
+name: Sync Project Wiki
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - master
+    paths:
+      - doc/wiki/**
+      - .github/workflows/wiki-sync.yml
+
+permissions:
+  contents: write
+
+jobs:
+  sync-wiki:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate wiki token
+        env:
+          WIKI_TOKEN: ${{ secrets.WIKI_TOKEN }}
+        run: |
+          if [ -z "$WIKI_TOKEN" ]; then
+            echo "Missing secret WIKI_TOKEN."
+            echo "Create a PAT with repo scope and add it as repository secret WIKI_TOKEN."
+            exit 1
+          fi
+
+      - name: Clone or initialize wiki repository
+        env:
+          WIKI_TOKEN: ${{ secrets.WIKI_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          WIKI_URL="https://x-access-token:${WIKI_TOKEN}@github.com/${{ github.repository }}.wiki.git"
+
+          if git ls-remote "$WIKI_URL" >/dev/null 2>&1; then
+            git clone "$WIKI_URL" wiki-repo
+          else
+            mkdir -p wiki-repo
+            cd wiki-repo
+            git init
+            git remote add origin "$WIKI_URL"
+          fi
+
+      - name: Sync wiki content
+        run: |
+          set -euo pipefail
+
+          cp -R doc/wiki/. wiki-repo/
+
+          if [ -f wiki-repo/wiki.md ]; then
+            mv wiki-repo/wiki.md wiki-repo/Home.md
+          fi
+
+      - name: Commit and push wiki changes
+        run: |
+          set -euo pipefail
+
+          cd wiki-repo
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add .
+
+          if git diff --staged --quiet; then
+            echo "No wiki changes to commit."
+            exit 0
+          fi
+
+          git commit -m "docs: sync wiki from doc/wiki"
+
+          if git rev-parse --verify origin/master >/dev/null 2>&1; then
+            git push origin HEAD:master
+          else
+            git push origin HEAD
+          fi
