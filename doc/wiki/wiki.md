@@ -36,7 +36,7 @@ MLPT is a *localized* pointing correction built for a specific target on a speci
 MLPT is meant to be run **every session**, either manually from the plugin tab or automatically via the MLPT sequence triggers. A completed MLPT is indicated by a yellow LPT button in AutoSlew.
 
 ## AutoSlew
-AutoSlew is the ASA mount control software. This plugin communicates with AutoSlew via the ASCOM driver to issue commands (model building, MLPT, fan/cover/motor control, etc.). AutoSlew must be running and connected to the mount before using this plugin.
+AutoSlew is the ASA mount control software. This plugin communicates with AutoSlew via the ASCOM/Alpaca driver to issue commands (model building, MLPT, fan/cover/motor control, etc.). AutoSlew must be running and connected to the mount before using this plugin.
 
 ## POX File
 A POX file is the intermediate output of a model build. The plugin writes measured pointing offsets to this file (in `%programdata%\ASA\Sequence\`), and you load it into AutoSlew to calculate the final pointing model.
@@ -44,8 +44,8 @@ A POX file is the intermediate output of a model build. The plugin writes measur
 ## DDM — Direct Drive Mount
 DDM refers to ASA direct-drive mounts (e.g., DDM60, DDM100). The **Legacy DDM** option in plugin settings affects the POX output format — enable it for older Autoslew versions (5.2.4.8).
 
-## ASCOM Driver
-ASCOM is the standard interface between astronomy software and mount hardware on Windows. This plugin communicates with the mount through its ASCOM driver. The driver must be installed and selected in NINA's telescope settings.
+## ASCOM/Alpaca Driver
+ASCOM/Alpaca is the standard interface between astronomy software and mount hardware on Windows. This plugin communicates with the mount through its ASCOM/Alpaca driver. The driver must be installed and selected in NINA's telescope settings.
 
 ---
 
@@ -160,7 +160,7 @@ Enable **Show path** to visualize the planned slew order as a dotted line in bot
 
 ## Pier Side Enforcement
 
-During a model build, the builder calls the ASA-specific ASCOM action `forcenextpierside` before each slew to place the mount on the correct side. If the active driver does not support this action, the builder disables it automatically and continues without interruption.
+During a model build, the builder calls the ASA-specific ASCOM/Alpaca action `forcenextpierside` before each slew to place the mount on the correct side. If the active driver does not support this action, the builder disables it automatically and continues without interruption.
 
 > For MLPT / Sidereal Path builds, pier-side forcing is skipped. The mount keeps its native pier-side behaviour near the meridian limits.
 
@@ -216,7 +216,7 @@ When using the Golden Spiral generator, you can supplement the standard distribu
 
 Sync points are periodic mid-session sync commands that re-anchor the mount's coordinate system as tracking progresses. They help reduce hysteresis accumulation during long runs.
 
-* **Use sync** — Enable periodic ASCOM sync commands during the model build.
+* **Use sync** — Enable periodic ASCOM/Alpaca sync commands during the model build.
 * **Sync every (HA minutes)** — How often (in hour-angle minutes) to issue a sync.
 * **East / West sync altitude and azimuth** — The sky position used for the sync slew on each side of the meridian.
 * **East / West reference altitude and azimuth** — Reference coordinates used for the sync offset calculation.
@@ -654,7 +654,7 @@ A consolidated reference of all configurable options. Options are set in the **A
 
 | Option | Default | Description |
 |---|---|---|
-| Use sync | Off | Enable periodic ASCOM sync commands during builds. |
+| Use sync | Off | Enable periodic ASCOM/Alpaca sync commands during builds. |
 | Sync every (HA min) | 30 | Interval in hour-angle minutes between sync commands. |
 | East sync altitude / azimuth | 65° / 90° | Sky position used for sync on the east pier side. |
 | West sync altitude / azimuth | 65° / 270° | Sky position used for sync on the west pier side. |
@@ -666,4 +666,4 @@ A consolidated reference of all configurable options. Options are set in the **A
 | Option | Default | Description |
 |---|---|---|
 | Use native NINA dome control | Off | Let NINA manage dome synchronization during MLPT/model builds instead of the plugin. |
-| Log commands | Off | Write ASCOM commands to the NINA log. Useful for debugging driver issues. |
+| Log commands | Off | Write ASCOM/Alpaca commands to the NINA log. Useful for debugging driver issues. |
