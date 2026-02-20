@@ -312,6 +312,7 @@ All MLPT triggers and sequence items include a **Re-center** toggle. When enable
 ### MLPT Automation Triggers
 
 #### MLPT After Flip
+![alt text](image-19.png)
 
 This trigger initiates the creation and execution of a new MLPT model immediately following a meridian flip. This ensures pointing accuracy is maintained on the new side of the pier.
 
@@ -320,6 +321,7 @@ NINA 3.2 and above: The plugin integrates directly with NINA's internal event sy
 Legacy NINA versions (Pre-3.2): The plugin employs a manual detection method to identify a flip event and activate the process.
 
 #### MLPT If Exceeds
+![alt text](image-18.png)
 > [!TIP] 
 > In the NINA sequencer this item is listed as **"MLPT Restart If Exceeds"**.
 
@@ -327,6 +329,7 @@ Legacy NINA versions (Pre-3.2): The plugin employs a manual detection method to 
 This trigger performs a proactive check before each exposure to ensure data integrity. It reads the "Remaining MLPT Time" value from Autoslew. If the duration of the next planned exposure is longer than this remaining time, the trigger will automatically start a new MLPT. This prevents a situation where the guiding model expires mid-exposure, which could compromise image quality.
 
 #### MLPT After Time
+![alt text](image-17.png)
 
 As the name implies, this trigger will regenerate the MLPT tracking model after a user-defined time interval has elapsed. This is used to periodically refresh the model to account for gradual changes in the mount's alignment or atmospheric conditions.
 
@@ -337,6 +340,7 @@ As the name implies, this trigger will regenerate the MLPT tracking model after 
 ### MLPT Sequence Items
 
 #### MLPT Start
+![alt text](image-15.png)
 
 This instruction initiates the Model Local Pointing Test (MLPT) process. It should be executed immediately before your first imaging exposure to ensure the highest possible tracking accuracy from the start of your data acquisition.
 
@@ -347,6 +351,7 @@ This instruction initiates the Model Local Pointing Test (MLPT) process. It shou
 > The mount must already be slewed and settled on the intended target before the sequence reaches this instruction.
 
 #### MLPT Stop
+![alt text](image-16.png)
 
 This instruction provides a method to manually terminate the MLPT process before the end of a sequence. It is useful for advanced sequencing or troubleshooting.
 
@@ -413,9 +418,11 @@ This section walks through a complete automated imaging session using the plugin
 # Enhanced Plugin Tools
 
 ## Motor Power
+![alt text](image-7.png)
 A dedicated instruction to power the ASA mount motors on or off. This can be used to conserve power when the mount is not in active use or as part of a safe shutdown procedure.
 
 ## Fan Speed Control
+![alt text](image-8.png)
 A dedicated instruction to manage the cooling fan speed.
 Sets the fan to a specific speed level, typically from 1 (lowest) to 9 (highest).
 
@@ -423,6 +430,7 @@ Sets the fan to a specific speed level, typically from 1 (lowest) to 9 (highest)
 > This command is only functional when the fans are connected to and managed directly by Autoslew. It does not work if the fans are controlled via ASA ACC.
 
 ## Covers Control
+![alt text](image-9.png)
 
 Dedicated instructions to open or close the ASA telescope covers.
 
@@ -432,6 +440,8 @@ Provides automated control to open covers at the start of a session and close th
 > This command is only functional when the covers are connected to and managed directly by Autoslew. It does not work if the covers are controlled via ASA ACC.
 
 ## Weather Data Update for Refraction Calculation
+![alt text](image-10.png)
+![alt text](image-11.png)
 
 To ensure the highest pointing and tracking accuracy, Autoslew requires current atmospheric data to calculate refraction. You can automate this process within the plugin.
 * Instruction: Weather Update
@@ -442,6 +452,8 @@ To ensure the highest pointing and tracking accuracy, Autoslew requires current 
 > The weather data should *NOT* be updated during an imaging session. The mount *WILL* move when sending new refraction data. Best practice is to send new data only before each imaging session.
 
 ## Rotator Limit Avoidance Trigger
+![alt text](image-12.png)
+
 > [!NOTE] 
 > In the NINA sequencer this item is listed as **"Flip Rotator If Needed"**.
 
@@ -453,6 +465,7 @@ This advanced trigger is essential for Alt-Az mount users where the rotator also
 * Applicability: Required only for Alt-Az mounts with an integrated derotator.
 
 ## Mount-Based Dithering Trigger
+![alt text](image-13.png)
 > [!NOTE] 
 > In the NINA sequencer this item is listed as **"Mount Dither After"**.
 
@@ -473,7 +486,7 @@ This trigger provides continuous monitoring for ASA mounts, specifically watchin
 Its purpose is to serve as a condition within a DIY Trigger block. When a motor error is detected, the trigger activates, allowing you to define a fully customized response.
 
 ## Relax Slew After Time
-
+![alt text](image-14.png)
 This trigger periodically performs a **relax slew** to reduce mechanical hysteresis that can build up in the drive system over the course of a session.
 
 * **Function**: At a configurable interval (in minutes), the mount briefly slews away from the target along the RA axis by a small offset, then immediately returns to the target position. This "stretch and return" motion exercises the drive mechanics and helps keep both RA and Dec drives properly loaded.
