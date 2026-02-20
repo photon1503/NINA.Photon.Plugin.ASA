@@ -120,7 +120,7 @@ Before using this plugin, confirm the following are in place:
 
 The model builder tab provides an interactive environment for generating sky coverage points and building a full-sky pointing model.
 
-![alt text](image.png)
+
 
 ## Point Generators
 
@@ -149,7 +149,7 @@ AutoGrid supports two slew ordering modes:
 * **ASA Band Path** — Groups points into altitude bands and traverses them in an ASA-style band pattern, which improves the final model.
 
 Enable **Show path** to visualize the planned slew order as a dotted line in both charts.
-![alt text](image-1.png)
+
 
 ## Pier Side Enforcement
 
@@ -161,7 +161,7 @@ During a model build, the builder calls the ASA-specific ASCOM action `forcenext
 
 A global **Minimum distance to horizon (°)** setting keeps all generated points above a safety margin from the local horizon. This limit is applied during point generation and visibility checks, so the chart display and the actual model build always agree on which points are valid.
 
-![alt text](image-2.png)
+
 
 ## Chart Features
 
@@ -553,7 +553,7 @@ Recommended settings for Autoslew
 * Control > ASCOM Alpaca > Enable Ascom to Homefind
   - needs to be enabled in order to use the NINA Homefind command
 * Mount > Track loop and Slew Settle Settings
- - set to your desired value, and set Slew Settle time in NINA to zero. ![alt text](image-4.png)
+ - set to your desired value, and set Slew Settle time in NINA to zero. 
   
 ---
 
