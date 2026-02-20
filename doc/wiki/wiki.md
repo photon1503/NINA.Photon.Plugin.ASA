@@ -42,7 +42,7 @@ AutoSlew is the ASA mount control software. This plugin communicates with AutoSl
 A POX file is the intermediate output of a model build. The plugin writes measured pointing offsets to this file (in `%programdata%\ASA\Sequence\`), and you load it into AutoSlew to calculate the final pointing model.
 
 ## DDM — Direct Drive Mount
-ASA direct-drive mounts (e.g., DDM60, DDM100). The **Legacy DDM** option in plugin settings affects the POX output format — enable it for older Autoslew versions (5.2.4.8).
+DDM refers to ASA direct-drive mounts (e.g., DDM60, DDM100). The **Legacy DDM** option in plugin settings affects the POX output format — enable it for older Autoslew versions (5.2.4.8).
 
 ## ASCOM Driver
 ASCOM is the standard interface between astronomy software and mount hardware on Windows. This plugin communicates with the mount through its ASCOM driver. The driver must be installed and selected in NINA's telescope settings.
@@ -67,6 +67,7 @@ ASCOM is the standard interface between astronomy software and mount hardware on
 > Some triggers require NINA 3.2 or higher.
 
 ---
+
 # Installation
 
 ## Manual Installation
@@ -233,7 +234,7 @@ After a successful build, the plugin writes a POX file to `%programdata%\ASA\Seq
 
 Load the generated POX file into Autoslew and calculate the model from there.
 
-* **Legacy DDM mode** — Controls the POX format written by the plugin. Enable for older Autoslew versions (5.2.4.8). Disable for newer versions that uses the extended POX format. When in doubt, check your AutoSlew version — if it is 7.x or later, disable Legacy DDM.
+* **Legacy DDM mode** — Controls the POX format written by the plugin. Enable for older Autoslew versions (5.2.4.8). Disable for newer versions that use the extended POX format. When in doubt, check your AutoSlew version — if it is 7.x or later, disable Legacy DDM.
 
 ## Grid Import / Export
 
@@ -252,9 +253,11 @@ MLPT (Multiple Local Pointing Tracking) generates a local pointing correction al
 
 ## Interactive Mode Operation
 
-> Tip: It's highly recommended to use the Interactive Mode to test MLPT performance before proceeding with the instructions in the Advanced Sequencer.
+> [!TIP]
+> It's highly recommended to use the Interactive Mode to test MLPT performance before proceeding with the instructions in the Advanced Sequencer.
 
-> Make sure to check your star eccentricity (using Hocus Focus) before and after running MLPT.
+> [!TIP]
+> Check your star eccentricity (using Hocus Focus) before and after running MLPT.
 
 ![MLPT Interactive Mode](image-6.png)
 
@@ -285,7 +288,7 @@ This section describes the process the plugin uses to generate and execute a (ML
 #### Initial Calculation
 The system begins by computing an optimal tracking path based on several key parameters. These include the current equatorial coordinates of the target, the user-defined meridian flip limit, and the minimum horizon limit. This ensures the generated path remains within safe and operational boundaries.
 
-To guarantee a valid model can be created, the process includes a dynamic safety feature. If the initial calculation determines that a standard path would intersect a limit,such as the horizon or meridian, with fewer than three data points possible, the system will automatically reduce the time interval between points. This adjustment ensures the collection of sufficient data for a reliable model, even under constrained conditions.
+To guarantee a valid model can be created, the process includes a dynamic safety feature. If the initial calculation determines that a standard path would intersect a limit, such as the horizon or meridian, with fewer than three data points possible, the system will automatically reduce the time interval between points. This adjustment ensures the collection of sufficient data for a reliable model, even under constrained conditions.
 
 #### Mount Movement and Execution
 Following the calculation, the mount performs a preparatory movement. It first slews to the final point of the generated MLPT path. This initial slew serves to pre-balance the telescope for the entire tracking duration. No image is taken at this position. The mount then returns to the starting point to begin the actual imaging sequence, capturing images at specified intervals along the predefined tracking path. Upon completion, the mount returns to its starting position.
@@ -318,9 +321,9 @@ All MLPT triggers and sequence items include a **Re-center** toggle. When enable
 
 This trigger initiates the creation and execution of a new MLPT model immediately following a meridian flip. This ensures pointing accuracy is maintained on the new side of the pier.
 
-NINA 3.2 and above: The plugin integrates directly with NINA's internal event system, automatically triggering upon a successful flip.
+**NINA 3.2 and above:** The plugin integrates directly with NINA's internal event system and triggers automatically upon a successful flip.
 
-Legacy NINA versions (Pre-3.2): The plugin employs a manual detection method to identify a flip event and activate the process.
+**Legacy NINA (pre-3.2):** The plugin uses a polling workaround to detect a flip event and activate the process.
 
 #### MLPT If Exceeds
 ![MLPT If Exceeds Trigger](image-18.png)
@@ -446,9 +449,9 @@ Provides automated control to open covers at the start of a session and close th
 ![Weather Data Trigger](image-11.png)
 
 To ensure the highest pointing and tracking accuracy, Autoslew requires current atmospheric data to calculate refraction. You can automate this process within the plugin.
-* Instruction: Weather Update
 
-* Trigger: Weather Update After XX min
+* **Instruction** — Weather Update
+* **Trigger** — Weather Update After XX min
 
 > [!IMPORTANT] 
 > The weather data should *NOT* be updated during an imaging session. The mount *WILL* move when sending new refraction data. Best practice is to send new data only before each imaging session.
@@ -462,9 +465,10 @@ To ensure the highest pointing and tracking accuracy, Autoslew requires current 
 
 This advanced trigger is essential for Alt-Az mount users where the rotator also acts as a field derotator. It proactively prevents the rotator from reaching its mechanical limits during a sequence.
 
-* Function: The trigger continuously monitors the planned rotator position for the next exposure. If it detects that the rotator would hit its hardware limit, it automatically commands a 180° flip before the exposure begins. This ensures an uninterrupted imaging sequence without manual intervention.
+The trigger continuously monitors the planned rotator position for the next exposure. If it detects that the rotator would hit its hardware limit, it automatically commands a 180° flip before the exposure begins, ensuring an uninterrupted imaging sequence without manual intervention.
 
-* Applicability: Required only for Alt-Az mounts with an integrated derotator.
+> [!NOTE]
+> Required only for Alt-Az mounts with an integrated derotator.
 
 ## Mount-Based Dithering Trigger
 ![Mount Dither Trigger](image-13.png)
@@ -472,9 +476,7 @@ This advanced trigger is essential for Alt-Az mount users where the rotator also
 > In the NINA sequencer this item is listed as **"Mount Dither After"**.
 
 
-For users who guide with PHD2 but prefer to use the mount's native capabilities for dithering, this trigger provides a dedicated solution.
-
-* Function: The "Mount Dither" trigger operates similarly to the standard "Dither After" trigger but exclusively uses the mount (via the ASCOM/Alpaca driver) to perform the dithering motion, bypassing PHD2 for this specific task.
+For users who guide with PHD2 but prefer to use the mount's native capabilities for dithering, this trigger provides a dedicated solution. It operates similarly to the standard **Dither After** trigger but exclusively uses the mount (via the ASCOM/Alpaca driver), bypassing PHD2 for this specific task.
 
 > [!NOTE] 
 > The settling parameters for pulse guiding (which occur after the dither) are not configured in this plugin. These thresholds, namely PulseGuide Tolerance and Maximum Wait Time, are defined within the Autoslew application itself.
@@ -503,15 +505,16 @@ This trigger periodically performs a **relax slew** to reduce mechanical hystere
 # Important Operational Notes
 
 ## Automated Dome Control
-To ensure a safe and successful operation, this plugin automatically manages your dome settings during the (MLPT) and pointing model building processes.
+To ensure safe operation, this plugin automatically manages your dome settings during MLPT and pointing model builds.
 
-The plugin will temporarily disable specific dome-related functions in NINA and will restore them to their original state upon completion.
+The plugin temporarily disables specific dome-related functions in NINA and restores them when the process completes.
 
-Please do not manually adjust dome settings or synchronization while these processes are active. Interfering may cause conflicts, interruptions, or incorrect model data.
+> [!WARNING]
+> Do not manually adjust dome settings or synchronization while these processes are active. Doing so may cause conflicts, interruptions, or incorrect model data.
 
-You maintain full control over the procedure. You can safely terminate the MLPT or pointing model run at any time by clicking the Stop button, available in both the interactive and advanced sequencer interfaces.
+You can safely stop an MLPT or model build at any time using the **Stop** button, available in both the interactive tab and the Advanced Sequencer.
 
-You can configure this behavior in the plugin options. Enable the "Use native NINA dome control" setting if you prefer NINA to manage the dome during these operations instead of the plugin's internal logic.
+To let NINA manage dome synchronization instead, enable **Use native NINA dome control** in the plugin options.
 
 [![Demo Video](https://img.youtube.com/vi/mxii6FCW5C8/0.jpg)](https://www.youtube.com/watch?v=mxii6FCW5C8)
 
@@ -562,7 +565,7 @@ You can configure this behavior in the plugin options. Enable the "Use native NI
 
 **Symptoms**: After a meridian flip, no new MLPT model is built.
 
-**Fix**: On NINA versions below 3.2, the plugin cannot receive a native flip event and uses a polling workaround instead. Ensure your sequence is actually waiting after the flip for the trigger to fire. Upgrading to NINA 3.2 or later resolves this reliably.
+**Fix**: On NINA versions below 3.2, the plugin uses a polling workaround to detect flips. Ensure your sequence is paused long enough after the flip for the trigger to fire. Upgrading to NINA 3.2 or later resolves this reliably.
 
 ## Weather Update Moves the Mount Mid-Session
 
@@ -571,6 +574,7 @@ You can configure this behavior in the plugin options. Enable the "Use native NI
 **Fix**: This is expected — AutoSlew recalculates refraction and adjusts pointing when new atmospheric data arrives. **Do not send weather updates during an active imaging session.** Use the Weather Update sequence item or trigger only at the start of a session.
 
 ---
+
 # Autoslew Settings
 
 Recommended settings for Autoslew
