@@ -122,7 +122,7 @@ Before using this plugin, confirm the following are in place:
 
 The model builder tab provides an interactive environment for generating sky coverage points and building a full-sky pointing model.
 
-
+![alt text](image-3.png)
 
 ## Point Generators
 
@@ -151,6 +151,8 @@ AutoGrid supports two slew ordering modes:
 * **ASA Band Path** — Groups points into altitude bands and traverses them in an ASA-style band pattern, which improves the final model.
 
 Enable **Show path** to visualize the planned slew order as a dotted line in both charts.
+
+![alt text](image-5.png)
 
 
 ## Pier Side Enforcement
@@ -253,6 +255,8 @@ MLPT (Multiple Local Pointing Tracking) generates a local pointing correction al
 > Tip: It's highly recommended to use the Interactive Mode to test MLPT performance before proceeding with the instructions in the Advanced Sequencer.
 
 > Make sure to check your star eccentricity (using Hocus Focus) before and after running MLPT.
+
+![alt text](image-6.png)
 
 
 
