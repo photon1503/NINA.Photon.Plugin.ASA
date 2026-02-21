@@ -1,6 +1,14 @@
 
 # Changelog
 
+## 3.2.8.4
+
+### Model Build Safety Guard
+
+- Added a pre-build guard for non-MLPT model builds that checks Autoslew pointing corrections (`GetCorrections`).
+- If corrections are non-zero (indicating config/model was not cleared), the user is prompted with a Yes/No confirmation before continuing.
+- Proceeding explicitly warns that the new model will be built on top of an existing model (potentially useful for PA/collimation with few points, but not recommended for full-sky models).
+
 ## 3.2.8.3 (2026-02-20)
 
 ### AutoGrid / Band Path Simplification
@@ -16,6 +24,8 @@
 - Changed default model builder generator from **Golden Spiral** to **AutoGrid**.
 - Changed default AutoGrid path ordering mode from **Legacy Azimuth Sweep** to **ASA Band Path**.
 - Changed default AutoGrid desired-point count from **195** to **50**.
+
+
 
 ## 3.2.8.2 (2026-02-18)
 
