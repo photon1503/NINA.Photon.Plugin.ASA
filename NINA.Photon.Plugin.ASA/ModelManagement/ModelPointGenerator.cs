@@ -233,9 +233,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                         }
 
                         point.DesiredPierSide = sideConfiguration.side;
-                        point.AutoGridHourAngleDegrees = options.StartAtHorizon
-                            ? GetStartAtHorizonHourAngleSortKey(shiftedHourAngleDegrees, sideConfiguration.side)
-                            : shiftedHourAngleDegrees;
+                        point.AutoGridHourAngleDegrees = shiftedHourAngleDegrees;
 
                         if (point.ModelPointState != ModelPointStateEnum.Generated)
                         {
