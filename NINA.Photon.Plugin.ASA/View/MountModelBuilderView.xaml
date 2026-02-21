@@ -267,6 +267,20 @@
                         </ninactrl:UnitTextBox>
 
                         <TextBlock
+                                                        Grid.Row="6" Grid.Column="0"
+                              HorizontalAlignment="Left"
+                              VerticalAlignment="Center"
+                              Text="Start at horizon"
+                              ToolTip="Start each side (east/west) from the lowest valid point per band" />
+                        <CheckBox
+                                                        Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="2"
+                              Margin="10,5,0,0"
+                              HorizontalAlignment="Left"
+                              VerticalAlignment="Center"
+                              ToolTip="Start each side (east/west) from the lowest valid point per band"
+                              IsChecked="{Binding StartAtHorizon}" />
+
+                        <TextBlock
                                                         Grid.Row="4" Grid.Column="0"
                               HorizontalAlignment="Left"
                               VerticalAlignment="Center"

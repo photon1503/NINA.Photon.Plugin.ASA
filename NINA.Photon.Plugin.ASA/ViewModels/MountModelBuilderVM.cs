@@ -759,6 +759,11 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 RaisePropertyChanged(nameof(MinDistanceToHorizonDegrees));
             }
 
+            if (e.PropertyName == nameof(modelBuilderOptions.StartAtHorizon))
+            {
+                RaisePropertyChanged(nameof(StartAtHorizon));
+            }
+
             if (e.PropertyName == nameof(modelBuilderOptions.SiderealTrackPathOffsetMinutes))
             {
                 RaisePropertyChanged(nameof(SiderealTrackPathOffsetMinutes));
@@ -2086,6 +2091,19 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 if (this.modelBuilderOptions.AutoGridPathOrderingMode != value)
                 {
                     this.modelBuilderOptions.AutoGridPathOrderingMode = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        public bool StartAtHorizon
+        {
+            get => this.modelBuilderOptions.StartAtHorizon;
+            set
+            {
+                if (this.modelBuilderOptions.StartAtHorizon != value)
+                {
+                    this.modelBuilderOptions.StartAtHorizon = value;
                     RaisePropertyChanged();
                 }
             }

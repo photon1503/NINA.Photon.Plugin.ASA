@@ -189,6 +189,17 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                     : -90.0d + ringDistanceDegrees;
 
                 var ringHourAngles = BuildUniformHourAnglesForRing(ringDistanceDegrees, raSpacingDegrees);
+                if (options.StartAtHorizon)
+                {
+                    ringHourAngles = OptimizeAutoGridRingHourAnglesForHorizonStart(
+                        ringHourAngles,
+                        latitudeDegrees,
+                        declinationDegrees,
+                        raSpacingDegrees,
+                        meridianLimitDegrees,
+                        horizon);
+                }
+
                 if (ringHourAngles.Count == 0)
                 {
                     continue;
@@ -293,6 +304,101 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             }
 
             return hourAngles;
+        }
+
+        private List<double> OptimizeAutoGridRingHourAnglesForHorizonStart(
+            List<double> baseHourAngles,
+            double latitudeDegrees,
+            double declinationDegrees,
+            double raSpacingDegrees,
+            double meridianLimitDegrees,
+            CustomHorizon horizon)
+        {
+            if (baseHourAngles == null || baseHourAngles.Count <= 2 || horizon == null)
+            {
+                return baseHourAngles;
+            }
+
+            var sideConfigurations = new[]
+            {
+                (side: PierSide.pierEast, hourAngleOffset: 0.0d),
+                (side: PierSide.pierWest, hourAngleOffset: raSpacingDegrees / 2.0d)
+            };
+
+            var ringCount = baseHourAngles.Count;
+            var ringSpacing = 360.0d / ringCount;
+            var phaseSamples = Math.Min(24, Math.Max(8, ringCount));
+            var phaseStepDegrees = ringSpacing / phaseSamples;
+
+            var bestHourAngles = baseHourAngles;
+            var bestGeneratedCount = -1;
+            var bestCoveredSides = -1;
+            var bestMinAltitudeSum = double.MaxValue;
+
+            for (var phaseIndex = 0; phaseIndex < phaseSamples; phaseIndex++)
+            {
+                var phaseOffsetDegrees = phaseIndex * phaseStepDegrees;
+                var candidateHourAngles = baseHourAngles
+                    .Select(hourAngle => NormalizeHourAngleDegrees(hourAngle + phaseOffsetDegrees))
+                    .ToList();
+
+                var totalGenerated = 0;
+                var coveredSides = 0;
+                var minAltitudeSum = 0.0d;
+
+                foreach (var sideConfiguration in sideConfigurations)
+                {
+                    var minSideAltitude = double.MaxValue;
+                    var sideGenerated = 0;
+
+                    for (var sequenceIndex = 0; sequenceIndex < candidateHourAngles.Count; sequenceIndex++)
+                    {
+                        var shiftedHourAngleDegrees = NormalizeHourAngleDegrees(candidateHourAngles[sequenceIndex] + sideConfiguration.hourAngleOffset);
+                        var destination = ToHorizontalFromDeclinationHourAngle(latitudeDegrees, declinationDegrees, shiftedHourAngleDegrees);
+                        var azimuthDegrees = AstroUtil.EuclidianModulus(720.0d - destination.azimuthDegrees, 360.0d);
+                        var altitudeDegrees = destination.altitudeDegrees;
+
+                        var expectedSide = GetExpectedPierSideFromHourAngle(shiftedHourAngleDegrees);
+                        var inMeridianOverlapZone = meridianLimitDegrees > 0.0d && Math.Abs(shiftedHourAngleDegrees) <= meridianLimitDegrees;
+                        if (!inMeridianOverlapZone && expectedSide != sideConfiguration.side)
+                        {
+                            continue;
+                        }
+
+                        var horizonAltitude = horizon.GetAltitude(azimuthDegrees);
+                        var pointState = DeterminePointState(altitudeDegrees, azimuthDegrees, horizonAltitude, applyAzimuthBounds: false);
+                        if (pointState != ModelPointStateEnum.Generated)
+                        {
+                            continue;
+                        }
+
+                        sideGenerated++;
+                        totalGenerated++;
+                        if (altitudeDegrees < minSideAltitude)
+                        {
+                            minSideAltitude = altitudeDegrees;
+                        }
+                    }
+
+                    if (sideGenerated > 0)
+                    {
+                        coveredSides++;
+                        minAltitudeSum += minSideAltitude;
+                    }
+                }
+
+                if (totalGenerated > bestGeneratedCount
+                    || (totalGenerated == bestGeneratedCount && coveredSides > bestCoveredSides)
+                    || (totalGenerated == bestGeneratedCount && coveredSides == bestCoveredSides && minAltitudeSum < bestMinAltitudeSum))
+                {
+                    bestGeneratedCount = totalGenerated;
+                    bestCoveredSides = coveredSides;
+                    bestMinAltitudeSum = minAltitudeSum;
+                    bestHourAngles = candidateHourAngles;
+                }
+            }
+
+            return bestHourAngles;
         }
 
         private static bool IsHourAngleWithinMeridianLimit(double hourAngleDegrees, PierSide side, double meridianLimitDegrees)

@@ -50,6 +50,7 @@ namespace NINA.Photon.Plugin.ASA
             autoGridInputMode = optionsAccessor.GetValueEnum("AutoGridInputMode", AutoGridInputModeEnum.Spacing);
             autoGridPathOrderingMode = optionsAccessor.GetValueEnum("AutoGridPathOrderingMode", AutoGridPathOrderingModeEnum.ASABandPath);
             autoGridDesiredPointCount = optionsAccessor.GetValueInt32("AutoGridDesiredPointCount", 50);
+            startAtHorizon = optionsAccessor.GetValueBoolean("StartAtHorizon", false);
             siderealTrackStartOffsetMinutes = optionsAccessor.GetValueInt32("SiderealTrackStartOffsetMinutes", 0);
             siderealTrackEndOffsetMinutes = optionsAccessor.GetValueInt32("SiderealTrackEndOffsetMinutes", 0);
             siderealTrackPathOffsetMinutes = optionsAccessor.GetValueInt32("SiderealTrackPathOffsetMinutes", 0);
@@ -116,6 +117,7 @@ namespace NINA.Photon.Plugin.ASA
             AutoGridInputMode = AutoGridInputModeEnum.Spacing;
             AutoGridPathOrderingMode = AutoGridPathOrderingModeEnum.ASABandPath;
             AutoGridDesiredPointCount = 50;
+            StartAtHorizon = false;
             SiderealTrackStartOffsetMinutes = 0;
             SiderealTrackEndOffsetMinutes = 0;
             SiderealTrackPathOffsetMinutes = 0;
@@ -333,6 +335,22 @@ namespace NINA.Photon.Plugin.ASA
 
                     autoGridDesiredPointCount = value;
                     optionsAccessor.SetValueInt32("AutoGridDesiredPointCount", autoGridDesiredPointCount);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private bool startAtHorizon;
+
+        public bool StartAtHorizon
+        {
+            get => startAtHorizon;
+            set
+            {
+                if (startAtHorizon != value)
+                {
+                    startAtHorizon = value;
+                    optionsAccessor.SetValueBoolean("StartAtHorizon", startAtHorizon);
                     RaisePropertyChanged();
                 }
             }
