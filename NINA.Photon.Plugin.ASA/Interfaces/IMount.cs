@@ -105,6 +105,8 @@ namespace NINA.Photon.Plugin.ASA.Interfaces
 
         Response<double> MLPTTimeLeft();
 
+        Response<(double X, double Y)> GetCorrections();
+
         Response<double> TimeToLimit();
 
         Response<bool> GetDualAxisTrackingEnabled();

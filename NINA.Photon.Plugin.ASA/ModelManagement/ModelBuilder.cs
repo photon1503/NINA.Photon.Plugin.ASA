@@ -239,6 +239,35 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             PreFlightChecks(modelPoints);
             forceNextPierSideAvailable = true;
 
+            if (options != null)
+            {
+                
+                if ( options.ModelPointGenerationType != ModelPointGenerationTypeEnum.SiderealPath)
+                {
+                    var corrections = mount.GetCorrections();
+                    if (corrections.Value.X != 0 || corrections.Value.Y != 0)
+                    {
+                        if (OperatingSystem.IsWindows())
+                        {
+                            var result = MessageBox.Show(
+                                "Config was not cleared in Autoslew. Proceed?",
+                                "ASA Model Builder",
+                                MessageBoxButtons.YesNo,
+                                MessageBoxIcon.Warning);
+
+                            if (result != DialogResult.Yes)
+                            {
+                                throw new OperationCanceledException("Model build canceled because Autoslew config was not cleared");
+                            }
+                        }
+                        else
+                        {
+                            Logger.Warning("Config was not cleared in Autoslew, but interactive confirmation is only supported on Windows. Proceeding by default");
+                        }
+                    }
+                }
+            }
+
             var innerCts = new CancellationTokenSource();
             var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, innerCts.Token);
             var telescopeInfo = telescopeMediator.GetInfo();

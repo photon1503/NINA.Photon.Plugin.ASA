@@ -204,6 +204,26 @@ namespace NINA.Photon.Plugin.ASA.Equipment
             return new Response<double>(0, rc);
         }
 
+        public Response<(double X, double Y)> GetCorrections()
+        {
+            string rc = this.mountCommander.SendCommandString("GetCorrections", true);
+            // Returns pointing corrections in radians: x.xxxxxxx#y.yyyyyyy (sign can be + or -)
+            var normalizedResponse = (rc ?? string.Empty).Trim().TrimEnd('#').Replace(',', '.');
+            var parts = normalizedResponse.Split('#');
+
+            if (
+                parts.Length >= 2
+                && double.TryParse(parts[0], NumberStyles.Float, CultureInfo.InvariantCulture, out var xCorrection)
+                && double.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out var yCorrection)
+            )
+            {
+                return new Response<(double X, double Y)>((xCorrection, yCorrection), rc);
+            }
+
+     
+            return new Response<(double X, double Y)>((0, 0), rc);
+        }
+
         public Response<double> TimeToLimit()
         {
             string rc = "0";
