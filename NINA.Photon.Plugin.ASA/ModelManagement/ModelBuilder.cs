@@ -247,23 +247,19 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                     var corrections = mount.GetCorrections();
                     if (corrections.Value.X != 0 || corrections.Value.Y != 0)
                     {
-                        if (OperatingSystem.IsWindows())
-                        {
-                            var result = MessageBox.Show(
-                                "Config was not cleared in Autoslew. Proceed?",
-                                "ASA Model Builder",
-                                MessageBoxButtons.YesNo,
-                                MessageBoxIcon.Warning);
+                        var result = System.Windows.MessageBox.Show(
+                            "Config was not cleared in Autoslew.\n\nProceeding will build a new model on top of an existing model.\n\nThis can be useful for PA/collimation with only a few points, but it is NOT recommended for a full-sky model.",
+                            "ASA Model Builder",
+                            System.Windows.MessageBoxButton.YesNo,
+                            System.Windows.MessageBoxImage.Warning);
 
-                            if (result != DialogResult.Yes)
-                            {
-                                throw new OperationCanceledException("Model build canceled because Autoslew config was not cleared");
-                            }
-                        }
-                        else
+                        if (result != System.Windows.MessageBoxResult.Yes)
                         {
-                            Logger.Warning("Config was not cleared in Autoslew, but interactive confirmation is only supported on Windows. Proceeding by default");
+                            throw new OperationCanceledException("Model build canceled because Autoslew config was not cleared");
                         }
+
+                        Logger.Warning("Proceeding with build while Autoslew config was not cleared. A model will be built on top of an existing model; this is only typically useful for PA/collimation with few points, not full-sky models");
+                        Notification.ShowWarning("Proceeding with uncleared Autoslew config: building model on top of existing model. Use only for PA/collimation with few points, not full-sky models");
                     }
                 }
             }
