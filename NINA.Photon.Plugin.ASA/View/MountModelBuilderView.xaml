@@ -227,18 +227,30 @@
                             </ComboBox.ItemTemplate>
                         </ComboBox>
 
-                                                <TextBlock
+                        <TextBlock
                                                         Grid.Row="2" Grid.Column="0"
-                                                        HorizontalAlignment="Left"
-                                                        VerticalAlignment="Center"
-                                                        Text="Show path"
-                                                        ToolTip="Connect generated points using a dotted preview line" />
-                                                <CheckBox
+                              HorizontalAlignment="Left"
+                              VerticalAlignment="Center"
+                              Text="Min horizon distance"
+                              ToolTip="Minimum clearance above horizon for generated points" />
+                        <ninactrl:UnitTextBox
                                                         Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2"
-                                                        Margin="10,5,0,0"
-                                                        HorizontalAlignment="Left"
-                                                        VerticalAlignment="Center"
-                                                        IsChecked="{Binding ShowDisplayPath}" />
+                              MinWidth="80"
+                              Margin="10,5,0,0"
+                              HorizontalAlignment="Left"
+                              VerticalAlignment="Center"
+                              Unit="°"
+                              ToolTip="Minimum clearance above horizon for generated points">
+                            <Binding Path="MinDistanceToHorizonDegrees" UpdateSourceTrigger="LostFocus">
+                                <Binding.ValidationRules>
+                                    <rules:DoubleRangeRule>
+                                        <rules:DoubleRangeRule.ValidRange>
+                                            <rules:DoubleRangeChecker Maximum="90" Minimum="0" />
+                                        </rules:DoubleRangeRule.ValidRange>
+                                    </rules:DoubleRangeRule>
+                                </Binding.ValidationRules>
+                            </Binding>
+                        </ninactrl:UnitTextBox>
 
                         <TextBlock
                                                         Grid.Row="3" Grid.Column="0"
@@ -265,6 +277,34 @@
                                 </Binding.ValidationRules>
                             </Binding>
                         </ninactrl:UnitTextBox>
+
+                        <TextBlock
+                                                        Grid.Row="6" Grid.Column="0"
+                              HorizontalAlignment="Left"
+                              VerticalAlignment="Center"
+                              Text="Start at horizon"
+                              ToolTip="Start each side (east/west) from the lowest valid point per band" />
+                        <CheckBox
+                                                        Grid.Row="6" Grid.Column="1" Grid.ColumnSpan="2"
+                              Margin="10,5,0,0"
+                              HorizontalAlignment="Left"
+                              VerticalAlignment="Center"
+                              ToolTip="Start each side (east/west) from the lowest valid point per band"
+                              IsChecked="{Binding StartAtHorizon}" />
+
+                        <TextBlock
+                                              Grid.Row="7" Grid.Column="0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Text="End at meridian limit"
+                            ToolTip="For AutoGrid, anchor each band so the last point on each side is as close as possible to meridian limit" />
+                        <CheckBox
+                                              Grid.Row="7" Grid.Column="1" Grid.ColumnSpan="2"
+                            Margin="10,5,0,0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            ToolTip="For AutoGrid, anchor each band so the last point on each side is as close as possible to meridian limit"
+                            IsChecked="{Binding BalanceMeridianZone}" />
 
                         <TextBlock
                                                         Grid.Row="4" Grid.Column="0"
@@ -1218,26 +1258,14 @@
                             Grid.Row="5" Grid.Column="0"
                             HorizontalAlignment="Left"
                             VerticalAlignment="Center"
-                            Text="Min horizon distance"
-                            ToolTip="Minimum clearance above horizon for generated points" />
-                        <ninactrl:UnitTextBox
+                            Text="Show path"
+                            ToolTip="Connect generated points using a dotted preview line" />
+                        <CheckBox
                             Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="2"
-                            MinWidth="80"
                             Margin="10,5,0,0"
                             HorizontalAlignment="Left"
                             VerticalAlignment="Center"
-                            Unit="°"
-                            ToolTip="Minimum clearance above horizon for generated points">
-                            <Binding Path="MinDistanceToHorizonDegrees" UpdateSourceTrigger="LostFocus">
-                                <Binding.ValidationRules>
-                                    <rules:DoubleRangeRule>
-                                        <rules:DoubleRangeRule.ValidRange>
-                                            <rules:DoubleRangeChecker Maximum="90" Minimum="0" />
-                                        </rules:DoubleRangeRule.ValidRange>
-                                    </rules:DoubleRangeRule>
-                                </Binding.ValidationRules>
-                            </Binding>
-                        </ninactrl:UnitTextBox>
+                            IsChecked="{Binding ShowDisplayPath}" />
 
                                 <TextBlock
                             Grid.Row="6" Grid.Column="0"

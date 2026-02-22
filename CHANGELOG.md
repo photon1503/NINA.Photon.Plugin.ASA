@@ -1,6 +1,34 @@
 
 # Changelog
 
+## 3.8.2.5 (2026-02-22)
+
+### AutoGrid Anchoring
+
+- Added **Start at horizon** as a shared option (global + builder) for AutoGrid.
+- Added **End at meridian limit** as a shared option (global + builder) for AutoGrid.
+- Made both anchor modes mutually exclusive so enabling one automatically disables the other.
+- Improved AutoGrid anchoring logic to evaluate each side (east/west) per band independently.
+- Enabled **End at meridian limit** behavior for both AutoGrid input modes:
+  - **Desired points** mode
+  - **Fixed spacing** mode
+- Added a fixed **1° safety margin** from the meridian limit target to reduce unexpected flip-risk edge cases.
+
+### Options UI / Usability
+
+- Reorganized plugin options into clearer categories in the main options template.
+- Added/updated descriptions and tooltips for ambiguous settings (including Legacy DDM and dome-control options).
+- Moved **Show path** into **Chart options** in the model builder UI.
+- Moved **Min horizon distance** into **AutoGrid options** in the model builder UI.
+
+## 3.2.8.4
+
+### Model Build Safety Guard
+
+- Added a pre-build guard for non-MLPT model builds that checks Autoslew pointing corrections (`GetCorrections`).
+  - If corrections are non-zero (indicating config/model was not cleared), the user is prompted with a Yes/No confirmation before continuing.
+  - Proceeding explicitly warns that the new model will be built on top of an existing model (potentially useful for PA/collimation with few points, but not recommended for full-sky models).
+
 ## 3.2.8.3 (2026-02-20)
 
 ### AutoGrid / Band Path Simplification
@@ -16,6 +44,8 @@
 - Changed default model builder generator from **Golden Spiral** to **AutoGrid**.
 - Changed default AutoGrid path ordering mode from **Legacy Azimuth Sweep** to **ASA Band Path**.
 - Changed default AutoGrid desired-point count from **195** to **50**.
+
+
 
 ## 3.2.8.2 (2026-02-18)
 

@@ -239,6 +239,31 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             PreFlightChecks(modelPoints);
             forceNextPierSideAvailable = true;
 
+            if (options != null)
+            {
+                
+                if ( options.ModelPointGenerationType != ModelPointGenerationTypeEnum.SiderealPath)
+                {
+                    var corrections = mount.GetCorrections();
+                    if (corrections.Value.X != 0 || corrections.Value.Y != 0)
+                    {
+                        var result = System.Windows.MessageBox.Show(
+                            "Config was not cleared in Autoslew.\n\nProceeding will build a new model on top of an existing model.\n\nThis can be useful for PA/collimation with only a few points, but it is NOT recommended for a full-sky model.",
+                            "ASA Model Builder",
+                            System.Windows.MessageBoxButton.YesNo,
+                            System.Windows.MessageBoxImage.Warning);
+
+                        if (result != System.Windows.MessageBoxResult.Yes)
+                        {
+                            throw new OperationCanceledException("Model build canceled because Autoslew config was not cleared");
+                        }
+
+                        Logger.Warning("Proceeding with build while Autoslew config was not cleared. A model will be built on top of an existing model; this is only typically useful for PA/collimation with few points, not full-sky models");
+                        Notification.ShowWarning("Proceeding with uncleared Autoslew config: building model on top of existing model. Use only for PA/collimation with few points, not full-sky models");
+                    }
+                }
+            }
+
             var innerCts = new CancellationTokenSource();
             var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, innerCts.Token);
             var telescopeInfo = telescopeMediator.GetInfo();

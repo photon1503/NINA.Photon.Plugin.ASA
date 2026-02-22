@@ -48,6 +48,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
         private const double AUTO_GRID_RING_PHASE_STEP_DEGREES = 12.0d;
         private const int AUTO_GRID_SPARSE_RING_THRESHOLD = 8;
         private const double AUTO_GRID_OVERLAP_MARGIN_MAX_DEGREES = 1.0d;
+        private const double AUTO_GRID_MERIDIAN_SAFETY_MARGIN_DEGREES = 1.0d;
 
         public ModelPointGenerator(IProfileService profileService, ITelescopeMediator telescopeMediator, IWeatherDataMediator weatherDataMediator, IASAOptions options, IMountMediator mountMediator, IMount mount)
         {
@@ -180,6 +181,9 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 (side: PierSide.pierEast, hourAngleOffset: 0.0d),
                 (side: PierSide.pierWest, hourAngleOffset: raSpacingDegrees / 2.0d)
             };
+            var shouldBalanceMeridianZone =
+                options.BalanceMeridianZone;
+            var shouldStartAtHorizon = options.StartAtHorizon && !shouldBalanceMeridianZone;
 
             for (var i = 0; i < ringDistances.Count; i++)
             {
@@ -189,6 +193,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                     : -90.0d + ringDistanceDegrees;
 
                 var ringHourAngles = BuildUniformHourAnglesForRing(ringDistanceDegrees, raSpacingDegrees);
+
                 if (ringHourAngles.Count == 0)
                 {
                     continue;
@@ -197,10 +202,25 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 var ringPoints = new List<ModelPoint>(ringHourAngles.Count * sideConfigurations.Length);
                 foreach (var sideConfiguration in sideConfigurations)
                 {
+                    var sideHourAngleOffset = sideConfiguration.hourAngleOffset;
+                    if (shouldStartAtHorizon || shouldBalanceMeridianZone)
+                    {
+                        sideHourAngleOffset += FindSideHorizonAnchorOffsetDegrees(
+                            baseHourAngles: ringHourAngles,
+                            latitudeDegrees: latitudeDegrees,
+                            declinationDegrees: declinationDegrees,
+                            baseSideOffsetDegrees: sideConfiguration.hourAngleOffset,
+                            meridianLimitDegrees: meridianLimitDegrees,
+                            horizon: horizon,
+                            side: sideConfiguration.side,
+                            targetClearanceDegrees: Math.Max(0.0d, options.MinDistanceToHorizonDegrees),
+                                anchorAtMeridianLimit: shouldBalanceMeridianZone);
+                    }
+
                     var sidePoints = new List<(ModelPoint Point, double HourAngleDegrees)>(ringHourAngles.Count);
                     for (var sequenceIndex = 0; sequenceIndex < ringHourAngles.Count; sequenceIndex++)
                     {
-                        var shiftedHourAngleDegrees = NormalizeHourAngleDegrees(ringHourAngles[sequenceIndex] + sideConfiguration.hourAngleOffset);
+                        var shiftedHourAngleDegrees = NormalizeHourAngleDegrees(ringHourAngles[sequenceIndex] + sideHourAngleOffset);
                         var point = CreateAutoGridPointFromHourAngle(
                             bandIndex: i,
                             sequenceIndex: sequenceIndex,
@@ -275,6 +295,126 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             return points;
         }
 
+        private double FindSideHorizonAnchorOffsetDegrees(
+            List<double> baseHourAngles,
+            double latitudeDegrees,
+            double declinationDegrees,
+            double baseSideOffsetDegrees,
+            double meridianLimitDegrees,
+            CustomHorizon horizon,
+            PierSide side,
+            double targetClearanceDegrees,
+            bool anchorAtMeridianLimit)
+        {
+            if (baseHourAngles == null || baseHourAngles.Count == 0 || horizon == null)
+            {
+                return 0.0d;
+            }
+
+            var ringSpacing = 360.0d / baseHourAngles.Count;
+            var sampleCount = Math.Min(120, Math.Max(24, baseHourAngles.Count * 4));
+            var stepDegrees = ringSpacing / sampleCount;
+
+            var bestOffsetDegrees = 0.0d;
+            var foundCandidate = false;
+            var bestExcess = double.MaxValue;
+            var bestAbsError = double.MaxValue;
+            var bestMeridianGap = double.MaxValue;
+            var bestValidCount = -1;
+            var bestStartMeridianDistance = double.MinValue;
+            var safeMeridianLimitDegrees = Math.Max(0.0d, Math.Abs(meridianLimitDegrees) - AUTO_GRID_MERIDIAN_SAFETY_MARGIN_DEGREES);
+            var sideMeridianTargetSortKey = -safeMeridianLimitDegrees;
+
+            for (var sampleIndex = 0; sampleIndex < sampleCount; sampleIndex++)
+            {
+                var candidateOffsetDegrees = sampleIndex * stepDegrees;
+                int validCount = 0;
+                double? startAltitude = null;
+                double? startAzimuth = null;
+                double? startHourAngle = null;
+                double? endSortKey = null;
+
+                for (var sequenceIndex = 0; sequenceIndex < baseHourAngles.Count; sequenceIndex++)
+                {
+                    var shiftedHourAngleDegrees = NormalizeHourAngleDegrees(baseHourAngles[sequenceIndex] + baseSideOffsetDegrees + candidateOffsetDegrees);
+                    var expectedSide = GetExpectedPierSideFromHourAngle(shiftedHourAngleDegrees);
+                    var inMeridianOverlapZone = meridianLimitDegrees > 0.0d && Math.Abs(shiftedHourAngleDegrees) <= meridianLimitDegrees;
+                    if (!inMeridianOverlapZone && expectedSide != side)
+                    {
+                        continue;
+                    }
+
+                    var destination = ToHorizontalFromDeclinationHourAngle(latitudeDegrees, declinationDegrees, shiftedHourAngleDegrees);
+                    var azimuthDegrees = AstroUtil.EuclidianModulus(720.0d - destination.azimuthDegrees, 360.0d);
+                    var altitudeDegrees = destination.altitudeDegrees;
+                    var horizonAltitude = horizon.GetAltitude(azimuthDegrees);
+                    var state = DeterminePointState(altitudeDegrees, azimuthDegrees, horizonAltitude, applyAzimuthBounds: false);
+                    if (state != ModelPointStateEnum.Generated)
+                    {
+                        continue;
+                    }
+
+                    validCount++;
+                    if (!startAltitude.HasValue
+                        || altitudeDegrees < startAltitude.Value
+                        || (Math.Abs(altitudeDegrees - startAltitude.Value) <= 1e-9d && shiftedHourAngleDegrees > (startHourAngle ?? double.MinValue)))
+                    {
+                        startAltitude = altitudeDegrees;
+                        startAzimuth = azimuthDegrees;
+                        startHourAngle = shiftedHourAngleDegrees;
+                    }
+
+                    var sortKey = anchorAtMeridianLimit
+                        ? GetBalanceMeridianHourAngleSortKey(shiftedHourAngleDegrees, side)
+                        : shiftedHourAngleDegrees;
+
+                    if (!endSortKey.HasValue
+                        || sortKey < endSortKey.Value)
+                    {
+                        endSortKey = sortKey;
+                    }
+                }
+
+                if (!startAltitude.HasValue || !startAzimuth.HasValue || !startHourAngle.HasValue || !endSortKey.HasValue)
+                {
+                    continue;
+                }
+
+                var startHorizonAltitude = horizon.GetAltitude(startAzimuth.Value);
+                var startClearance = startAltitude.Value - startHorizonAltitude;
+                var excess = Math.Max(0.0d, startClearance - targetClearanceDegrees);
+                var absError = Math.Abs(startClearance - targetClearanceDegrees);
+                var meridianGap = Math.Abs(endSortKey.Value - sideMeridianTargetSortKey);
+                var startMeridianDistance = Math.Abs(startHourAngle.Value);
+
+                if (!foundCandidate
+                    || (anchorAtMeridianLimit && meridianGap < bestMeridianGap)
+                    || (anchorAtMeridianLimit && Math.Abs(meridianGap - bestMeridianGap) <= 1e-9d && excess < bestExcess)
+                    || (anchorAtMeridianLimit && Math.Abs(meridianGap - bestMeridianGap) <= 1e-9d && Math.Abs(excess - bestExcess) <= 1e-9d && absError < bestAbsError)
+                    || (anchorAtMeridianLimit && Math.Abs(meridianGap - bestMeridianGap) <= 1e-9d && Math.Abs(excess - bestExcess) <= 1e-9d && Math.Abs(absError - bestAbsError) <= 1e-9d && validCount > bestValidCount)
+                    || (!anchorAtMeridianLimit && excess < bestExcess)
+                    || (!anchorAtMeridianLimit && Math.Abs(excess - bestExcess) <= 1e-9d && absError < bestAbsError)
+                    || (!anchorAtMeridianLimit && Math.Abs(excess - bestExcess) <= 1e-9d && Math.Abs(absError - bestAbsError) <= 1e-9d && startMeridianDistance > bestStartMeridianDistance)
+                    || (!anchorAtMeridianLimit && Math.Abs(excess - bestExcess) <= 1e-9d && Math.Abs(absError - bestAbsError) <= 1e-9d && Math.Abs(startMeridianDistance - bestStartMeridianDistance) <= 1e-9d && validCount > bestValidCount))
+                {
+                    foundCandidate = true;
+                    bestOffsetDegrees = candidateOffsetDegrees;
+                    bestExcess = excess;
+                    bestAbsError = absError;
+                    bestMeridianGap = meridianGap;
+                    bestStartMeridianDistance = startMeridianDistance;
+                    bestValidCount = validCount;
+                }
+            }
+
+            return foundCandidate ? bestOffsetDegrees : 0.0d;
+        }
+
+        private static double GetBalanceMeridianHourAngleSortKey(double hourAngleDegrees, PierSide side)
+        {
+            return side == PierSide.pierEast ? -hourAngleDegrees : hourAngleDegrees;
+        }
+
         private List<double> BuildUniformHourAnglesForRing(double ringDistanceDegrees, double raSpacingDegrees)
         {
             if (Math.Abs(ringDistanceDegrees) < 0.0001d || Math.Abs(ringDistanceDegrees - 180.0d) < 0.0001d)
@@ -293,6 +433,142 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             }
 
             return hourAngles;
+        }
+
+        private List<double> OptimizeAutoGridRingHourAnglesForHorizonStart(
+            List<double> baseHourAngles,
+            double latitudeDegrees,
+            double declinationDegrees,
+            double raSpacingDegrees,
+            double meridianLimitDegrees,
+            CustomHorizon horizon)
+        {
+            if (baseHourAngles == null || baseHourAngles.Count <= 2 || horizon == null)
+            {
+                return baseHourAngles;
+            }
+
+            var sideConfigurations = new[]
+            {
+                (side: PierSide.pierEast, hourAngleOffset: 0.0d),
+                (side: PierSide.pierWest, hourAngleOffset: raSpacingDegrees / 2.0d)
+            };
+
+            var ringCount = baseHourAngles.Count;
+            var ringSpacing = 360.0d / ringCount;
+            var phaseSamples = Math.Min(120, Math.Max(40, ringCount * 5));
+            var phaseStepDegrees = ringSpacing / phaseSamples;
+
+            var bestHourAngles = baseHourAngles;
+            var targetClearance = Math.Max(0.0d, options.MinDistanceToHorizonDegrees);
+            var bestCoveredSides = -1;
+            var bestWorstExcess = double.MaxValue;
+            var bestTotalExcess = double.MaxValue;
+            var bestMeridianProgress = double.MinValue;
+
+            (int coveredSides, double worstExcess, double totalExcess, double meridianProgress) EvaluateCandidate(IReadOnlyList<double> candidateHourAngles)
+            {
+                var coveredSides = 0;
+                var startExcesses = new List<double>(sideConfigurations.Length);
+                var meridianProgress = 0.0d;
+
+                foreach (var sideConfiguration in sideConfigurations)
+                {
+                    double? startHourAngle = null;
+                    double? startAltitude = null;
+                    double? startAzimuth = null;
+
+                    for (var sequenceIndex = 0; sequenceIndex < candidateHourAngles.Count; sequenceIndex++)
+                    {
+                        var shiftedHourAngleDegrees = NormalizeHourAngleDegrees(candidateHourAngles[sequenceIndex] + sideConfiguration.hourAngleOffset);
+                        var destination = ToHorizontalFromDeclinationHourAngle(latitudeDegrees, declinationDegrees, shiftedHourAngleDegrees);
+                        var azimuthDegrees = AstroUtil.EuclidianModulus(720.0d - destination.azimuthDegrees, 360.0d);
+                        var altitudeDegrees = destination.altitudeDegrees;
+
+                        var expectedSide = GetExpectedPierSideFromHourAngle(shiftedHourAngleDegrees);
+                        var inMeridianOverlapZone = meridianLimitDegrees > 0.0d && Math.Abs(shiftedHourAngleDegrees) <= meridianLimitDegrees;
+                        if (!inMeridianOverlapZone && expectedSide != sideConfiguration.side)
+                        {
+                            continue;
+                        }
+
+                        var horizonAltitude = horizon.GetAltitude(azimuthDegrees);
+                        var pointState = DeterminePointState(altitudeDegrees, azimuthDegrees, horizonAltitude, applyAzimuthBounds: false);
+                        if (pointState != ModelPointStateEnum.Generated)
+                        {
+                            continue;
+                        }
+
+                        if (!startHourAngle.HasValue
+                            || shiftedHourAngleDegrees > startHourAngle.Value
+                            || (Math.Abs(shiftedHourAngleDegrees - startHourAngle.Value) <= 1e-9d && altitudeDegrees > (startAltitude ?? double.MinValue)))
+                        {
+                            startHourAngle = shiftedHourAngleDegrees;
+                            startAltitude = altitudeDegrees;
+                            startAzimuth = azimuthDegrees;
+                        }
+                    }
+
+                    if (startHourAngle.HasValue && startAltitude.HasValue && startAzimuth.HasValue)
+                    {
+                        coveredSides++;
+                        var startHorizonAltitude = horizon.GetAltitude(startAzimuth.Value);
+                        var startClearance = startAltitude.Value - startHorizonAltitude;
+                        var startExcess = Math.Max(0.0d, startClearance - targetClearance);
+                        startExcesses.Add(startExcess);
+
+                        var sideMeridianDistance = sideConfiguration.side == PierSide.pierEast
+                            ? (startHourAngle.Value + 180.0d)
+                            : (180.0d - startHourAngle.Value);
+                        meridianProgress += sideMeridianDistance;
+                    }
+                }
+
+                var worstExcess = startExcesses.Count > 0
+                    ? startExcesses.Max()
+                    : double.MaxValue;
+                var totalExcess = startExcesses.Count > 0
+                    ? startExcesses.Sum()
+                    : double.MaxValue;
+
+                return (coveredSides, worstExcess, totalExcess, meridianProgress);
+            }
+
+            for (var phaseIndex = 0; phaseIndex < phaseSamples; phaseIndex++)
+            {
+                var phaseOffsetDegrees = phaseIndex * phaseStepDegrees;
+                var candidateHourAngles = baseHourAngles
+                    .Select(hourAngle => NormalizeHourAngleDegrees(hourAngle + phaseOffsetDegrees))
+                    .ToList();
+                var (coveredSides, worstExcess, totalExcess, meridianProgress) = EvaluateCandidate(candidateHourAngles);
+
+                if (coveredSides > bestCoveredSides
+                    || (coveredSides == bestCoveredSides && worstExcess < bestWorstExcess)
+                    || (coveredSides == bestCoveredSides && Math.Abs(worstExcess - bestWorstExcess) <= 1e-9d && totalExcess < bestTotalExcess)
+                    || (coveredSides == bestCoveredSides && Math.Abs(worstExcess - bestWorstExcess) <= 1e-9d && Math.Abs(totalExcess - bestTotalExcess) <= 1e-9d && meridianProgress > bestMeridianProgress))
+                {
+                    bestCoveredSides = coveredSides;
+                    bestWorstExcess = worstExcess;
+                    bestTotalExcess = totalExcess;
+                    bestMeridianProgress = meridianProgress;
+                    bestHourAngles = candidateHourAngles;
+                }
+            }
+
+            var baseline = EvaluateCandidate(baseHourAngles);
+            var optimized = EvaluateCandidate(bestHourAngles);
+            var optimizationImproved =
+                optimized.coveredSides > baseline.coveredSides
+                || (optimized.coveredSides == baseline.coveredSides && optimized.worstExcess < baseline.worstExcess)
+                || (optimized.coveredSides == baseline.coveredSides && Math.Abs(optimized.worstExcess - baseline.worstExcess) <= 1e-9d && optimized.totalExcess < baseline.totalExcess)
+                || (optimized.coveredSides == baseline.coveredSides && Math.Abs(optimized.worstExcess - baseline.worstExcess) <= 1e-9d && Math.Abs(optimized.totalExcess - baseline.totalExcess) <= 1e-9d && optimized.meridianProgress > baseline.meridianProgress);
+
+            if (!optimizationImproved)
+            {
+                return baseHourAngles;
+            }
+
+            return bestHourAngles;
         }
 
         private static bool IsHourAngleWithinMeridianLimit(double hourAngleDegrees, PierSide side, double meridianLimitDegrees)

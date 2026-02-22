@@ -45,6 +45,10 @@ namespace NINA.Photon.Plugin.ASA.Interfaces
 
         int AutoGridDesiredPointCount { get; set; }
 
+        bool StartAtHorizon { get; set; }
+
+        bool BalanceMeridianZone { get; set; }
+
         string SiderealTrackStartTimeProvider { get; set; }
 
         string SiderealTrackEndTimeProvider { get; set; }
