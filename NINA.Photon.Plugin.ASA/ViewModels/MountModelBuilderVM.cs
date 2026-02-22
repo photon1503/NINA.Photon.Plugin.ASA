@@ -764,6 +764,11 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 RaisePropertyChanged(nameof(StartAtHorizon));
             }
 
+            if (e.PropertyName == nameof(modelBuilderOptions.BalanceMeridianZone))
+            {
+                RaisePropertyChanged(nameof(BalanceMeridianZone));
+            }
+
             if (e.PropertyName == nameof(modelBuilderOptions.SiderealTrackPathOffsetMinutes))
             {
                 RaisePropertyChanged(nameof(SiderealTrackPathOffsetMinutes));
@@ -2104,6 +2109,19 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 if (this.modelBuilderOptions.StartAtHorizon != value)
                 {
                     this.modelBuilderOptions.StartAtHorizon = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        public bool BalanceMeridianZone
+        {
+            get => this.modelBuilderOptions.BalanceMeridianZone;
+            set
+            {
+                if (this.modelBuilderOptions.BalanceMeridianZone != value)
+                {
+                    this.modelBuilderOptions.BalanceMeridianZone = value;
                     RaisePropertyChanged();
                 }
             }

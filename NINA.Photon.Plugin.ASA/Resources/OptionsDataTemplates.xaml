@@ -70,6 +70,7 @@
                 <RowDefinition />
                 <RowDefinition />
                 <RowDefinition />
+                <RowDefinition />
             </Grid.RowDefinitions>
             <Grid.Resources>
                 <TextBlock x:Key="LogCommands_Tooltip" Text="If enabled, every ASA command sent and response received will be logged at INFO level in the NINA log" />
@@ -81,6 +82,7 @@
                 <TextBlock x:Key="MaxPointAzimuth_Tooltip" Text="The maximum azimuth allowed for point generation. This is helpful for providing clearance during the point where meridian flips occur" />
                 <TextBlock x:Key="MinDistanceToHorizon_Tooltip" Text="Minimum clearance above the custom horizon required for generated points" />
                 <TextBlock x:Key="StartAtHorizon_Tooltip" Text="When enabled for AutoGrid, the first generated point per side (east/west) in each band starts from the lowest valid horizon-adjacent point" />
+                <TextBlock x:Key="BalanceMeridianZone_Tooltip" Text="For AutoGrid, anchors each band so its last point per side is as close as possible to meridian limit" />
                 <TextBlock x:Key="ShowRemovedPoints_Tooltip" Text="Whether to show points that were rejected for being outside of the altitude bounds or below the defined horizon" />
                 <TextBlock x:Key="DomeShutterWidth_Tooltip" Text="The width of the dome shutter, in mm. If set, this is used to determine if the scope is pointing out of the shutter instead of the Threshold setting from Dome Options" />
                 <TextBlock x:Key="MinimizeDomeMovement_Tooltip" Text="If enabled, points will be ordered based on the calculated dome azimuth. The left boundary of the dome opening is used for E-&gt;W sorting, and the right boundary for W-&gt;E" />
@@ -292,6 +294,23 @@
                 VerticalAlignment="Center"
                 IsChecked="{Binding StartAtHorizon}"
                 ToolTip="{StaticResource StartAtHorizon_Tooltip}" />
+
+            <TextBlock
+                Grid.Row="21"
+                Grid.Column="0"
+                VerticalAlignment="Center"
+                Text="End at Meridian Limit"
+                ToolTip="{StaticResource BalanceMeridianZone_Tooltip}" />
+            <CheckBox
+                Grid.Row="21"
+                Grid.Column="1"
+                Grid.ColumnSpan="2"
+                MinWidth="80"
+                Margin="5,5,0,0"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Center"
+                IsChecked="{Binding BalanceMeridianZone}"
+                ToolTip="{StaticResource BalanceMeridianZone_Tooltip}" />
 
             <TextBlock
                 Grid.Row="11"

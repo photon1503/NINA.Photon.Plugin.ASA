@@ -281,6 +281,20 @@
                               IsChecked="{Binding StartAtHorizon}" />
 
                         <TextBlock
+                                              Grid.Row="7" Grid.Column="0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Text="End at meridian limit"
+                            ToolTip="For AutoGrid, anchor each band so the last point on each side is as close as possible to meridian limit" />
+                        <CheckBox
+                                              Grid.Row="7" Grid.Column="1" Grid.ColumnSpan="2"
+                            Margin="10,5,0,0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            ToolTip="For AutoGrid, anchor each band so the last point on each side is as close as possible to meridian limit"
+                            IsChecked="{Binding BalanceMeridianZone}" />
+
+                        <TextBlock
                                                         Grid.Row="4" Grid.Column="0"
                               HorizontalAlignment="Left"
                               VerticalAlignment="Center"

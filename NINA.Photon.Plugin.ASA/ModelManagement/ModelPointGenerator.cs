@@ -48,6 +48,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
         private const double AUTO_GRID_RING_PHASE_STEP_DEGREES = 12.0d;
         private const int AUTO_GRID_SPARSE_RING_THRESHOLD = 8;
         private const double AUTO_GRID_OVERLAP_MARGIN_MAX_DEGREES = 1.0d;
+        private const double AUTO_GRID_MERIDIAN_SAFETY_MARGIN_DEGREES = 1.0d;
 
         public ModelPointGenerator(IProfileService profileService, ITelescopeMediator telescopeMediator, IWeatherDataMediator weatherDataMediator, IASAOptions options, IMountMediator mountMediator, IMount mount)
         {
@@ -180,6 +181,9 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 (side: PierSide.pierEast, hourAngleOffset: 0.0d),
                 (side: PierSide.pierWest, hourAngleOffset: raSpacingDegrees / 2.0d)
             };
+            var shouldBalanceMeridianZone =
+                options.BalanceMeridianZone;
+            var shouldStartAtHorizon = options.StartAtHorizon && !shouldBalanceMeridianZone;
 
             for (var i = 0; i < ringDistances.Count; i++)
             {
@@ -199,7 +203,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 foreach (var sideConfiguration in sideConfigurations)
                 {
                     var sideHourAngleOffset = sideConfiguration.hourAngleOffset;
-                    if (options.StartAtHorizon)
+                    if (shouldStartAtHorizon || shouldBalanceMeridianZone)
                     {
                         sideHourAngleOffset += FindSideHorizonAnchorOffsetDegrees(
                             baseHourAngles: ringHourAngles,
@@ -209,7 +213,8 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                             meridianLimitDegrees: meridianLimitDegrees,
                             horizon: horizon,
                             side: sideConfiguration.side,
-                            targetClearanceDegrees: Math.Max(0.0d, options.MinDistanceToHorizonDegrees));
+                            targetClearanceDegrees: Math.Max(0.0d, options.MinDistanceToHorizonDegrees),
+                                anchorAtMeridianLimit: shouldBalanceMeridianZone);
                     }
 
                     var sidePoints = new List<(ModelPoint Point, double HourAngleDegrees)>(ringHourAngles.Count);
@@ -298,7 +303,8 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             double meridianLimitDegrees,
             CustomHorizon horizon,
             PierSide side,
-            double targetClearanceDegrees)
+            double targetClearanceDegrees,
+            bool anchorAtMeridianLimit)
         {
             if (baseHourAngles == null || baseHourAngles.Count == 0 || horizon == null)
             {
@@ -313,15 +319,20 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             var foundCandidate = false;
             var bestExcess = double.MaxValue;
             var bestAbsError = double.MaxValue;
+            var bestMeridianGap = double.MaxValue;
             var bestValidCount = -1;
+            var bestStartMeridianDistance = double.MinValue;
+            var safeMeridianLimitDegrees = Math.Max(0.0d, Math.Abs(meridianLimitDegrees) - AUTO_GRID_MERIDIAN_SAFETY_MARGIN_DEGREES);
+            var sideMeridianTargetSortKey = -safeMeridianLimitDegrees;
 
             for (var sampleIndex = 0; sampleIndex < sampleCount; sampleIndex++)
             {
                 var candidateOffsetDegrees = sampleIndex * stepDegrees;
                 int validCount = 0;
-                double? startSortKey = null;
                 double? startAltitude = null;
                 double? startAzimuth = null;
+                double? startHourAngle = null;
+                double? endSortKey = null;
 
                 for (var sequenceIndex = 0; sequenceIndex < baseHourAngles.Count; sequenceIndex++)
                 {
@@ -344,18 +355,27 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                     }
 
                     validCount++;
-                    var sortKey = GetStartAtHorizonHourAngleSortKey(shiftedHourAngleDegrees, side);
-                    if (!startSortKey.HasValue
-                        || sortKey > startSortKey.Value
-                        || (Math.Abs(sortKey - startSortKey.Value) <= 1e-9d && altitudeDegrees > (startAltitude ?? double.MinValue)))
+                    if (!startAltitude.HasValue
+                        || altitudeDegrees < startAltitude.Value
+                        || (Math.Abs(altitudeDegrees - startAltitude.Value) <= 1e-9d && shiftedHourAngleDegrees > (startHourAngle ?? double.MinValue)))
                     {
-                        startSortKey = sortKey;
                         startAltitude = altitudeDegrees;
                         startAzimuth = azimuthDegrees;
+                        startHourAngle = shiftedHourAngleDegrees;
+                    }
+
+                    var sortKey = anchorAtMeridianLimit
+                        ? GetBalanceMeridianHourAngleSortKey(shiftedHourAngleDegrees, side)
+                        : shiftedHourAngleDegrees;
+
+                    if (!endSortKey.HasValue
+                        || sortKey < endSortKey.Value)
+                    {
+                        endSortKey = sortKey;
                     }
                 }
 
-                if (!startSortKey.HasValue || !startAltitude.HasValue || !startAzimuth.HasValue)
+                if (!startAltitude.HasValue || !startAzimuth.HasValue || !startHourAngle.HasValue || !endSortKey.HasValue)
                 {
                     continue;
                 }
@@ -364,16 +384,25 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 var startClearance = startAltitude.Value - startHorizonAltitude;
                 var excess = Math.Max(0.0d, startClearance - targetClearanceDegrees);
                 var absError = Math.Abs(startClearance - targetClearanceDegrees);
+                var meridianGap = Math.Abs(endSortKey.Value - sideMeridianTargetSortKey);
+                var startMeridianDistance = Math.Abs(startHourAngle.Value);
 
                 if (!foundCandidate
-                    || excess < bestExcess
-                    || (Math.Abs(excess - bestExcess) <= 1e-9d && absError < bestAbsError)
-                    || (Math.Abs(excess - bestExcess) <= 1e-9d && Math.Abs(absError - bestAbsError) <= 1e-9d && validCount > bestValidCount))
+                    || (anchorAtMeridianLimit && meridianGap < bestMeridianGap)
+                    || (anchorAtMeridianLimit && Math.Abs(meridianGap - bestMeridianGap) <= 1e-9d && excess < bestExcess)
+                    || (anchorAtMeridianLimit && Math.Abs(meridianGap - bestMeridianGap) <= 1e-9d && Math.Abs(excess - bestExcess) <= 1e-9d && absError < bestAbsError)
+                    || (anchorAtMeridianLimit && Math.Abs(meridianGap - bestMeridianGap) <= 1e-9d && Math.Abs(excess - bestExcess) <= 1e-9d && Math.Abs(absError - bestAbsError) <= 1e-9d && validCount > bestValidCount)
+                    || (!anchorAtMeridianLimit && excess < bestExcess)
+                    || (!anchorAtMeridianLimit && Math.Abs(excess - bestExcess) <= 1e-9d && absError < bestAbsError)
+                    || (!anchorAtMeridianLimit && Math.Abs(excess - bestExcess) <= 1e-9d && Math.Abs(absError - bestAbsError) <= 1e-9d && startMeridianDistance > bestStartMeridianDistance)
+                    || (!anchorAtMeridianLimit && Math.Abs(excess - bestExcess) <= 1e-9d && Math.Abs(absError - bestAbsError) <= 1e-9d && Math.Abs(startMeridianDistance - bestStartMeridianDistance) <= 1e-9d && validCount > bestValidCount))
                 {
                     foundCandidate = true;
                     bestOffsetDegrees = candidateOffsetDegrees;
                     bestExcess = excess;
                     bestAbsError = absError;
+                    bestMeridianGap = meridianGap;
+                    bestStartMeridianDistance = startMeridianDistance;
                     bestValidCount = validCount;
                 }
             }
@@ -381,7 +410,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             return foundCandidate ? bestOffsetDegrees : 0.0d;
         }
 
-        private static double GetStartAtHorizonHourAngleSortKey(double hourAngleDegrees, PierSide side)
+        private static double GetBalanceMeridianHourAngleSortKey(double hourAngleDegrees, PierSide side)
         {
             return side == PierSide.pierEast ? -hourAngleDegrees : hourAngleDegrees;
         }
