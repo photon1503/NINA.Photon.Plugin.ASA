@@ -1,6 +1,26 @@
 
 # Changelog
 
+## 3.8.2.5 (2026-02-22)
+
+### AutoGrid Anchoring
+
+- Added **Start at horizon** as a shared option (global + builder) for AutoGrid.
+- Added **End at meridian limit** as a shared option (global + builder) for AutoGrid.
+- Made both anchor modes mutually exclusive so enabling one automatically disables the other.
+- Improved AutoGrid anchoring logic to evaluate each side (east/west) per band independently.
+- Enabled **End at meridian limit** behavior for both AutoGrid input modes:
+  - **Desired points** mode
+  - **Fixed spacing** mode
+- Added a fixed **1° safety margin** from the meridian limit target to reduce unexpected flip-risk edge cases.
+
+### Options UI / Usability
+
+- Reorganized plugin options into clearer categories in the main options template.
+- Added/updated descriptions and tooltips for ambiguous settings (including Legacy DDM and dome-control options).
+- Moved **Show path** into **Chart options** in the model builder UI.
+- Moved **Min horizon distance** into **AutoGrid options** in the model builder UI.
+
 ## 3.2.8.4
 
 ### Model Build Safety Guard
