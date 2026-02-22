@@ -141,10 +141,28 @@ For MLPT (Sidereal Path) point generation, see [MLPT Integration](#mlpt-integrat
 
 AutoGrid generates an ASA-style grid with dual-side meridian overlap. The east and west sky halves are sampled separately. Overlap points near the meridian are duplicated for both pier-side solutions. Each generated point stores a desired pier side.
 
+For ASA Band Path generation, anchoring is evaluated independently per side (east/west) and per altitude band. This keeps both sides balanced while preserving the existing traversal logic used during model builds.
+
 Two input modes are available:
 
 * **Desired points** — Set a target point count (3–1000). The generator distributes that many points across the visible sky.
 * **RA / Dec spacing** — Define fixed spacing in degrees for both RA and Dec axes. The generator fills the visible sky at the given intervals.
+
+### Anchor Modes
+
+AutoGrid provides two optional anchor strategies:
+
+* **Start at horizon** — Starts each band side (east/west) from the lowest valid horizon-adjacent point.
+* **End at meridian limit** — Anchors each band side so its last point is as close as possible to the meridian limit.
+
+These modes are **mutually exclusive**. Enabling one automatically disables the other.
+
+When **End at meridian limit** is used, the target is constrained with a fixed **1° safety margin** from the meridian limit to reduce unexpected flip-risk edge cases.
+
+`End at meridian limit` applies to both AutoGrid input modes:
+
+* **Desired points**
+* **RA / Dec spacing**
 
 ### Pathing Options
 
@@ -601,9 +619,11 @@ A consolidated reference of all configurable options. Options are set in the **A
 | Golden Spiral star count | 9 | Number of golden spiral rings (controls point density). |
 | AutoGrid RA spacing (°) | 10 | RA spacing for AutoGrid in spacing mode. |
 | AutoGrid Dec spacing (°) | 10 | Dec spacing for AutoGrid in spacing mode. |
-| AutoGrid desired point count | 195 | Target point count for AutoGrid in count mode. |
+| AutoGrid desired point count | 50 | Target point count for AutoGrid in count mode. |
 | AutoGrid input mode | Spacing | Switch between point-count and spacing modes for AutoGrid. |
-| AutoGrid path ordering | Legacy Azimuth Sweep | Slew order: Legacy Azimuth Sweep or ASA Band Path. |
+| AutoGrid path ordering | ASA Band Path | Slew order: Legacy Azimuth Sweep or ASA Band Path. |
+| Start at horizon | Off | AutoGrid anchor mode: starts each side of every band at the lowest valid horizon-adjacent point. Mutually exclusive with End at meridian limit. |
+| End at meridian limit | Off | AutoGrid anchor mode: targets each side's final band point near meridian limit with a 1° safety margin. Mutually exclusive with Start at horizon. |
 | Min point altitude (°) | 0 | Lower altitude cutoff for generated points. |
 | Max point altitude (°) | 90 | Upper altitude cutoff. |
 | Min point azimuth (°) | 0.5 | Lower azimuth boundary. |
