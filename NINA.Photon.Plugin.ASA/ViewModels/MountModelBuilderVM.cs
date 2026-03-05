@@ -816,6 +816,8 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 return;
             }
 
+            var normalizedAutoGridPathOrderingMode = NormalizeAutoGridPathOrderingMode(modelBuilderOptions.AutoGridPathOrderingMode);
+
             var previewOptions = new ModelBuilderOptions()
             {
                 WestToEastSorting = modelBuilderOptions.WestToEastSorting,
@@ -840,7 +842,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 RefEastAzimuth = modelBuilderOptions.RefEastAzimuth,
                 RefWestAzimuth = modelBuilderOptions.RefWestAzimuth,
                 ModelPointGenerationType = modelBuilderOptions.ModelPointGenerationType,
-                AutoGridPathOrderingMode = modelBuilderOptions.AutoGridPathOrderingMode,
+                AutoGridPathOrderingMode = normalizedAutoGridPathOrderingMode,
                 DomeControlNINA = modelBuilderOptions.DomeControlNINA,
             };
 
@@ -1474,6 +1476,8 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 throw new Exception("Model build already in progress");
             }
 
+            var normalizedAutoGridPathOrderingMode = NormalizeAutoGridPathOrderingMode(modelBuilderOptions.AutoGridPathOrderingMode);
+
             var options = new ModelBuilderOptions()
             {
                 WestToEastSorting = modelBuilderOptions.WestToEastSorting,
@@ -1498,7 +1502,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 RefEastAzimuth = modelBuilderOptions.RefEastAzimuth,
                 RefWestAzimuth = modelBuilderOptions.RefWestAzimuth,
                 ModelPointGenerationType = modelBuilderOptions.ModelPointGenerationType,
-                AutoGridPathOrderingMode = modelBuilderOptions.AutoGridPathOrderingMode,
+                AutoGridPathOrderingMode = normalizedAutoGridPathOrderingMode,
             };
             var modelPoints = ModelPoints.ToList();
             return DoBuildModel(modelPoints, options, CancellationToken.None);
@@ -2093,12 +2097,21 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             get => this.modelBuilderOptions.AutoGridPathOrderingMode;
             set
             {
+                value = NormalizeAutoGridPathOrderingMode(value);
+
                 if (this.modelBuilderOptions.AutoGridPathOrderingMode != value)
                 {
                     this.modelBuilderOptions.AutoGridPathOrderingMode = value;
                     RaisePropertyChanged();
                 }
             }
+        }
+
+        private static AutoGridPathOrderingModeEnum NormalizeAutoGridPathOrderingMode(AutoGridPathOrderingModeEnum value)
+        {
+            return Enum.IsDefined(typeof(AutoGridPathOrderingModeEnum), value)
+                ? value
+                : AutoGridPathOrderingModeEnum.ASABandPath;
         }
 
         public bool StartAtHorizon

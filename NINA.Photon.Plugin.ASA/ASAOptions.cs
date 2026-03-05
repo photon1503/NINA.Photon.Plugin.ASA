@@ -49,6 +49,11 @@ namespace NINA.Photon.Plugin.ASA
             autoGridDecSpacingDegrees = optionsAccessor.GetValueDouble("AutoGridDecSpacingDegrees", 10.0d);
             autoGridInputMode = optionsAccessor.GetValueEnum("AutoGridInputMode", AutoGridInputModeEnum.Spacing);
             autoGridPathOrderingMode = optionsAccessor.GetValueEnum("AutoGridPathOrderingMode", AutoGridPathOrderingModeEnum.ASABandPath);
+            if (!Enum.IsDefined(typeof(AutoGridPathOrderingModeEnum), autoGridPathOrderingMode))
+            {
+                autoGridPathOrderingMode = AutoGridPathOrderingModeEnum.ASABandPath;
+                optionsAccessor.SetValueEnum("AutoGridPathOrderingMode", autoGridPathOrderingMode);
+            }
             autoGridDesiredPointCount = optionsAccessor.GetValueInt32("AutoGridDesiredPointCount", 50);
             startAtHorizon = optionsAccessor.GetValueBoolean("StartAtHorizon", false);
             balanceMeridianZone = optionsAccessor.GetValueBoolean("BalanceMeridianZone", false);
@@ -92,11 +97,11 @@ namespace NINA.Photon.Plugin.ASA
             highAltitudeMin = optionsAccessor.GetValueInt32("HighAltitudeMin", 70);
             highAltitudeMax = optionsAccessor.GetValueInt32("HighAltitudeMax", 89);
             useSync = optionsAccessor.GetValueBoolean("UseSync", false);
-            syncEveryHA = optionsAccessor.GetValueDouble("SyncEveryHA", 30.0d);
-            syncEastAltitude = optionsAccessor.GetValueDouble("SyncEastAltitude", 65.0d);
-            syncWestAltitude = optionsAccessor.GetValueDouble("SyncWestAltitude", 65.0d);
-            refEastAltitude = optionsAccessor.GetValueDouble("RefEastAltitude", 35.0d);
-            refWestAltitude = optionsAccessor.GetValueDouble("RefWestAltitude", 35.0d);
+            syncEveryHA = optionsAccessor.GetValueDouble("SyncEveryHA", 90.0d);
+            syncEastAltitude = optionsAccessor.GetValueDouble("SyncEastAltitude", 45.0d);
+            syncWestAltitude = optionsAccessor.GetValueDouble("SyncWestAltitude", 45.0d);
+            refEastAltitude = optionsAccessor.GetValueDouble("RefEastAltitude", 30.0d);
+            refWestAltitude = optionsAccessor.GetValueDouble("RefWestAltitude", 30.0d);
             syncEastAzimuth = optionsAccessor.GetValueDouble("SyncEastAzimuth", 90.0d);
             syncWestAzimuth = optionsAccessor.GetValueDouble("SyncWestAzimuth", 270.0d);
             refEastAzimuth = optionsAccessor.GetValueDouble("RefEastAzimuth", 90.0d);
@@ -160,13 +165,13 @@ namespace NINA.Photon.Plugin.ASA
             UseSync = false;
             HighAltitudeMin = 60;
             HighAltitudeMax = 89;
-            SyncEveryHA = 30.0d;
-            SyncEastAltitude = 65.0d;
-            SyncWestAltitude = 65.0d;
+            SyncEveryHA = 90.0d;
+            SyncEastAltitude = 45.0d;
+            SyncWestAltitude = 45.0d;
             SyncEastAzimuth = 90.0d;
             SyncWestAzimuth = 270.0d;
-            RefEastAltitude = 35.0d;
-            RefWestAltitude = 35.0d;
+            RefEastAltitude = 30.0d;
+            RefWestAltitude = 30.0d;
             RefEastAzimuth = 90.0d;
             RefWestAzimuth = 270.0d;
             ChartPointSize = 2.8d;
@@ -312,6 +317,11 @@ namespace NINA.Photon.Plugin.ASA
             get => autoGridPathOrderingMode;
             set
             {
+                if (!Enum.IsDefined(typeof(AutoGridPathOrderingModeEnum), value))
+                {
+                    value = AutoGridPathOrderingModeEnum.ASABandPath;
+                }
+
                 if (autoGridPathOrderingMode != value)
                 {
                     autoGridPathOrderingMode = value;

@@ -38,16 +38,16 @@ namespace NINA.Photon.Plugin.ASA.Interfaces
         public bool DomeControlNINA { get; set; } = false;
 
         public bool UseSync { get; set; } = false;
-        public double SyncEveryHA { get; set; } = 0.0d;
-        public double SyncEastAltitude { get; set; } = 0.0d;
-        public double SyncWestAltitude { get; set; } = 0.0d;
-        public double SyncEastAzimuth { get; set; } = 0.0d;
-        public double SyncWestAzimuth { get; set; } = 0.0d;
+        public double SyncEveryHA { get; set; } = 90.0d;
+        public double SyncEastAltitude { get; set; } = 45.0d;
+        public double SyncWestAltitude { get; set; } = 45.0d;
+        public double SyncEastAzimuth { get; set; } = 90.0d;
+        public double SyncWestAzimuth { get; set; } = 270.0d;
 
-        public double RefEastAltitude { get; set; } = 0.0d;
-        public double RefWestAltitude { get; set; } = 0.0d;
-        public double RefEastAzimuth { get; set; } = 0.0d;
-        public double RefWestAzimuth { get; set; } = 0.0d;
+        public double RefEastAltitude { get; set; } = 30.0d;
+        public double RefWestAltitude { get; set; } = 30.0d;
+        public double RefEastAzimuth { get; set; } = 90.0d;
+        public double RefWestAzimuth { get; set; } = 270.0d;
         public ModelPointGenerationTypeEnum ModelPointGenerationType { get; set; } = ModelPointGenerationTypeEnum.GoldenSpiral;
         public AutoGridPathOrderingModeEnum AutoGridPathOrderingMode { get; set; } = AutoGridPathOrderingModeEnum.LegacyAzimuthSweep;
     }

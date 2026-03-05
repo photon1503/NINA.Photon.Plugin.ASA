@@ -1,6 +1,13 @@
 
 # Changelog
 
+## 3.8.2.x
+
+- Fixed an issue where AutoGrid builds could still use legacy azimuth sweep immediately after selecting **ASA Band Path**.
+
+- Improved sync/reference point handling so reference-point selection follows the target point's pier-side intent, not azimuth-only branching.
+
+
 ## 3.8.2.5 (2026-02-22)
 
 ### AutoGrid Anchoring

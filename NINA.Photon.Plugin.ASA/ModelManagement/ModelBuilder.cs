@@ -939,14 +939,16 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 Altitude = state.Options.RefEastAltitude,
                 Azimuth = state.Options.RefEastAzimuth,
                 IsSyncPoint = true,
+                DesiredPierSide = PierSide.pierEast,
                 ModelPointState = ModelPointStateEnum.Generated
             };
 
-            ModelPoint refPoinWest = new ModelPoint(telescopeMediator)
+            ModelPoint refPointWest = new ModelPoint(telescopeMediator)
             {
                 Altitude = state.Options.RefWestAltitude,
                 Azimuth = state.Options.RefWestAzimuth,
                 IsSyncPoint = true,
+                DesiredPierSide = PierSide.pierWest,
                 ModelPointState = ModelPointStateEnum.Generated
             };
 
@@ -986,7 +988,8 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 {
                     if (nextPoint.IsSyncPoint)
                     {
-                        var refPoint = nextPoint.Azimuth < 180 ? refPointEast : refPoinWest;
+                        var referencePierSide = GetAsaOrderingPierSide(nextPoint);
+                        var refPoint = referencePierSide == PierSide.pierEast ? refPointEast : refPointWest;
 
                         if (!await SlewTelescopeToPoint(state, refPoint, ct))
                         {
@@ -1199,6 +1202,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 Altitude = options.SyncEastAltitude,
                 Azimuth = options.SyncEastAzimuth,
                 IsSyncPoint = true,
+                DesiredPierSide = PierSide.pierEast,
                 ModelPointState = ModelPointStateEnum.Generated
             };
 
@@ -1207,6 +1211,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 Altitude = options.SyncWestAltitude,
                 Azimuth = options.SyncWestAzimuth,
                 IsSyncPoint = true,
+                DesiredPierSide = PierSide.pierWest,
                 ModelPointState = ModelPointStateEnum.Generated
             };
 
@@ -1224,8 +1229,10 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
 
                 if (shouldInsertSync)
                 {
+                    var syncPierSide = GetAsaOrderingPierSide(point);
                     var syncPoint = new ModelPoint(telescopeMediator);
-                    syncPoint.CopyFrom(point.Azimuth < 180 ? syncPointEast : syncPointWest);
+                    syncPoint.CopyFrom(syncPierSide == PierSide.pierEast ? syncPointEast : syncPointWest);
+                    syncPoint.DesiredPierSide = syncPierSide;
                     syncPoint.ModelIndex = idx++;
                     pointsWithSync.Add(syncPoint);
                 }
