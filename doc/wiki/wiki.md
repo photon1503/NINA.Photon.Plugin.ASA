@@ -159,10 +159,6 @@ These modes are **mutually exclusive**. Enabling one automatically disables the 
 
 When **End at meridian limit** is used, the target is constrained with a fixed **1° safety margin** from the meridian limit to reduce unexpected flip-risk edge cases.
 
-`End at meridian limit` applies to both AutoGrid input modes:
-
-* **Desired points**
-* **RA / Dec spacing**
 
 ### Pathing Options
 
