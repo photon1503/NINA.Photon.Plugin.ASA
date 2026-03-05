@@ -33,6 +33,7 @@ using NINA.WPF.Base.Interfaces.Mediator;
 using NINA.WPF.Base.Interfaces.ViewModel;
 using NINA.WPF.Base.ViewModel;
 using OxyPlot;
+using OxyPlot.Series;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -209,6 +210,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             SubscribeDisplayModelPoints(displayModelPoints);
             RefreshMlptErrorCharts();
             RefreshMeridianLimitGuides();
+            RefreshSyncReferenceDisplayPoints();
         }
 
         private void SubscribeDisplayModelPoints(AsyncObservableCollection<ModelPoint> points)
@@ -373,6 +375,46 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             }
 
             return normalized;
+        }
+
+        private void RefreshSyncReferenceDisplayPoints()
+        {
+            if (!UseSync || ModelPointGenerationType == ModelPointGenerationTypeEnum.SiderealPath)
+            {
+                SyncDisplayPoints = new AsyncObservableCollection<DataPoint>();
+                RefDisplayPoints = new AsyncObservableCollection<DataPoint>();
+                SyncDisplayPointsPolar = new AsyncObservableCollection<DataPoint>();
+                RefDisplayPointsPolar = new AsyncObservableCollection<DataPoint>();
+                return;
+            }
+
+            var syncPoints = new List<DataPoint>();
+            var refPoints = new List<DataPoint>();
+
+            if (!double.IsNaN(SyncEastAltitude) && !double.IsNaN(SyncEastAzimuth))
+            {
+                syncPoints.Add(new DataPoint(NormalizeAzimuthDegrees(SyncEastAzimuth), SyncEastAltitude));
+            }
+
+            if (!double.IsNaN(SyncWestAltitude) && !double.IsNaN(SyncWestAzimuth))
+            {
+                syncPoints.Add(new DataPoint(NormalizeAzimuthDegrees(SyncWestAzimuth), SyncWestAltitude));
+            }
+
+            if (!double.IsNaN(RefEastAltitude) && !double.IsNaN(RefEastAzimuth))
+            {
+                refPoints.Add(new DataPoint(NormalizeAzimuthDegrees(RefEastAzimuth), RefEastAltitude));
+            }
+
+            if (!double.IsNaN(RefWestAltitude) && !double.IsNaN(RefWestAzimuth))
+            {
+                refPoints.Add(new DataPoint(NormalizeAzimuthDegrees(RefWestAzimuth), RefWestAltitude));
+            }
+
+            SyncDisplayPoints = new AsyncObservableCollection<DataPoint>(syncPoints);
+            RefDisplayPoints = new AsyncObservableCollection<DataPoint>(refPoints);
+            SyncDisplayPointsPolar = new AsyncObservableCollection<DataPoint>(syncPoints.Select(point => new DataPoint(90.0d - point.Y, point.X)));
+            RefDisplayPointsPolar = new AsyncObservableCollection<DataPoint>(refPoints.Select(point => new DataPoint(90.0d - point.Y, point.X)));
         }
 
         private static List<DataPoint> BuildPolarGuideLine(double azimuth)
@@ -792,6 +834,19 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 RaisePropertyChanged(nameof(ShowMeridianLimitsInCharts));
                 RaisePropertyChanged(nameof(ShowMeridianLimitGuidesEffective));
             }
+
+            if (e.PropertyName == nameof(modelBuilderOptions.UseSync)
+                || e.PropertyName == nameof(modelBuilderOptions.SyncEastAltitude)
+                || e.PropertyName == nameof(modelBuilderOptions.SyncWestAltitude)
+                || e.PropertyName == nameof(modelBuilderOptions.SyncEastAzimuth)
+                || e.PropertyName == nameof(modelBuilderOptions.SyncWestAzimuth)
+                || e.PropertyName == nameof(modelBuilderOptions.RefEastAltitude)
+                || e.PropertyName == nameof(modelBuilderOptions.RefWestAltitude)
+                || e.PropertyName == nameof(modelBuilderOptions.RefEastAzimuth)
+                || e.PropertyName == nameof(modelBuilderOptions.RefWestAzimuth))
+            {
+                RefreshSyncReferenceDisplayPoints();
+            }
         }
 
         private void UpdateDisplayModelPoints()
@@ -841,6 +896,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 RefWestAltitude = modelBuilderOptions.RefWestAltitude,
                 RefEastAzimuth = modelBuilderOptions.RefEastAzimuth,
                 RefWestAzimuth = modelBuilderOptions.RefWestAzimuth,
+                SiderealTrackPreBalanceFarEndSlew = modelBuilderOptions.SiderealTrackPreBalanceFarEndSlew,
                 ModelPointGenerationType = modelBuilderOptions.ModelPointGenerationType,
                 AutoGridPathOrderingMode = normalizedAutoGridPathOrderingMode,
                 DomeControlNINA = modelBuilderOptions.DomeControlNINA,
@@ -1501,6 +1557,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 RefWestAltitude = modelBuilderOptions.RefWestAltitude,
                 RefEastAzimuth = modelBuilderOptions.RefEastAzimuth,
                 RefWestAzimuth = modelBuilderOptions.RefWestAzimuth,
+                SiderealTrackPreBalanceFarEndSlew = modelBuilderOptions.SiderealTrackPreBalanceFarEndSlew,
                 ModelPointGenerationType = modelBuilderOptions.ModelPointGenerationType,
                 AutoGridPathOrderingMode = normalizedAutoGridPathOrderingMode,
             };
@@ -2425,6 +2482,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 {
                     this.modelBuilderOptions.SyncEastAltitude = value;
                     RaisePropertyChanged();
+                    RefreshSyncReferenceDisplayPoints();
                 }
             }
         }
@@ -2438,6 +2496,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 {
                     this.modelBuilderOptions.SyncWestAltitude = value;
                     RaisePropertyChanged();
+                    RefreshSyncReferenceDisplayPoints();
                 }
             }
         }
@@ -2451,6 +2510,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 {
                     this.modelBuilderOptions.SyncEastAzimuth = value;
                     RaisePropertyChanged();
+                    RefreshSyncReferenceDisplayPoints();
                 }
             }
         }
@@ -2464,6 +2524,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 {
                     this.modelBuilderOptions.SyncWestAzimuth = value;
                     RaisePropertyChanged();
+                    RefreshSyncReferenceDisplayPoints();
                 }
             }
         }
@@ -2477,6 +2538,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 {
                     this.modelBuilderOptions.RefEastAltitude = value;
                     RaisePropertyChanged();
+                    RefreshSyncReferenceDisplayPoints();
                 }
             }
         }
@@ -2490,6 +2552,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 {
                     this.modelBuilderOptions.RefWestAltitude = value;
                     RaisePropertyChanged();
+                    RefreshSyncReferenceDisplayPoints();
                 }
             }
         }
@@ -2503,6 +2566,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 {
                     this.modelBuilderOptions.RefEastAzimuth = value;
                     RaisePropertyChanged();
+                    RefreshSyncReferenceDisplayPoints();
                 }
             }
         }
@@ -2516,6 +2580,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 {
                     this.modelBuilderOptions.RefWestAzimuth = value;
                     RaisePropertyChanged();
+                    RefreshSyncReferenceDisplayPoints();
                 }
             }
         }
@@ -2529,6 +2594,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 {
                     this.modelBuilderOptions.UseSync = value;
                     RaisePropertyChanged();
+                    RefreshSyncReferenceDisplayPoints();
                 }
             }
         }
@@ -2580,6 +2646,19 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 if (this.modelBuilderOptions.SiderealTrackRADeltaDegrees != value)
                 {
                     this.modelBuilderOptions.SiderealTrackRADeltaDegrees = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        public bool SiderealTrackPreBalanceFarEndSlew
+        {
+            get => this.modelBuilderOptions.SiderealTrackPreBalanceFarEndSlew;
+            set
+            {
+                if (this.modelBuilderOptions.SiderealTrackPreBalanceFarEndSlew != value)
+                {
+                    this.modelBuilderOptions.SiderealTrackPreBalanceFarEndSlew = value;
                     RaisePropertyChanged();
                 }
             }
@@ -2964,6 +3043,54 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             private set
             {
                 displayPathPointsPolar = value;
+                RaisePropertyChanged();
+            }
+        }
+
+        private AsyncObservableCollection<DataPoint> syncDisplayPoints = new AsyncObservableCollection<DataPoint>();
+
+        public AsyncObservableCollection<DataPoint> SyncDisplayPoints
+        {
+            get => syncDisplayPoints;
+            private set
+            {
+                syncDisplayPoints = value;
+                RaisePropertyChanged();
+            }
+        }
+
+        private AsyncObservableCollection<DataPoint> refDisplayPoints = new AsyncObservableCollection<DataPoint>();
+
+        public AsyncObservableCollection<DataPoint> RefDisplayPoints
+        {
+            get => refDisplayPoints;
+            private set
+            {
+                refDisplayPoints = value;
+                RaisePropertyChanged();
+            }
+        }
+
+        private AsyncObservableCollection<DataPoint> syncDisplayPointsPolar = new AsyncObservableCollection<DataPoint>();
+
+        public AsyncObservableCollection<DataPoint> SyncDisplayPointsPolar
+        {
+            get => syncDisplayPointsPolar;
+            private set
+            {
+                syncDisplayPointsPolar = value;
+                RaisePropertyChanged();
+            }
+        }
+
+        private AsyncObservableCollection<DataPoint> refDisplayPointsPolar = new AsyncObservableCollection<DataPoint>();
+
+        public AsyncObservableCollection<DataPoint> RefDisplayPointsPolar
+        {
+            get => refDisplayPointsPolar;
+            private set
+            {
+                refDisplayPointsPolar = value;
                 RaisePropertyChanged();
             }
         }

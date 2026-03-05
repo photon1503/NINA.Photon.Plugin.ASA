@@ -61,6 +61,7 @@ namespace NINA.Photon.Plugin.ASA
             siderealTrackEndOffsetMinutes = optionsAccessor.GetValueInt32("SiderealTrackEndOffsetMinutes", 0);
             siderealTrackPathOffsetMinutes = optionsAccessor.GetValueInt32("SiderealTrackPathOffsetMinutes", 0);
             siderealTrackRADeltaDegrees = optionsAccessor.GetValueDouble("SiderealTrackRADeltaDegrees", 1.5d);
+            siderealTrackPreBalanceFarEndSlew = optionsAccessor.GetValueBoolean("SiderealTrackPreBalanceFarEndSlew", true);
             domeShutterWidth_mm = optionsAccessor.GetValueInt32("DomeShutterWidth_mm", 0);
             minimizeDomeMovementEnabled = optionsAccessor.GetValueBoolean("MinimizeDomeMovementEnabled", true);
             minimizeMeridianFlipsEnabled = optionsAccessor.GetValueBoolean("MinimizeMeridianFlipsEnabled", true);
@@ -129,6 +130,7 @@ namespace NINA.Photon.Plugin.ASA
             SiderealTrackEndOffsetMinutes = 0;
             SiderealTrackPathOffsetMinutes = 0;
             SiderealTrackRADeltaDegrees = 1.5d;
+            SiderealTrackPreBalanceFarEndSlew = false;
             DomeShutterWidth_mm = 0;
             MinimizeDomeMovementEnabled = true;
             MinimizeMeridianFlipsEnabled = true;
@@ -463,6 +465,22 @@ namespace NINA.Photon.Plugin.ASA
                     }
                     siderealTrackRADeltaDegrees = value;
                     optionsAccessor.SetValueDouble("SiderealTrackRADeltaDegrees", siderealTrackRADeltaDegrees);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private bool siderealTrackPreBalanceFarEndSlew;
+
+        public bool SiderealTrackPreBalanceFarEndSlew
+        {
+            get => siderealTrackPreBalanceFarEndSlew;
+            set
+            {
+                if (siderealTrackPreBalanceFarEndSlew != value)
+                {
+                    siderealTrackPreBalanceFarEndSlew = value;
+                    optionsAccessor.SetValueBoolean("SiderealTrackPreBalanceFarEndSlew", siderealTrackPreBalanceFarEndSlew);
                     RaisePropertyChanged();
                 }
             }

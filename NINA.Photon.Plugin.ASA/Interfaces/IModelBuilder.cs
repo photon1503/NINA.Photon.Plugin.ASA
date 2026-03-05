@@ -48,6 +48,7 @@ namespace NINA.Photon.Plugin.ASA.Interfaces
         public double RefWestAltitude { get; set; } = 30.0d;
         public double RefEastAzimuth { get; set; } = 90.0d;
         public double RefWestAzimuth { get; set; } = 270.0d;
+        public bool SiderealTrackPreBalanceFarEndSlew { get; set; } = false;
         public ModelPointGenerationTypeEnum ModelPointGenerationType { get; set; } = ModelPointGenerationTypeEnum.GoldenSpiral;
         public AutoGridPathOrderingModeEnum AutoGridPathOrderingMode { get; set; } = AutoGridPathOrderingModeEnum.LegacyAzimuthSweep;
     }

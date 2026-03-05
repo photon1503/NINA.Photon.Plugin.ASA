@@ -1,11 +1,18 @@
 
 # Changelog
 
-## 3.8.2.x
+## 3.2.8.6
 
-- Fixed an issue where AutoGrid builds could still use legacy azimuth sweep immediately after selecting **ASA Band Path**.
+- Fixed an issue where AutoGrid builds could still use legacy azimuth sweep immediately after selecting 
 
-- Improved sync/reference point handling so reference-point selection follows the target point's pier-side intent, not azimuth-only branching.
+- For **AutoGrid + ASA Band Path**, sync placement now follows band/side boundaries instead of interval-based insertion. Implemented vendor-style per-block sequence: **Ref → Sync → Ref → band points**.
+  - Updated sync/reference defaults to:
+    - `Sync East/West = Alt 45°, Az 90° / 270°`
+    - `Ref East/West = Alt 30°, Az 90° / 270°`
+
+- Added new MLPT option **Pre-balance** to control the initial far-end slew before the first planned point.
+  - Existing installs keep previous behavior by default: if no stored value exists, **Pre-balance** defaults to **ON**.
+
 
 
 ## 3.8.2.5 (2026-02-22)

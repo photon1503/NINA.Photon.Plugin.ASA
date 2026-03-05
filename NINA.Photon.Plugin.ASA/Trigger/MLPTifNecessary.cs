@@ -259,6 +259,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
                 RemoveHighRMSPointsAfterBuild = options.RemoveHighRMSPointsAfterBuild,
                 PlateSolveSubframePercentage = options.PlateSolveSubframePercentage,
                 DisableRefractionCorrection = options.DisableRefractionCorrection,
+                SiderealTrackPreBalanceFarEndSlew = options.SiderealTrackPreBalanceFarEndSlew,
                 ModelPointGenerationType = ModelPointGenerationTypeEnum.SiderealPath
             };
 
@@ -689,6 +690,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
                 RemoveHighRMSPointsAfterBuild = options.RemoveHighRMSPointsAfterBuild,
                 PlateSolveSubframePercentage = options.PlateSolveSubframePercentage,
                 DisableRefractionCorrection = options.DisableRefractionCorrection,
+                SiderealTrackPreBalanceFarEndSlew = options.SiderealTrackPreBalanceFarEndSlew,
                 ModelPointGenerationType = ModelPointGenerationTypeEnum.SiderealPath
             };
 

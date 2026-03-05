@@ -952,8 +952,9 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 ModelPointState = ModelPointStateEnum.Generated
             };
 
-            // For MLTP, go to last point then back to first point
-            if (state.Options.ModelPointGenerationType == ModelPointGenerationTypeEnum.SiderealPath)
+            // For MLTP, optionally go to last point then back to first point to pre-balance for the final pier-side change
+            if (state.Options.ModelPointGenerationType == ModelPointGenerationTypeEnum.SiderealPath
+                && state.Options.SiderealTrackPreBalanceFarEndSlew)
             {
                 // slew to last point and then back
                 var lastPoint = eligiblePointsOrdered.Last();
@@ -978,6 +979,11 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 }
             }
 
+            var useAsaBandRefSyncRefPattern =
+                state.Options.ModelPointGenerationType == ModelPointGenerationTypeEnum.AutoGrid &&
+                state.Options.AutoGridPathOrderingMode == AutoGridPathOrderingModeEnum.ASABandPath;
+            var pendingReferenceAfterSync = false;
+
             while (nextPoint != null)
             {
                 ct.ThrowIfCancellationRequested();
@@ -986,10 +992,19 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 bool success = false;
                 try
                 {
+                    if (useAsaBandRefSyncRefPattern && pendingReferenceAfterSync && !nextPoint.IsSyncPoint)
+                    {
+                        var trailingRefPoint = IsEastSkySide(nextPoint) ? refPointEast : refPointWest;
+                        if (!await SlewTelescopeToPoint(state, trailingRefPoint, ct))
+                        {
+                            Logger.Error($"Failed to slew to trailing reference point{trailingRefPoint}. Continuing to the next point");
+                        }
+                        pendingReferenceAfterSync = false;
+                    }
+
                     if (nextPoint.IsSyncPoint)
                     {
-                        var referencePierSide = GetAsaOrderingPierSide(nextPoint);
-                        var refPoint = referencePierSide == PierSide.pierEast ? refPointEast : refPointWest;
+                        var refPoint = IsEastSkySide(nextPoint) ? refPointEast : refPointWest;
 
                         if (!await SlewTelescopeToPoint(state, refPoint, ct))
                         {
@@ -1005,6 +1020,11 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                     }
                     else
                     {
+                        if (useAsaBandRefSyncRefPattern && nextPoint.IsSyncPoint)
+                        {
+                            pendingReferenceAfterSync = true;
+                        }
+
                         using (MyStopWatch.Measure("Waiting on ProcessingSemaphore"))
                         {
                             await state.ProcessingSemaphore.WaitAsync(ct);
@@ -1184,9 +1204,12 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 orderedBase = OrderAutoGridPointsAsaBandPath(eligiblePoints);
             }
 
-            Logger.Info($"Sync is {(options.UseSync ? "enabled" : "disabled")}");
+            var useSyncForThisBuild = options.UseSync
+                && options.ModelPointGenerationType != ModelPointGenerationTypeEnum.SiderealPath;
 
-            if (!options.UseSync)
+            Logger.Info($"Sync is {(useSyncForThisBuild ? "enabled" : "disabled")}");
+
+            if (!useSyncForThisBuild)
             {
                 if (cloneNonSyncPoints)
                 {
@@ -1217,21 +1240,37 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
 
             var pointsWithSync = new List<ModelPoint>();
             ModelPoint lastSyncPoint = null;
+            var lastSyncBandIndex = int.MinValue;
+            var lastSyncPierSide = PierSide.pierUnknown;
             var idx = 0;
+
+            var useAsaBandSyncStrategy =
+                options.ModelPointGenerationType == ModelPointGenerationTypeEnum.AutoGrid &&
+                options.AutoGridPathOrderingMode == AutoGridPathOrderingModeEnum.ASABandPath;
+
+            if (useAsaBandSyncStrategy)
+            {
+                Logger.Info("Using ASA band sync placement strategy (sync at band/side boundaries)");
+            }
 
             foreach (var sourcePoint in orderedBase)
             {
                 var point = cloneNonSyncPoints ? sourcePoint.Clone() : sourcePoint;
-                var shouldInsertSync =
-                    lastSyncPoint == null ||
-                    Math.Abs(lastSyncPoint.Azimuth - point.Azimuth) >= options.SyncEveryHA ||
-                    Math.Abs(lastSyncPoint.Azimuth - point.Azimuth) > 180;
+                var syncPierSide = GetAsaOrderingPierSide(point);
+                var syncOnEastSky = IsEastSkySide(point);
+
+                var shouldInsertSync = useAsaBandSyncStrategy
+                    ? lastSyncPoint == null
+                      || point.AutoGridBandIndex != lastSyncBandIndex
+                      || syncPierSide != lastSyncPierSide
+                    : lastSyncPoint == null
+                      || Math.Abs(lastSyncPoint.Azimuth - point.Azimuth) >= options.SyncEveryHA
+                      || Math.Abs(lastSyncPoint.Azimuth - point.Azimuth) > 180;
 
                 if (shouldInsertSync)
                 {
-                    var syncPierSide = GetAsaOrderingPierSide(point);
                     var syncPoint = new ModelPoint(telescopeMediator);
-                    syncPoint.CopyFrom(syncPierSide == PierSide.pierEast ? syncPointEast : syncPointWest);
+                    syncPoint.CopyFrom(syncOnEastSky ? syncPointEast : syncPointWest);
                     syncPoint.DesiredPierSide = syncPierSide;
                     syncPoint.ModelIndex = idx++;
                     pointsWithSync.Add(syncPoint);
@@ -1243,6 +1282,8 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 if (shouldInsertSync)
                 {
                     lastSyncPoint = point;
+                    lastSyncBandIndex = point.AutoGridBandIndex;
+                    lastSyncPierSide = syncPierSide;
                 }
             }
 
@@ -1341,6 +1382,34 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             }
 
             return point.Azimuth <= 180.0d ? PierSide.pierEast : PierSide.pierWest;
+        }
+
+        private static bool IsEastSkySide(ModelPoint point)
+        {
+            if (point == null)
+            {
+                return true;
+            }
+
+            // ASA side metadata is pier-side based. Convert to sky-side:
+            // pierWest => east sky, pierEast => west sky.
+            if (point.DesiredPierSide == PierSide.pierWest || point.ExpectedDomeSideOfPier == PierSide.pierWest)
+            {
+                return true;
+            }
+
+            if (point.DesiredPierSide == PierSide.pierEast || point.ExpectedDomeSideOfPier == PierSide.pierEast)
+            {
+                return false;
+            }
+
+            if (double.IsNaN(point.Azimuth) || double.IsInfinity(point.Azimuth))
+            {
+                return true;
+            }
+
+            var normalizedAzimuth = AstroUtil.EuclidianModulus(point.Azimuth, 360.0d);
+            return normalizedAzimuth <= 180.0d;
         }
 
         private static List<ModelPoint> OrderBandPointsAsaSidePasses(List<ModelPoint> bandPoints)

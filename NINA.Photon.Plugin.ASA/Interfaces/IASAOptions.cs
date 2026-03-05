@@ -61,6 +61,8 @@ namespace NINA.Photon.Plugin.ASA.Interfaces
 
         double SiderealTrackRADeltaDegrees { get; set; }
 
+        bool SiderealTrackPreBalanceFarEndSlew { get; set; }
+
         int DomeShutterWidth_mm { get; set; }
 
         bool MinimizeDomeMovementEnabled { get; set; }

@@ -488,7 +488,17 @@
                   Text="Sync Options" />
                         </Grid>
                     </GroupBox.Header>
-                    <Expander Header="Show..." IsExpanded="False">
+                    <Expander Header="Show...">
+                        <Expander.Style>
+                            <Style TargetType="Expander">
+                                <Setter Property="IsExpanded" Value="False" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding UseSync}" Value="True">
+                                        <Setter Property="IsExpanded" Value="True" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Expander.Style>
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="Auto" SharedSizeGroup="SettingsCol0" />
@@ -523,7 +533,8 @@
                    HorizontalAlignment="Left"
                    VerticalAlignment="Center"
                    Text="Add Sync Point every"
-                   ToolTip="Degrees Azimuth" />
+                   ToolTip="Degrees Azimuth"
+                   Visibility="Collapsed" />
                             <ninactrl:UnitTextBox
                Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"
                MinWidth="80"
@@ -532,7 +543,8 @@
                VerticalAlignment="Center"
                Unit="° Degrees (Azimuth)"
                IsEnabled="True"
-               ToolTip="Create a new synch point every x degrees azimuth">
+               ToolTip="Create a new synch point every x degrees azimuth"
+               Visibility="Collapsed">
                                 <Binding Path="SyncEveryHA">
                                 </Binding>
                             </ninactrl:UnitTextBox>
@@ -704,7 +716,8 @@
                             <RowDefinition />
                             <RowDefinition />
                             <RowDefinition />
-                              <RowDefinition />
+                                                        <RowDefinition />
+                                                        <RowDefinition />
                             <RowDefinition />
                         </Grid.RowDefinitions>
                         <StackPanel
@@ -952,27 +965,44 @@
 
                         <TextBlock
                             Grid.Row="7" Grid.Column="0"
+                            Margin="0,5,0,0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Text="Pre-balance"
+                            ToolTip="When enabled, MLPT does an initial far-end slew and returns to the first point to pre-balance for the final pier-side change (last Wechsel)." />
+                        <CheckBox
+                            Grid.Row="7" Grid.Column="1"
+                            Margin="10,5,0,0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            IsChecked="{Binding SiderealTrackPreBalanceFarEndSlew}"
+                            ToolTip="When enabled, MLPT does an initial far-end slew and returns to the first point to pre-balance for the final pier-side change (last Wechsel)." />
+
+                        <TextBlock
+                            Grid.Row="8" Grid.Column="0"
+                            Margin="0,5,0,0"
                             HorizontalAlignment="Left"
                             VerticalAlignment="Center"
                             Text="Relative"
                             ToolTip="When enabled, uses the first solved point as zero reference for MLPT error charts" />
                         <CheckBox
-                            Grid.Row="7" Grid.Column="1"
-                            Margin="10,0,0,0"
+                            Grid.Row="8" Grid.Column="1"
+                            Margin="10,5,0,0"
                             HorizontalAlignment="Left"
                             VerticalAlignment="Center"
                             IsChecked="{Binding UseRelativeMlptErrors}"
                             ToolTip="When enabled, uses the first solved point as zero reference for MLPT error charts" />
 
                         <TextBlock
-                            Grid.Row="8" Grid.Column="0"
+                            Grid.Row="9" Grid.Column="0"
+                            Margin="0,5,0,0"
                             HorizontalAlignment="Left"
                             VerticalAlignment="Center"
                             Text="Match Y-axis scale"
                             ToolTip="When enabled, both MLPT error charts use the same Y-axis limit based on the larger max error" />
                         <CheckBox
-                            Grid.Row="8" Grid.Column="1"
-                            Margin="10,0,0,0"
+                            Grid.Row="9" Grid.Column="1"
+                            Margin="10,5,0,0"
                             HorizontalAlignment="Left"
                             VerticalAlignment="Center"
                             IsChecked="{Binding UseUnifiedMlptErrorScale}"
@@ -1419,6 +1449,28 @@
                             MarkerSize="{Binding ChartPointSize}"
                             DataFieldValue="PlotColorValue"
                             TrackerFormatString="{}Altitude: {Altitude:##0.00}&#176;&#x0a;Azimuth: {Azimuth:##0.00}&#176;&#x0a;State: {ModelPointStateString}&#x0a;RMS Error: {RMSErrorString}" />
+                        <oxy:LineSeries
+                            ItemsSource="{Binding RefDisplayPoints, UpdateSourceTrigger=PropertyChanged}"
+                            DataFieldX="X"
+                            DataFieldY="Y"
+                            LineStyle="None"
+                            MarkerType="Diamond"
+                            MarkerSize="5"
+                            MarkerFill="#5CE1E6"
+                            MarkerStroke="#5CE1E6"
+                            MarkerStrokeThickness="2"
+                            TrackerFormatString="{}Ref" />
+                        <oxy:LineSeries
+                            ItemsSource="{Binding SyncDisplayPoints, UpdateSourceTrigger=PropertyChanged}"
+                            DataFieldX="X"
+                            DataFieldY="Y"
+                            LineStyle="None"
+                            MarkerType="Triangle"
+                            MarkerSize="6"
+                            MarkerFill="#FF6FAE"
+                            MarkerStroke="#FF6FAE"
+                            MarkerStrokeThickness="2"
+                            TrackerFormatString="{}Sync" />
                         <oxy:LineSeries
                             ItemsSource="{Binding DisplayPathPoints, UpdateSourceTrigger=PropertyChanged}"
                             DataFieldX="X"
@@ -1870,6 +1922,32 @@
                                 TrackerFormatString="{}Altitude: {Altitude:###.####}&#176;&#x0a;Azimuth: {Azimuth:###.####}&#176;&#x0a;RMS Error: {ErrorArcsec:###.##} arcsec"
                                 XAxisKey="AltitudeAxis"
                                 YAxisKey="AzimuthAxis" />
+                        <oxy:LineSeries
+                            ItemsSource="{Binding RefDisplayPointsPolar, UpdateSourceTrigger=PropertyChanged}"
+                            DataFieldX="X"
+                            DataFieldY="Y"
+                            XAxisKey="AltitudeAxis"
+                            YAxisKey="AzimuthAxis"
+                            LineStyle="None"
+                            MarkerType="Diamond"
+                            MarkerSize="5"
+                            MarkerFill="#5CE1E6"
+                            MarkerStroke="#5CE1E6"
+                            MarkerStrokeThickness="2"
+                            TrackerFormatString="{}Ref" />
+                        <oxy:LineSeries
+                            ItemsSource="{Binding SyncDisplayPointsPolar, UpdateSourceTrigger=PropertyChanged}"
+                            DataFieldX="X"
+                            DataFieldY="Y"
+                            XAxisKey="AltitudeAxis"
+                            YAxisKey="AzimuthAxis"
+                            LineStyle="None"
+                            MarkerType="Triangle"
+                            MarkerSize="6"
+                            MarkerFill="#FF6FAE"
+                            MarkerStroke="#FF6FAE"
+                            MarkerStrokeThickness="2"
+                            TrackerFormatString="{}Sync" />
                             <oxy:LineSeries
                                 ItemsSource="{Binding DisplayPathPointsPolar, UpdateSourceTrigger=PropertyChanged}"
                                 DataFieldX="X"
