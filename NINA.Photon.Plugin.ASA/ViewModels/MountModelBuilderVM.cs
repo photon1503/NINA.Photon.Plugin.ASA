@@ -180,10 +180,6 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             this.ExportCommand = new AsyncRelayCommand(ExportPoints);
 
             this.ModelPointGenerationType = ModelPointGenerationTypeEnum.AutoGrid;
-            if (this.AutoGridPathOrderingMode == AutoGridPathOrderingModeEnum.LegacyAzimuthSweep)
-            {
-                this.AutoGridPathOrderingMode = AutoGridPathOrderingModeEnum.ASABandPath;
-            }
 
             // progress
 
@@ -379,7 +375,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
 
         private void RefreshSyncReferenceDisplayPoints()
         {
-            if (!UseSync || ModelPointGenerationType == ModelPointGenerationTypeEnum.SiderealPath)
+            if (!UseSync || ModelPointGenerationType != ModelPointGenerationTypeEnum.AutoGrid)
             {
                 SyncDisplayPoints = new AsyncObservableCollection<DataPoint>();
                 RefDisplayPoints = new AsyncObservableCollection<DataPoint>();
@@ -776,6 +772,19 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
 
         private void ModelBuilderOptions_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
+            if (e.PropertyName == nameof(modelBuilderOptions.AutoGridPathOrderingMode))
+            {
+                var normalizedAutoGridPathOrderingMode = NormalizeAutoGridPathOrderingMode(modelBuilderOptions.AutoGridPathOrderingMode);
+                if (modelBuilderOptions.AutoGridPathOrderingMode != normalizedAutoGridPathOrderingMode)
+                {
+                    modelBuilderOptions.AutoGridPathOrderingMode = normalizedAutoGridPathOrderingMode;
+                    return;
+                }
+
+                RaisePropertyChanged(nameof(AutoGridPathOrderingMode));
+                RefreshDisplayPathPoints();
+            }
+
             if (e.PropertyName == nameof(modelBuilderOptions.ShowRemovedPoints))
             {
                 UpdateDisplayModelPoints();
@@ -1478,7 +1487,9 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             modelBuilderOptions.RefEastAzimuth = options.RefEastAzimuth;
             modelBuilderOptions.RefWestAzimuth = options.RefWestAzimuth;
             modelBuilderOptions.SyncEveryHA = options.SyncEveryHA;
-            modelBuilderOptions.AutoGridPathOrderingMode = options.AutoGridPathOrderingMode;
+            var normalizedAutoGridPathOrderingMode = NormalizeAutoGridPathOrderingMode(options.AutoGridPathOrderingMode);
+            modelBuilderOptions.AutoGridPathOrderingMode = normalizedAutoGridPathOrderingMode;
+            options.AutoGridPathOrderingMode = normalizedAutoGridPathOrderingMode;
             return DoBuildModel(modelPoints, options, ct);
         }
 
@@ -2079,6 +2090,11 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             ModelPointGenerationTypeEnum.GoldenSpiral,
         };
 
+        public IList<AutoGridPathOrderingModeEnum> AutoGridPathOrderingModeOptions { get; } = new List<AutoGridPathOrderingModeEnum>
+        {
+            AutoGridPathOrderingModeEnum.ASABandPath,
+        };
+
         public int GoldenSpiralStarCount
         {
             get => this.modelBuilderOptions.GoldenSpiralStarCount;
@@ -2143,7 +2159,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
 
         public bool IsHighAltitudeOptionsVisible => this.modelBuilderOptions.ModelPointGenerationType == ModelPointGenerationTypeEnum.GoldenSpiral;
 
-        public bool IsSyncOptionsVisible => this.modelBuilderOptions.ModelPointGenerationType != ModelPointGenerationTypeEnum.SiderealPath;
+        public bool IsSyncOptionsVisible => this.modelBuilderOptions.ModelPointGenerationType == ModelPointGenerationTypeEnum.AutoGrid;
 
         public bool IsMlptOptionsVisible => this.modelBuilderOptions.ModelPointGenerationType == ModelPointGenerationTypeEnum.SiderealPath;
 
@@ -2160,13 +2176,14 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 {
                     this.modelBuilderOptions.AutoGridPathOrderingMode = value;
                     RaisePropertyChanged();
+                    RefreshDisplayPathPoints();
                 }
             }
         }
 
         private static AutoGridPathOrderingModeEnum NormalizeAutoGridPathOrderingMode(AutoGridPathOrderingModeEnum value)
         {
-            return Enum.IsDefined(typeof(AutoGridPathOrderingModeEnum), value)
+            return value == AutoGridPathOrderingModeEnum.ASABandPath
                 ? value
                 : AutoGridPathOrderingModeEnum.ASABandPath;
         }

@@ -50,7 +50,7 @@ namespace NINA.Photon.Plugin.ASA.Interfaces
         public double RefWestAzimuth { get; set; } = 270.0d;
         public bool SiderealTrackPreBalanceFarEndSlew { get; set; } = false;
         public ModelPointGenerationTypeEnum ModelPointGenerationType { get; set; } = ModelPointGenerationTypeEnum.GoldenSpiral;
-        public AutoGridPathOrderingModeEnum AutoGridPathOrderingMode { get; set; } = AutoGridPathOrderingModeEnum.LegacyAzimuthSweep;
+        public AutoGridPathOrderingModeEnum AutoGridPathOrderingMode { get; set; } = AutoGridPathOrderingModeEnum.ASABandPath;
     }
 
     public class PointNextUpEventArgs : EventArgs

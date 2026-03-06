@@ -1205,7 +1205,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             }
 
             var useSyncForThisBuild = options.UseSync
-                && options.ModelPointGenerationType != ModelPointGenerationTypeEnum.SiderealPath;
+                && options.ModelPointGenerationType == ModelPointGenerationTypeEnum.AutoGrid;
 
             Logger.Info($"Sync is {(useSyncForThisBuild ? "enabled" : "disabled")}");
 

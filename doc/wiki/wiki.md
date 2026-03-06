@@ -132,6 +132,8 @@ The model builder provides the following point generation modes:
 * **AutoGrid** — see below
 * **Golden Spiral** — Classic full-sky spiral distribution
 
+Path-order controls are shown only for **AutoGrid**. Golden Spiral does not expose AutoGrid path-order settings.
+
 For MLPT (Sidereal Path) point generation, see [MLPT Integration](#mlpt-integration).
 
 > [!TIP]
@@ -162,10 +164,11 @@ When **End at meridian limit** is used, the target is constrained with a fixed *
 
 ### Pathing Options
 
-AutoGrid supports two slew ordering modes:
+AutoGrid uses **ASA Band Path** slew ordering.
 
-* **Legacy Azimuth Sweep** — Traverses points in a simple azimuth sweep.
 * **ASA Band Path** — Groups points into altitude bands and traverses them in an ASA-style band pattern, which improves the final model.
+
+The obsolete **Legacy Azimuth Sweep** mode is no longer exposed in the UI.
 
 Enable **Show path** to visualize the planned slew order as a dotted line in both charts.
 
@@ -230,7 +233,19 @@ When using the Golden Spiral generator, you can supplement the standard distribu
 
 Sync points are periodic mid-session sync commands that re-anchor the mount's coordinate system as tracking progresses. They help reduce hysteresis accumulation during long runs.
 
-* **Use sync** — Enable periodic ASCOM/Alpaca sync commands during the model build.
+Sync/reference behavior is available for **AutoGrid** builds only.
+
+For **AutoGrid + ASA Band Path**, sync placement follows ASA-style band/side boundaries rather than fixed HA intervals.
+
+The sequence for each sync block is:
+
+* **Ref -> Sync -> Ref -> band points**
+
+This means a reference slew runs before sync, then a trailing reference slew runs before continuing with the band's regular points. The behavior repeats at each new band/side boundary.
+
+Golden Spiral builds do not use sync/reference insertion.
+
+* **Use sync** — Enable periodic ASCOM/Alpaca sync commands during AutoGrid builds.
 * **Sync every (HA minutes)** — How often (in hour-angle minutes) to issue a sync.
 * **East / West sync altitude and azimuth** — The sky position used for the sync slew on each side of the meridian.
 * **East / West reference altitude and azimuth** — Reference coordinates used for the sync offset calculation.
@@ -617,7 +632,7 @@ A consolidated reference of all configurable options. Options are set in the **A
 | AutoGrid Dec spacing (°) | 10 | Dec spacing for AutoGrid in spacing mode. |
 | AutoGrid desired point count | 50 | Target point count for AutoGrid in count mode. |
 | AutoGrid input mode | Spacing | Switch between point-count and spacing modes for AutoGrid. |
-| AutoGrid path ordering | ASA Band Path | Slew order: Legacy Azimuth Sweep or ASA Band Path. |
+| AutoGrid path ordering | ASA Band Path | Slew order used by AutoGrid builds. Legacy Azimuth Sweep is hidden/obsolete. |
 | Start at horizon | Off | AutoGrid anchor mode: starts each side of every band at the lowest valid horizon-adjacent point. Mutually exclusive with End at meridian limit. |
 | End at meridian limit | Off | AutoGrid anchor mode: targets each side's final band point near meridian limit with a 1° safety margin. Mutually exclusive with Start at horizon. |
 | Min point altitude (°) | 0 | Lower altitude cutoff for generated points. |
@@ -667,12 +682,12 @@ A consolidated reference of all configurable options. Options are set in the **A
 
 | Option | Default | Description |
 |---|---|---|
-| Use sync | Off | Enable periodic ASCOM/Alpaca sync commands during builds. |
-| Sync every (HA min) | 30 | Interval in hour-angle minutes between sync commands. |
-| East sync altitude / azimuth | 65° / 90° | Sky position used for sync on the east pier side. |
-| West sync altitude / azimuth | 65° / 270° | Sky position used for sync on the west pier side. |
-| East reference altitude / azimuth | 35° / 90° | Reference coordinates for east-side sync offset. |
-| West reference altitude / azimuth | 35° / 270° | Reference coordinates for west-side sync offset. |
+| Use sync | Off | Enable periodic ASCOM/Alpaca sync commands during AutoGrid builds. |
+| Sync every (HA min) | 90 | Interval in hour-angle minutes between sync commands (used for non-ASA-band traversal). |
+| East sync altitude / azimuth | 45° / 90° | Sky position used for sync on the east pier side. |
+| West sync altitude / azimuth | 45° / 270° | Sky position used for sync on the west pier side. |
+| East reference altitude / azimuth | 30° / 90° | Reference coordinates for east-side sync offset. |
+| West reference altitude / azimuth | 30° / 270° | Reference coordinates for west-side sync offset. |
 
 ## Dome & Logging
 

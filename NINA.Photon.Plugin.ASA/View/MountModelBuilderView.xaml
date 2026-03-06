@@ -218,7 +218,7 @@
                             Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"
                             Margin="10,5,0,0"
                             MinWidth="120"
-                            ItemsSource="{Binding Source={util:EnumBindingSource {x:Type tmmodel:AutoGridPathOrderingModeEnum}}}"
+                            ItemsSource="{Binding AutoGridPathOrderingModeOptions}"
                             SelectedItem="{Binding AutoGridPathOrderingMode}">
                             <ComboBox.ItemTemplate>
                               <DataTemplate>

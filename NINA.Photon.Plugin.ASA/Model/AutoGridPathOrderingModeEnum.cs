@@ -18,10 +18,7 @@ namespace NINA.Photon.Plugin.ASA.Model
     [TypeConverter(typeof(EnumStaticDescriptionTypeConverter))]
     public enum AutoGridPathOrderingModeEnum
     {
-        [Description("Legacy Azimuth Sweep")]
-        LegacyAzimuthSweep = 0,
-
         [Description("ASA Band Path")]
-        ASABandPath = 1
+        ASABandPath = 0
     }
 }
