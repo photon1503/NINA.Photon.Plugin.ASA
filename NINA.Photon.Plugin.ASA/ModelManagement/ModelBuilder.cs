@@ -198,6 +198,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             public int BuildAttempt { get; set; }
             public int PriorSuccessfulPointsProcessed { get; set; }
             public int PointsProcessed { get; set; }
+            public int IterationPlannedPointCount { get; set; }
             public int FailedPoints { get; set; }
             public bool IsComplete { get; set; } = false;
             public ObservableRectangle PlateSolveSubsample { get; set; } = null;
@@ -467,6 +468,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                     state.PriorSuccessfulPointsProcessed = 0;
                     state.FailedPoints = 0;
                     state.PointsProcessed = 0;
+                    state.IterationPlannedPointCount = 0;
                     state.BuildAttempt = retryCount + 1;
                     state.IterationStartTime = DateTime.Now;
                     state.PendingTasks.Clear();
@@ -916,6 +918,10 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 state.Options,
                 state.PointAzimuthComparer,
                 cloneNonSyncPoints: false);
+
+            // Track planned traversal count for progress/ETA reporting.
+            // This includes generated sync points so the denominator matches actual work.
+            state.IterationPlannedPointCount = eligiblePointsOrdered.Count;
 
             var nextPoint = eligiblePointsOrdered.FirstOrDefault();
 
@@ -1737,8 +1743,10 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
         {
             var elapsedTime = DateTime.Now - state.IterationStartTime;
             var elapsedTimeSecondsRounded = TimeSpan.FromSeconds((int)elapsedTime.TotalSeconds);
-            var completedPoints = state.PointsProcessed + state.FailedPoints;
-            var totalPoints = state.ValidPoints.Count - state.PriorSuccessfulPointsProcessed;
+            var completedPoints = state.PointsProcessed;
+            var totalPoints = state.IterationPlannedPointCount > 0
+                ? state.IterationPlannedPointCount
+                : Math.Max(0, state.ValidPoints.Count - state.PriorSuccessfulPointsProcessed);
             TimeSpan totalEstimatedTime;
             string elapsedProgressStatus;
             if (completedPoints >= 2)
