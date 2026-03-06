@@ -1,35 +1,31 @@
-# ASA Model Builder NINA Plugin
+# ASA Tools Plugin for N.I.N.A.
 
-A [N.I.N.A](https://nighttime-imaging.eu/) plugin for building a telescope model for ASA mounts.
+ASA Tools for [N.I.N.A.](https://nighttime-imaging.eu/) model building and MLPT automation.
 
-This project was forked from the TenMicron plugin by [ghilios](https://github.com/ghilios) at https://github.com/ghilios/NINA.Joko.Plugin.TenMicron
-Many thanks for the great work!
+## Core Features
 
-<img width="500" alt="image" src="https://github.com/photon1503/NINA.Photon.Plugin.ASA/assets/14548927/5b8b6940-2fb1-4c91-9dcc-ca5618206fa0">
+- **Interactive full-sky model builder** with chart overlays, path preview, and POX export for AutoSlew.
 
-## Setup
+- **AutoGrid model generation** with ASA-style band traversal and dual-side meridian overlap.
+- **Golden Spiral generator** with optional high-altitude point enrichment.
+- **AutoGrid sync/reference workflow** using ASA-style sequencing.
+- **MLPT path generation and automation** for session-based local tracking refinement.
+- **Sequencer integration** via MLPT triggers and instructions (start, restart-if-exceeds, after-time, after-flip, stop).
+- **ASA operational tools** including motor, fans, covers, weather/refraction update, relax slew, and mount dither trigger.
+- **Grid import/export** for reusing and sharing generated point sets.
 
-download end extract the archive to `%localappdata%\NINA\Plugins` from https://github.com/photon1503/NINA.Photon.Plugin.ASA/releases/latest
+## Links
 
-## Features
+- Releases: https://github.com/photon1503/NINA.Photon.Plugin.ASA/releases/latest
+- Wiki: https://github.com/photon1503/NINA.Photon.Plugin.ASA/blob/master/doc/wiki/wiki.md
+- Changelog: https://github.com/photon1503/NINA.Photon.Plugin.ASA/blob/master/CHANGELOG.md
 
-- Generate a point model based on the golden spiral method
-- Fine-tuning of the model with additional high altitude points
-- Creation of sync points to improve telescope alignment and reduce hysteresis errors
-- Export import model points (i.e. for exchange with Sequence)
+## Acknowledgements
 
-## Usage
+This project was forked from [NINA.Joko.Plugin.TenMicron](https://github.com/ghilios/NINA.Joko.Plugin.TenMicron).
 
-- Configure the settings on the plugin options page
-- Always sync your telescope to a know position before starting any model build. Can by easily done by using plate solve directly in N.I.N.A
-- Start building your model using the plugin.
-- Load the created POX file from `%programdata%\ASA\Sequence\NINA-ASA-*.pox` into AutoSlew and calculate the model
+## Disclaimer
 
-## Changelog
-[See here](https://github.com/photon1503/NINA.Photon.Plugin.ASA/blob/master/CHANGELOG.md)
+All trademarks, logos, and brand names are the property of their respective owners. All company, product, and service names used in this project are for identification purposes only and do not imply endorsement.
 
-### Disclaimer
-
-All trademarks, logos and brand names are the property of their respective owners. All company, product and service names used in this website are for identification purposes only. Use of these names,trademarks and brands does not imply endorsement.
-
-This software is in not related to ASA in any way.
+This software is not affiliated with ASA.
