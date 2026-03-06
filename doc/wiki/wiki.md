@@ -231,6 +231,13 @@ When using the Golden Spiral generator, you can supplement the standard distribu
 
 ### Sync Points
 
+![alt text](image-20.png)
+
+In the chart overlay for sync-enabled AutoGrid builds:
+
+* **Reference point** is shown as a **diamond** marker.
+* **Sync point** is shown as a **triangle** marker.
+
 Sync points are periodic mid-session sync commands that re-anchor the mount's coordinate system as tracking progresses. They help reduce hysteresis accumulation during long runs.
 
 Sync/reference behavior is available for **AutoGrid** builds only.
@@ -243,12 +250,14 @@ The sequence for each sync block is:
 
 This means a reference slew runs before sync, then a trailing reference slew runs before continuing with the band's regular points. The behavior repeats at each new band/side boundary.
 
+No image is taken at a reference point. The reference point is a repeatable slew anchor used so the mount approaches the sync point in the same way each time.
+
 Golden Spiral builds do not use sync/reference insertion.
 
 If an older install has sync/reference fields persisted as all zeros, the plugin auto-migrates them to the current defaults when loading options.
 
 * **Use sync** — Enable periodic ASCOM/Alpaca sync commands during AutoGrid builds.
-* **Sync every (HA minutes)** — How often (in hour-angle minutes) to issue a sync.
+
 * **East / West sync altitude and azimuth** — The sky position used for the sync slew on each side of the meridian.
 * **East / West reference altitude and azimuth** — Reference coordinates used for the sync offset calculation.
 
