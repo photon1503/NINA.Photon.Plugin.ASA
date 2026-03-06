@@ -694,7 +694,6 @@ A consolidated reference of all configurable options. Options are set in the **A
 | Option | Default | Description |
 |---|---|---|
 | Use sync | Off | Enable periodic ASCOM/Alpaca sync commands during AutoGrid builds. |
-| Sync every (HA min) | 90 | Interval in hour-angle minutes between sync commands (used for non-ASA-band traversal). |
 | East sync altitude / azimuth | 60° / 90° | Sky position used for sync on the east pier side. |
 | West sync altitude / azimuth | 60° / 270° | Sky position used for sync on the west pier side. |
 | East reference altitude / azimuth | 30° / 90° | Reference coordinates for east-side sync offset. |
