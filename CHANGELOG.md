@@ -5,14 +5,13 @@
 
 - Fixed an issue where AutoGrid builds could still use legacy azimuth sweep immediately after selecting ASA Band Path.
 
-- Removed obsolete **Legacy Azimuth Sweep** from the AutoGrid path-order UI and normalized stored values to **ASA Band Path**.
+- Removed obsolete **Legacy Azimuth Sweep** from the AutoGrid path-order UI 
 
-- Removed the legacy path enum option from implementation and kept AutoGrid traversal on **ASA Band Path**.
-
-- For **AutoGrid + ASA Band Path**, sync placement now follows band/side boundaries instead of interval-based insertion. Implemented vendor-style per-block sequence: **Ref → Sync → Ref → band points**.
+- For **AutoGrid + ASA Band Path**, sync placement now follows band/side boundaries instead of interval-based insertion. Implemented ASA Sequence-style per-block sequence: **Ref → Sync → Ref → band points**.
   - Updated sync/reference defaults to:
-    - `Sync East/West = Alt 45°, Az 90° / 270°`
+    - `Sync East/West = Alt 60°, Az 90° / 270°`
     - `Ref East/West = Alt 30°, Az 90° / 270°`
+  - Added migration for old installs where sync/reference values were stored as all zeros: UI now auto-populates and persists current defaults.
 
 - Restricted sync/reference controls and sync insertion behavior to **AutoGrid** builds only.
   - Golden Spiral builds now hide sync/reference options and do not insert sync points.

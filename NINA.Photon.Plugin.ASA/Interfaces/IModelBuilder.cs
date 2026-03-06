@@ -39,8 +39,8 @@ namespace NINA.Photon.Plugin.ASA.Interfaces
 
         public bool UseSync { get; set; } = false;
         public double SyncEveryHA { get; set; } = 90.0d;
-        public double SyncEastAltitude { get; set; } = 45.0d;
-        public double SyncWestAltitude { get; set; } = 45.0d;
+        public double SyncEastAltitude { get; set; } = 60.0d;
+        public double SyncWestAltitude { get; set; } = 60.0d;
         public double SyncEastAzimuth { get; set; } = 90.0d;
         public double SyncWestAzimuth { get; set; } = 270.0d;
 

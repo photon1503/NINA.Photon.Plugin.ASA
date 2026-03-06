@@ -245,6 +245,8 @@ This means a reference slew runs before sync, then a trailing reference slew run
 
 Golden Spiral builds do not use sync/reference insertion.
 
+If an older install has sync/reference fields persisted as all zeros, the plugin auto-migrates them to the current defaults when loading options.
+
 * **Use sync** — Enable periodic ASCOM/Alpaca sync commands during AutoGrid builds.
 * **Sync every (HA minutes)** — How often (in hour-angle minutes) to issue a sync.
 * **East / West sync altitude and azimuth** — The sky position used for the sync slew on each side of the meridian.
@@ -684,8 +686,8 @@ A consolidated reference of all configurable options. Options are set in the **A
 |---|---|---|
 | Use sync | Off | Enable periodic ASCOM/Alpaca sync commands during AutoGrid builds. |
 | Sync every (HA min) | 90 | Interval in hour-angle minutes between sync commands (used for non-ASA-band traversal). |
-| East sync altitude / azimuth | 45° / 90° | Sky position used for sync on the east pier side. |
-| West sync altitude / azimuth | 45° / 270° | Sky position used for sync on the west pier side. |
+| East sync altitude / azimuth | 60° / 90° | Sky position used for sync on the east pier side. |
+| West sync altitude / azimuth | 60° / 270° | Sky position used for sync on the west pier side. |
 | East reference altitude / azimuth | 30° / 90° | Reference coordinates for east-side sync offset. |
 | West reference altitude / azimuth | 30° / 270° | Reference coordinates for west-side sync offset. |
 

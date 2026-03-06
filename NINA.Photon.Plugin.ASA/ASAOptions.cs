@@ -26,6 +26,14 @@ namespace NINA.Photon.Plugin.ASA
 {
     public class ASAOptions : BaseINPC, IASAOptions
     {
+        private const double DEFAULT_SYNC_EVERY_HA_MINUTES = 90.0d;
+        private const double DEFAULT_SYNC_ALTITUDE_DEGREES = 60.0d;
+        private const double DEFAULT_REF_ALTITUDE_DEGREES = 30.0d;
+        private const double DEFAULT_SYNC_EAST_AZIMUTH_DEGREES = 90.0d;
+        private const double DEFAULT_SYNC_WEST_AZIMUTH_DEGREES = 270.0d;
+        private const double DEFAULT_REF_EAST_AZIMUTH_DEGREES = 90.0d;
+        private const double DEFAULT_REF_WEST_AZIMUTH_DEGREES = 270.0d;
+
         private readonly PluginOptionsAccessor optionsAccessor;
 
         public ASAOptions(IProfileService profileService)
@@ -98,15 +106,16 @@ namespace NINA.Photon.Plugin.ASA
             highAltitudeMin = optionsAccessor.GetValueInt32("HighAltitudeMin", 70);
             highAltitudeMax = optionsAccessor.GetValueInt32("HighAltitudeMax", 89);
             useSync = optionsAccessor.GetValueBoolean("UseSync", false);
-            syncEveryHA = optionsAccessor.GetValueDouble("SyncEveryHA", 90.0d);
-            syncEastAltitude = optionsAccessor.GetValueDouble("SyncEastAltitude", 45.0d);
-            syncWestAltitude = optionsAccessor.GetValueDouble("SyncWestAltitude", 45.0d);
-            refEastAltitude = optionsAccessor.GetValueDouble("RefEastAltitude", 30.0d);
-            refWestAltitude = optionsAccessor.GetValueDouble("RefWestAltitude", 30.0d);
-            syncEastAzimuth = optionsAccessor.GetValueDouble("SyncEastAzimuth", 90.0d);
-            syncWestAzimuth = optionsAccessor.GetValueDouble("SyncWestAzimuth", 270.0d);
-            refEastAzimuth = optionsAccessor.GetValueDouble("RefEastAzimuth", 90.0d);
-            refWestAzimuth = optionsAccessor.GetValueDouble("RefWestAzimuth", 270.0d);
+            syncEveryHA = optionsAccessor.GetValueDouble("SyncEveryHA", DEFAULT_SYNC_EVERY_HA_MINUTES);
+            syncEastAltitude = optionsAccessor.GetValueDouble("SyncEastAltitude", DEFAULT_SYNC_ALTITUDE_DEGREES);
+            syncWestAltitude = optionsAccessor.GetValueDouble("SyncWestAltitude", DEFAULT_SYNC_ALTITUDE_DEGREES);
+            refEastAltitude = optionsAccessor.GetValueDouble("RefEastAltitude", DEFAULT_REF_ALTITUDE_DEGREES);
+            refWestAltitude = optionsAccessor.GetValueDouble("RefWestAltitude", DEFAULT_REF_ALTITUDE_DEGREES);
+            syncEastAzimuth = optionsAccessor.GetValueDouble("SyncEastAzimuth", DEFAULT_SYNC_EAST_AZIMUTH_DEGREES);
+            syncWestAzimuth = optionsAccessor.GetValueDouble("SyncWestAzimuth", DEFAULT_SYNC_WEST_AZIMUTH_DEGREES);
+            refEastAzimuth = optionsAccessor.GetValueDouble("RefEastAzimuth", DEFAULT_REF_EAST_AZIMUTH_DEGREES);
+            refWestAzimuth = optionsAccessor.GetValueDouble("RefWestAzimuth", DEFAULT_REF_WEST_AZIMUTH_DEGREES);
+            ApplyLegacyZeroSyncReferenceDefaults();
             poxOutputDirectory = optionsAccessor.GetValueString("POXOutputDirectory", DefaultASAPointingPicsPath());
             chartPointSize = optionsAccessor.GetValueDouble("ChartPointSize", 2.8d);
             showHorizon = optionsAccessor.GetValueBoolean("ShowHorizon", true);
@@ -167,15 +176,15 @@ namespace NINA.Photon.Plugin.ASA
             UseSync = false;
             HighAltitudeMin = 60;
             HighAltitudeMax = 89;
-            SyncEveryHA = 90.0d;
-            SyncEastAltitude = 45.0d;
-            SyncWestAltitude = 45.0d;
-            SyncEastAzimuth = 90.0d;
-            SyncWestAzimuth = 270.0d;
-            RefEastAltitude = 30.0d;
-            RefWestAltitude = 30.0d;
-            RefEastAzimuth = 90.0d;
-            RefWestAzimuth = 270.0d;
+            SyncEveryHA = DEFAULT_SYNC_EVERY_HA_MINUTES;
+            SyncEastAltitude = DEFAULT_SYNC_ALTITUDE_DEGREES;
+            SyncWestAltitude = DEFAULT_SYNC_ALTITUDE_DEGREES;
+            SyncEastAzimuth = DEFAULT_SYNC_EAST_AZIMUTH_DEGREES;
+            SyncWestAzimuth = DEFAULT_SYNC_WEST_AZIMUTH_DEGREES;
+            RefEastAltitude = DEFAULT_REF_ALTITUDE_DEGREES;
+            RefWestAltitude = DEFAULT_REF_ALTITUDE_DEGREES;
+            RefEastAzimuth = DEFAULT_REF_EAST_AZIMUTH_DEGREES;
+            RefWestAzimuth = DEFAULT_REF_WEST_AZIMUTH_DEGREES;
             ChartPointSize = 2.8d;
             ShowHorizon = true;
             ShowCardinalLabels = false;
@@ -192,6 +201,47 @@ namespace NINA.Photon.Plugin.ASA
             var filePath = System.IO.Path.Combine(programdata, "ASA", "Sequence", "PointingPics");
 
             return filePath;
+        }
+
+        private void ApplyLegacyZeroSyncReferenceDefaults()
+        {
+            // Some older installs persisted all sync/reference values as zeros.
+            // Migrate that full-zero state to current defaults so the UI is pre-populated.
+            var hasLegacyAllZeroSyncReferenceValues =
+                syncEveryHA == 0.0d &&
+                syncEastAltitude == 0.0d &&
+                syncWestAltitude == 0.0d &&
+                syncEastAzimuth == 0.0d &&
+                syncWestAzimuth == 0.0d &&
+                refEastAltitude == 0.0d &&
+                refWestAltitude == 0.0d &&
+                refEastAzimuth == 0.0d &&
+                refWestAzimuth == 0.0d;
+
+            if (!hasLegacyAllZeroSyncReferenceValues)
+            {
+                return;
+            }
+
+            syncEveryHA = DEFAULT_SYNC_EVERY_HA_MINUTES;
+            syncEastAltitude = DEFAULT_SYNC_ALTITUDE_DEGREES;
+            syncWestAltitude = DEFAULT_SYNC_ALTITUDE_DEGREES;
+            syncEastAzimuth = DEFAULT_SYNC_EAST_AZIMUTH_DEGREES;
+            syncWestAzimuth = DEFAULT_SYNC_WEST_AZIMUTH_DEGREES;
+            refEastAltitude = DEFAULT_REF_ALTITUDE_DEGREES;
+            refWestAltitude = DEFAULT_REF_ALTITUDE_DEGREES;
+            refEastAzimuth = DEFAULT_REF_EAST_AZIMUTH_DEGREES;
+            refWestAzimuth = DEFAULT_REF_WEST_AZIMUTH_DEGREES;
+
+            optionsAccessor.SetValueDouble("SyncEveryHA", syncEveryHA);
+            optionsAccessor.SetValueDouble("SyncEastAltitude", syncEastAltitude);
+            optionsAccessor.SetValueDouble("SyncWestAltitude", syncWestAltitude);
+            optionsAccessor.SetValueDouble("SyncEastAzimuth", syncEastAzimuth);
+            optionsAccessor.SetValueDouble("SyncWestAzimuth", syncWestAzimuth);
+            optionsAccessor.SetValueDouble("RefEastAltitude", refEastAltitude);
+            optionsAccessor.SetValueDouble("RefWestAltitude", refWestAltitude);
+            optionsAccessor.SetValueDouble("RefEastAzimuth", refEastAzimuth);
+            optionsAccessor.SetValueDouble("RefWestAzimuth", refWestAzimuth);
         }
 
         public ICommand ShowSelectPOXOutputDirectoryDialogCommand { get; private set; }
