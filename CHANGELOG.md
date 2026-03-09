@@ -1,7 +1,7 @@
 
 # Changelog
 
-## 3.2.8.7
+## 3.2.8.7 (2026-03-09)
 
 - Fixed an issue where AutoGrid builds could still use legacy azimuth sweep immediately after selecting ASA Band Path.
 
