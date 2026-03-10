@@ -17,6 +17,7 @@ A plugin for [N.I.N.A.](https://nighttime-imaging.eu/) (Nighttime Imaging 'N' As
 - [Enhanced Plugin Tools](#enhanced-plugin-tools)
 - [Important Operational Notes](#important-operational-notes)
 - [Troubleshooting](#troubleshooting)
+- [Autoslew Settings](#autoslew-settings)
 - [Plugin Options Reference](#plugin-options-reference)
 
 ---
@@ -56,12 +57,12 @@ ASCOM/Alpaca is the standard interface between astronomy software and mount hard
 |--------------------|--------------------------------------|
 | N.I.N.A. Version   | 3.2 or later                       |
 | AutoSlew           | 5.2.4.8 or higher                    |
-|                    | 7.2.5.0 or higher for MLPT           |
+|                    | 7.1.4.4 or higher for MLPT           |
 | Operating System   | Windows 10/11 (64-bit)              |
 | .NET Runtime       | Version 8.0                         |
 
 > [!NOTE] 
-> All MLPT commands require Autoslew 7.1.4.5 or higher.
+> All MLPT commands require Autoslew 7.1.4.4 or higher.
 
 > [!NOTE] 
 > Some triggers require NINA 3.2 or higher.
@@ -74,7 +75,7 @@ ASCOM/Alpaca is the standard interface between astronomy software and mount hard
 
 1. Download latest version from https://github.com/photon1503/NINA.Photon.Plugin.ASA/releases
 2. Close NINA
-3. Copy DLLs to: %localappdata%\NINA\Plugins\3.0.0\ASA Tools
+3. Copy DLLs to: %localappdata%\NINA\Plugins\3.0.0\ASA Tools  *(the `3.0.0` folder is the plugin API version, not the NINA application version)*
 
 ---
 
@@ -86,7 +87,7 @@ Before using this plugin, confirm the following are in place:
 
 - [ ] NINA 3.2 or later installed and running
 - [ ] ASA ASCOM/Alpaca driver installed and configured (select it as your telescope in NINA)
-- [ ] AutoSlew version 5.2.4.8 or higher (7.2.5.0+ for MLPT)
+- [ ] AutoSlew version 5.2.4.8 or higher (7.1.4.4+ for MLPT)
 - [ ] AutoSlew running and connected to the mount
 - [ ] Plate solver configured in NINA — [ASTAP](https://www.hnsky.org/astap.htm) with a star database is strongly recommended. For long focal lengths, [PlateSolve3](https://nighttime-imaging.eu/docs/master/site/advanced/platesolving/#platesolve380) is also recommended.
 - [ ] Camera connected and functional in NINA
@@ -256,7 +257,7 @@ Once points have been generated (via AutoGrid or Golden Spiral), you can start a
 
 ### Build Process
 
-The builder slews to each generated point, takes an exposure, and plate solves the result. The solved coordinates are compared against the expected position to produce pointing error data. When all points are processed, the results are written to a POX file that can be loaded into Autoslew to calculate the final pointing model.
+The builder slews to each generated point, takes an exposure, and plate solves the result. The solved coordinates are compared against the expected position to produce pointing error data. When all points are processed, the results are written to a POX file that can be loaded into Autoslew to calculate the final pointing model. The default output path is `%programdata%\ASA\Sequence\PointingPics\`.
 
 ### Pier Side Enforcement
 
@@ -284,7 +285,7 @@ The following settings are available in the plugin options:
 
 ### POX Output
 
-After a successful build, the plugin writes a POX file to `%programdata%\ASA\Sequence\`. You can configure a custom output directory in the plugin options if you are running Autoslew on a different computer or want more control over file management.
+After a successful build, the plugin writes a POX file to `%programdata%\ASA\Sequence\PointingPics\`. You can configure a custom output directory in the plugin options if you are running Autoslew on a different computer or want more control over file management.
 
 Load the generated POX file into Autoslew and calculate the model from there.
 
@@ -404,7 +405,7 @@ As the name implies, this trigger will regenerate the MLPT tracking model after 
 #### MLPT Start
 ![MLPT Start Instruction](image-15.png)
 
-This instruction initiates the Model Local Pointing Test (MLPT) process. It should be executed immediately before your first imaging exposure to ensure the highest possible tracking accuracy from the start of your data acquisition.
+This instruction initiates the MLPT (Multiple Local Pointing Tracking) process. It should be executed immediately before your first imaging exposure to ensure the highest possible tracking accuracy from the start of your data acquisition.
 
 > [!TIP] 
 > The "MLPT Start" instruction must be placed inside a Target Container. This is essential for the plugin to correctly inherit the target's celestial coordinates.
@@ -426,7 +427,7 @@ This instruction provides a method to manually terminate the MLPT process before
 
 | **Section**               | **Details**             | **Comments / Notes**                      |
 |---------------------------|--------------------------|--------------------------------------------|
-| **Sequence Start Area**   | [Motor On](#motor-power)                 | Initialize mount tracking                  |
+| **Sequence Start Area**   | [Power On Motor](#motor-power)           | Initialize mount tracking                  |
 |                           | [Fans On](#fan-speed-control)                  | Start cooling system if needed             |
 |                           | [Covers Open](#covers-control)              | Open telescope covers       |
 | **Sequential Instruction Set** |                      |                                            |
@@ -438,13 +439,13 @@ This instruction provides a method to manually terminate the MLPT process before
 |                           | Take images (...)        | Define exposure time, binning, filters, etc|
 | **Sequence End Area**     | [Fans Off](#fan-speed-control)                 | Turn off cooling system                    |
 |                           | [Covers Close](#covers-control)             | Close telescope covers      |
-|                           | [Motor Off](#motor-power)                | Power down mount                           |
+|                           | [Power Off Motor](#motor-power)          | Power down mount                           |
 
 
   
 
 
-### Target Scheduler
+## Target Scheduler
 
 For Target Scheduler, drag your MLPT triggers into the parent container (same as e.g. AF after time).
 
@@ -463,14 +464,14 @@ This section walks through a complete automated imaging session using the plugin
 5. **Open the Advanced Sequencer** and load or build your target sequence:
    - Add **MLPT If Exceeds** and **MLPT After Flip** triggers to the parent container.
    - Place **MLPT Start** as the first instruction inside the target container (before the first exposure).
-   - Optionally add **Motor On**, **Fans On**, and **Covers Open** items to the Sequence Start area.
+   - Optionally add **Power On Motor**, **Fans On**, and **Covers Open** items to the Sequence Start area.
 6. **Run the sequence**. At each new target:
    - The mount slews to the target.
    - `MLPT Start` builds a local tracking model for the sidereal path.
    - Exposures begin. AutoSlew applies the MLPT correction continuously.
    - If the session crosses the meridian, `MLPT After Flip` automatically rebuilds MLPT for the new pier side.
    - `MLPT If Exceeds` watches the remaining MLPT time and silently triggers a refresh before it expires.
-7. **End of session**: The **Motor Off**, **Fans Off**, and **Covers Close** items in the Sequence End area handle safe shutdown.
+7. **End of session**: The **Power Off Motor**, **Fans Off**, and **Covers Close** items in the Sequence End area handle safe shutdown.
 
 > [!TIP] 
 > At any point you can monitor MLPT progress in the ASA Tools tab. A yellow LPT button in AutoSlew confirms an active model.
@@ -608,7 +609,7 @@ To let NINA manage dome synchronization instead, enable **Use native NINA dome c
 **Symptoms**: AutoSlew shows no file to load, or loading fails.
 
 **Fixes**:
-- Check `%programdata%\ASA\Sequence\` for a file named `NINA-ASA-*.pox`.
+- Check `%programdata%\ASA\Sequence\PointingPics\` for a file named `NINA-ASA-*.pox`.
 - If you set a custom output directory in the plugin options, look there instead.
 - If NINA is running on a different machine than AutoSlew, configure the custom output path to point to a shared folder accessible by both machines.
 
@@ -653,7 +654,7 @@ A consolidated reference of all configurable options. Options are set in the **A
 
 | Option | Default | Description |
 |---|---|---|
-| Golden Spiral star count | 9 | Number of golden spiral rings (controls point density). |
+| Golden Spiral star count | 9 | Number of points to generate for the golden spiral distribution. |
 | AutoGrid RA spacing (°) | 10 | RA spacing for AutoGrid in spacing mode. |
 | AutoGrid Dec spacing (°) | 10 | Dec spacing for AutoGrid in spacing mode. |
 | AutoGrid desired point count | 50 | Target point count for AutoGrid in count mode. |
@@ -701,7 +702,7 @@ A consolidated reference of all configurable options. Options are set in the **A
 | MLPT start offset (min) | 0 | Offset in minutes applied to the MLPT start time. |
 | MLPT end time provider | Now | Time reference for the MLPT path end. |
 | MLPT end offset (min) | 0 | Offset in minutes applied to the MLPT end time. |
-| MLPT RA interval (°) | 1.5 | RA spacing between MLPT path points (3–5° recommended). |
+| MLPT RA interval (°) | 1.5 | RA spacing between MLPT path points. The default 1.5° provides finer sampling; 3–5° is sufficient for most sessions. |
 | MLPT path offset (RA-min) | 0 | Signed offset to shift the path start: negative = RA−, positive = RA+ (future). |
 | Pre-balance | On | Controls the initial far-end slew before the first planned MLPT point. Recommended to leave ON. |
 
