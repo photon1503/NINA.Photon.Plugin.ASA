@@ -238,7 +238,11 @@ In the chart overlay for sync-enabled AutoGrid builds:
 * **Reference point** is shown as a **diamond** marker.
 * **Sync point** is shown as a **triangle** marker.
 
-Sync points are periodic mid-session sync commands that re-anchor the mount's coordinate system as tracking progresses. They help reduce hysteresis accumulation during long runs.
+![alt text](image-21.png)
+
+In long pointing runs, small time-dependent effects (for example thermal drift) can shift the coordinate offset between the start and end of the build. Sync points are periodic mid-session sync commands that re-anchor the mount's coordinate system as tracking progresses.
+
+Reference points are used together with sync points to keep the sync approach repeatable. Without a reference anchor, the mount could arrive at the same sync coordinate from different parts of the sky, which increases hysteresis-related variation.
 
 Sync/reference behavior is available for **AutoGrid** builds only.
 
@@ -250,7 +254,9 @@ The sequence for each sync block is:
 
 This means a reference slew runs before sync, then a trailing reference slew runs before continuing with the band's regular points. The behavior repeats at each new band/side boundary.
 
-No image is taken at a reference point. The reference point is a repeatable slew anchor used so the mount approaches the sync point in the same way each time.
+No image is taken at a reference point. In this plugin, each sync block always uses the configured East/West reference coordinate as the repeatable pre-sync anchor, then executes the sync exposure at the configured East/West sync coordinate.
+
+For German mounts, ASA commonly recommends placing the reference position low in the East (around azimuth 90 deg) to maximize repeatability.
 
 Golden Spiral builds do not use sync/reference insertion.
 
