@@ -344,7 +344,11 @@ The system begins by computing an optimal tracking path based on several key par
 To guarantee a valid model can be created, the process includes a dynamic safety feature. If the initial calculation determines that a standard path would intersect a limit, such as the horizon or meridian, with fewer than three data points possible, the system will automatically reduce the time interval between points. This adjustment ensures the collection of sufficient data for a reliable model, even under constrained conditions.
 
 #### Mount Movement and Execution
-Following the calculation, the mount performs a preparatory movement. It first slews to the final point of the generated MLPT path. This initial slew serves to pre-balance the telescope for the entire tracking duration. No image is taken at this position. The mount then returns to the starting point to begin the actual imaging sequence, capturing images at specified intervals along the predefined tracking path. Upon completion, the mount returns to its starting position.
+Following the calculation, the mount can perform a preparatory movement. With **Pre-balance** enabled, it first slews to the final point of the generated MLPT path, then returns to the starting point. This initial far-end slew helps pre-balance the telescope for the full tracking run. No image is taken at the far-end position.
+
+The **Pre-balance** toggle controls this behavior. It is recommended to leave **Pre-balance ON** for most setups.
+
+After pre-balance (or immediately, if disabled), the mount begins the actual imaging sequence, capturing images at specified intervals along the predefined tracking path. Upon completion, the mount returns to its starting position.
 
 > [!NOTE] 
 > During MLPT builds, pier-side forcing is not used. The mount keeps its native pier-side behaviour, which is important when tracking near the meridian limits.
@@ -699,6 +703,7 @@ A consolidated reference of all configurable options. Options are set in the **A
 | MLPT end offset (min) | 0 | Offset in minutes applied to the MLPT end time. |
 | MLPT RA interval (°) | 1.5 | RA spacing between MLPT path points (3–5° recommended). |
 | MLPT path offset (RA-min) | 0 | Signed offset to shift the path start: negative = RA−, positive = RA+ (future). |
+| Pre-balance | On | Controls the initial far-end slew before the first planned MLPT point. Recommended to leave ON. |
 
 ## Sync Points
 
