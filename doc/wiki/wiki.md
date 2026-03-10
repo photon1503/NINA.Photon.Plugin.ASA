@@ -313,7 +313,7 @@ MLPT (Multiple Local Pointing Tracking) generates a local pointing correction al
 > [!TIP]
 > Check your star eccentricity (using Hocus Focus) before and after running MLPT.
 
-![MLPT Interactive Mode](image-6.png)
+![alt text](image-22.png)
 
 
 
