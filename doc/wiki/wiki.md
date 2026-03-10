@@ -86,9 +86,9 @@ Before using this plugin, confirm the following are in place:
 
 - [ ] NINA 3.2 or later installed and running
 - [ ] ASA ASCOM/Alpaca driver installed and configured (select it as your telescope in NINA)
-- [ ] AutoSlew running and connected to the mount
 - [ ] AutoSlew version 5.2.4.8 or higher (7.2.5.0+ for MLPT)
-- [ ] Plate solver configured in NINA — [ASTAP](https://www.hnsky.org/astap.htm) with a star database is strongly recommended
+- [ ] AutoSlew running and connected to the mount
+- [ ] Plate solver configured in NINA — [ASTAP](https://www.hnsky.org/astap.htm) with a star database is strongly recommended. For long focal lengths, [PlateSolve3](https://nighttime-imaging.eu/docs/master/site/advanced/platesolving/#platesolve380) is also recommended.
 - [ ] Camera connected and functional in NINA
 
 ## First Night: Step-by-Step
@@ -584,7 +584,7 @@ To let NINA manage dome synchronization instead, enable **Use native NINA dome c
 **Symptoms**: Points are marked as failed; the build completes with many skipped points.
 
 **Fixes**:
-- Ensure ASTAP (or your solver) has a star database installed and is selected in NINA's plate solve settings.
+- Ensure your selected solver is correctly configured in NINA: ASTAP with star database, or PlateSolve3 for long focal lengths.
 - Increase the search radius in the solver settings, or enable **Allow blind solves** in the plugin options as a fallback. Note: blind solves are much slower.
 - Check that your exposure time and gain produce a reasonable star field. Too bright or too short may give too few stars.
 - Make sure the system clock is correct — wrong time causes large coordinate offsets that defeat narrow-field solvers.
