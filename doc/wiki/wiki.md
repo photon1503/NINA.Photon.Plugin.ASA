@@ -139,7 +139,7 @@ For MLPT (Sidereal Path) point generation, see [MLPT Integration](#mlpt-integrat
 > [!TIP]
 > **AutoGrid with ASA Band Path** is the recommended approach for building high-quality pointing models. It closely replicates the grid layout and slew strategy used by ASA Sequence, so the resulting models are comparable in accuracy and coverage.
 
-## AutoGrid
+### AutoGrid
 
 AutoGrid generates an ASA-style grid with dual-side meridian overlap. The east and west sky halves are sampled separately. Overlap points near the meridian are duplicated for both pier-side solutions. Each generated point stores a desired pier side.
 
@@ -150,7 +150,7 @@ Two input modes are available:
 * **Desired points** — Set a target point count (3–1000). The generator distributes that many points across the visible sky.
 * **RA / Dec spacing** — Define fixed spacing in degrees for both RA and Dec axes. The generator fills the visible sky at the given intervals.
 
-### Anchor Modes
+#### Anchor Modes
 
 AutoGrid provides two optional anchor strategies:
 
@@ -162,7 +162,7 @@ These modes are **mutually exclusive**. Enabling one automatically disables the 
 When **End at meridian limit** is used, the target is constrained with a fixed **1° safety margin** from the meridian limit to reduce unexpected flip-risk edge cases.
 
 
-### Pathing Options
+#### Pathing Options
 
 AutoGrid uses **ASA Band Path** slew ordering.
 
@@ -175,19 +175,66 @@ Enable **Show path** to visualize the planned slew order as a dotted line in bot
 ![AutoGrid Path Visualization](image-5.png)
 
 
-## Pier Side Enforcement
+#### Sync Points (AutoGrid)
 
-During a model build, the builder calls the ASA-specific ASCOM/Alpaca action `forcenextpierside` before each slew to place the mount on the correct side. If the active driver does not support this action, the builder disables it automatically and continues without interruption.
 
-> For MLPT / Sidereal Path builds, pier-side forcing is skipped. The mount keeps its native pier-side behaviour near the meridian limits.
+In the chart overlay for sync-enabled AutoGrid builds:
 
-## Minimum Distance to Horizon
+* **Reference point** is shown as a **diamond** marker.
+* **Sync point** is shown as a **triangle** marker.
+
+![alt text](image-21.png)
+
+In long pointing runs, small time-dependent effects (for example thermal drift) can shift the coordinate offset between the start and end of the build. Sync points are periodic mid-session sync measurements: an image is captured, plate-solved, and written as a sync-marked entry in the POX data.
+
+No ASCOM/Alpaca mount sync command is issued at these points.
+
+Reference points are used together with sync points to keep the sync approach repeatable. Without a reference anchor, the mount could arrive at the same sync coordinate from different parts of the sky, which increases hysteresis-related variation.
+
+Sync/reference behavior is available for **AutoGrid** builds only.
+
+For **AutoGrid + ASA Band Path**, sync placement follows ASA-style band/side boundaries.
+
+The sequence for each sync block is:
+
+* **Ref -> Sync -> Ref -> band points**
+
+This means a reference slew runs before sync, then a trailing reference slew runs before continuing with the band's regular points. The behavior repeats at each new band/side boundary.
+
+No image is taken at a reference point. In this plugin, each sync block always uses the configured East/West reference coordinate as the repeatable pre-sync anchor, then executes the sync exposure at the configured East/West sync coordinate.
+
+For German mounts, ASA commonly recommends placing the reference position low in the East (around azimuth 90 deg) to maximize repeatability.
+
+
+
+If an older install has sync/reference fields persisted as all zeros, the plugin auto-migrates them to the current defaults when loading options.
+
+* **Use sync** — Enable periodic sync-marked plate-solve points during AutoGrid builds (POX-marked; no mount sync command).
+
+* **East / West sync altitude and azimuth** — The sky position used for the sync slew on each side of the meridian.
+* **East / West reference altitude and azimuth** — Reference coordinates used for the sync offset calculation.
+
+> [!IMPORTANT]
+> Sync points are an advanced feature. Leave disabled unless you are specifically tuning hysteresis behaviour.
+
+### Golden Spiral
+
+Golden Spiral uses a classic full-sky spiral distribution and does not use sync/reference insertion.
+
+#### High Altitude Stars
+
+When using the Golden Spiral generator, you can supplement the standard distribution with extra points concentrated at high altitude:
+
+* **High altitude stars** — Number of additional points to inject in the high-altitude zone (default: 10). Set to 0 to disable.
+* **High altitude min / max (°)** — Altitude range for the injected high-altitude points (defaults: 70°–89°). Useful for mounts that show larger errors near the zenith.
+
+### Shared Generator Settings
+
+#### Minimum Distance to Horizon
 
 A global **Minimum distance to horizon (°)** setting keeps all generated points above a safety margin from the local horizon. This limit is applied during point generation and visibility checks, so the chart display and the actual model build always agree on which points are valid.
 
-
-
-## Chart Features
+#### Chart Features
 
 Both the Alt/Az chart and the polar chart include the following aids:
 
@@ -211,6 +258,12 @@ Once points have been generated (via AutoGrid or Golden Spiral), you can start a
 
 The builder slews to each generated point, takes an exposure, and plate solves the result. The solved coordinates are compared against the expected position to produce pointing error data. When all points are processed, the results are written to a POX file that can be loaded into Autoslew to calculate the final pointing model.
 
+### Pier Side Enforcement
+
+During a model build, the builder calls the ASA-specific ASCOM/Alpaca action `forcenextpierside` before each slew to place the mount on the correct side. If the active driver does not support this action, the builder disables it automatically and continues without interruption.
+
+> For MLPT / Sidereal Path builds, pier-side forcing is skipped. The mount keeps its native pier-side behaviour near the meridian limits.
+
 ### Build Options
 
 The following settings are available in the plugin options:
@@ -221,53 +274,6 @@ The following settings are available in the plugin options:
 * **Builder retries** — How many times to retry when individual points fail. Only the failed points are reprocessed; previous successful solves are reused.
 * **Max failed points** — If more than this many points have failed after a build iteration, no further retry is attempted.
 * **Alternate directions between iterations** — Reverses the slew order on each retry iteration. This helps reduce overall scope and dome movement.
-
-### High Altitude Stars (Golden Spiral only)
-
-When using the Golden Spiral generator, you can supplement the standard distribution with extra points concentrated at high altitude:
-
-* **High altitude stars** — Number of additional points to inject in the high-altitude zone (default: 10). Set to 0 to disable.
-* **High altitude min / max (°)** — Altitude range for the injected high-altitude points (defaults: 70°–89°). Useful for mounts that show larger errors near the zenith.
-
-### Sync Points
-
-![alt text](image-20.png)
-
-In the chart overlay for sync-enabled AutoGrid builds:
-
-* **Reference point** is shown as a **diamond** marker.
-* **Sync point** is shown as a **triangle** marker.
-
-![alt text](image-21.png)
-
-In long pointing runs, small time-dependent effects (for example thermal drift) can shift the coordinate offset between the start and end of the build. Sync points are periodic mid-session sync commands that re-anchor the mount's coordinate system as tracking progresses.
-
-Reference points are used together with sync points to keep the sync approach repeatable. Without a reference anchor, the mount could arrive at the same sync coordinate from different parts of the sky, which increases hysteresis-related variation.
-
-Sync/reference behavior is available for **AutoGrid** builds only.
-
-For **AutoGrid + ASA Band Path**, sync placement follows ASA-style band/side boundaries rather than fixed HA intervals.
-
-The sequence for each sync block is:
-
-* **Ref -> Sync -> Ref -> band points**
-
-This means a reference slew runs before sync, then a trailing reference slew runs before continuing with the band's regular points. The behavior repeats at each new band/side boundary.
-
-No image is taken at a reference point. In this plugin, each sync block always uses the configured East/West reference coordinate as the repeatable pre-sync anchor, then executes the sync exposure at the configured East/West sync coordinate.
-
-For German mounts, ASA commonly recommends placing the reference position low in the East (around azimuth 90 deg) to maximize repeatability.
-
-Golden Spiral builds do not use sync/reference insertion.
-
-If an older install has sync/reference fields persisted as all zeros, the plugin auto-migrates them to the current defaults when loading options.
-
-* **Use sync** — Enable periodic ASCOM/Alpaca sync commands during AutoGrid builds.
-
-* **East / West sync altitude and azimuth** — The sky position used for the sync slew on each side of the meridian.
-* **East / West reference altitude and azimuth** — Reference coordinates used for the sync offset calculation.
-
-> Sync points are an advanced feature. Leave disabled unless you are specifically tuning hysteresis behaviour.
 
 ### Sorting and Dome Options
 
@@ -291,7 +297,6 @@ Generated point grids can be saved to a `.grd` file and reloaded later. This is 
 - Sharing a proven grid between NINA and ASA Sequence.
 
 Use the **Import** and **Export** buttons in the model builder tab. Grid files are stored by default in `%programdata%\ASA\Sequence\Grids\`. Only points in the **Generated** state are included in an export; failed or removed points are not saved.
-
 
 
 ---
@@ -699,7 +704,7 @@ A consolidated reference of all configurable options. Options are set in the **A
 
 | Option | Default | Description |
 |---|---|---|
-| Use sync | Off | Enable periodic ASCOM/Alpaca sync commands during AutoGrid builds. |
+| Use sync | Off | Enable periodic sync-marked plate-solve points during AutoGrid builds (written in POX; no mount sync command). |
 | East sync altitude / azimuth | 60° / 90° | Sky position used for sync on the east pier side. |
 | West sync altitude / azimuth | 60° / 270° | Sky position used for sync on the west pier side. |
 | East reference altitude / azimuth | 30° / 90° | Reference coordinates for east-side sync offset. |
