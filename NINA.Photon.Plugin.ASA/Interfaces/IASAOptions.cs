@@ -115,7 +115,10 @@ namespace NINA.Photon.Plugin.ASA.Interfaces
         bool DisableRefractionCorrection { get; set; }
         bool IsLegacyDDM { get; set; }
         bool DomeControlNINA { get; set; }
+        bool EnableMLPTDebugSimulator { get; set; }
         DateTime LastMLPT { get; set; }
+        double ActiveMLPTDurationSeconds { get; set; }
+        int ActiveMLPTPointCount { get; set; }
 
         string IPAddress { get; set; }
 

@@ -1688,6 +1688,13 @@
                                 MarkerType="Circle"
                                 MarkerSize="3"
                                 TrackerFormatString="{}Image #{X:0}&#x0a;RA Error: {Y:0.##} arcsec" />
+                            <oxy:LineSeries
+                                ItemsSource="{Binding MlptRaProgressBandPoints}"
+                                DataFieldX="X"
+                                DataFieldY="Y"
+                                Color="#FFFFA000"
+                                StrokeThickness="4"
+                                TrackerFormatString="" />
                         </oxy:Plot.Series>
                         <oxy:Plot.Annotations>
                             <oxy:LineAnnotation
@@ -1704,6 +1711,7 @@
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
                     <TextBlock
                         Grid.Row="0"
@@ -1759,6 +1767,13 @@
                                 MarkerType="Circle"
                                 MarkerSize="3"
                                 TrackerFormatString="{}Image #{X:0}&#x0a;DE Error: {Y:0.##} arcsec" />
+                            <oxy:LineSeries
+                                ItemsSource="{Binding MlptDeProgressBandPoints}"
+                                DataFieldX="X"
+                                DataFieldY="Y"
+                                Color="#FFFFA000"
+                                StrokeThickness="4"
+                                TrackerFormatString="" />
                         </oxy:Plot.Series>
                         <oxy:Plot.Annotations>
                             <oxy:LineAnnotation
@@ -1769,6 +1784,18 @@
                                 Color="{Binding Path=Color, Source={StaticResource PrimaryBrush}, Converter={StaticResource SetAlphaToColorConverter}, ConverterParameter=70}" />
                         </oxy:Plot.Annotations>
                     </oxy:Plot>
+                    <StackPanel
+                        Grid.Row="2"
+                        Margin="0,6,0,0"
+                        HorizontalAlignment="Center"
+                        Orientation="Horizontal">
+                        <TextBlock Text="Elapsed " />
+                        <TextBlock Text="{Binding MlptElapsedMinutes, StringFormat={}{0:0.0}}" />
+                        <TextBlock Margin="2,0,12,0" Text=" min" />
+                        <TextBlock Text="Remaining " />
+                        <TextBlock Text="{Binding MlptRemainingMinutes, StringFormat={}{0:0.0}}" />
+                        <TextBlock Margin="2,0,0,0" Text=" min" />
+                    </StackPanel>
                 </Grid>
 
                 <Grid Grid.Row="3" Grid.Column="0">

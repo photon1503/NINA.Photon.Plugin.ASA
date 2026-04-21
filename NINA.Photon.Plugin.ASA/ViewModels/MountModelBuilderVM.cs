@@ -90,6 +90,11 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
         private DateTime lastMeridianFlipAngleRefreshUtc = DateTime.MinValue;
         private static readonly TimeSpan MeridianFlipAngleRefreshInterval = TimeSpan.FromSeconds(10);
         private bool shouldPollMeridianFlipMaxAngle = true;
+        private readonly DispatcherTimer mlptProgressTimer;
+        private DateTime mlptSentAt = DateTime.MinValue;
+        private TimeSpan mlptPlannedDuration = TimeSpan.Zero;
+        private bool mlptPreviewPendingSend;
+        private bool mlptDebugSimulationSessionOwned;
 
         [ImportingConstructor]
         public MountModelBuilderVM(IProfileService profileService, IApplicationStatusMediator applicationStatusMediator, ITelescopeMediator telescopeMediator, IDomeMediator domeMediator, IFramingAssistantVM framingAssistant, INighttimeCalculator nighttimeCalculator) :
@@ -142,6 +147,13 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             this.modelBuilder = modelBuilder;
             this.modelBuilder.PointNextUp += ModelBuilder_PointNextUp;
             this.modelBuilderOptions.PropertyChanged += ModelBuilderOptions_PropertyChanged;
+            this.mlptProgressTimer = new DispatcherTimer(
+                DispatcherPriority.Background,
+                Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher)
+            {
+                Interval = TimeSpan.FromSeconds(1)
+            };
+            this.mlptProgressTimer.Tick += MlptProgressTimer_Tick;
 
             this.SiderealPathStartDateTimeProviders = ImmutableList.Create<IDateTimeProvider>(
                 new NowDateTimeProvider(new SystemDateTime()),
@@ -207,6 +219,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             RefreshMlptErrorCharts();
             RefreshMeridianLimitGuides();
             RefreshSyncReferenceDisplayPoints();
+            SyncMlptProgressTracking();
         }
 
         private void SubscribeDisplayModelPoints(AsyncObservableCollection<ModelPoint> points)
@@ -756,6 +769,8 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 MlptRaErrorAxisLimitArcsec = raAxisLimitArcsec;
                 MlptDeErrorAxisLimitArcsec = deAxisLimitArcsec;
             }
+
+            RefreshMlptProgressLinePoints();
         }
 
         private void RefreshMlptPlannedImageCount()
@@ -763,11 +778,13 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             if (this.ModelPointGenerationType == ModelPointGenerationTypeEnum.SiderealPath && !hasValidGeneratedSiderealPath)
             {
                 MlptPlannedImageCount = 3;
+                SyncMlptProgressTracking();
                 return;
             }
 
             var currentCount = DisplayModelPoints?.Count ?? 0;
             MlptPlannedImageCount = Math.Max(1, currentCount);
+            SyncMlptProgressTracking();
         }
 
         private void ModelBuilderOptions_PropertyChanged(object sender, PropertyChangedEventArgs e)
@@ -844,6 +861,27 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 RaisePropertyChanged(nameof(ShowMeridianLimitGuidesEffective));
             }
 
+            if (e.PropertyName == nameof(IASAOptions.LastMLPT))
+            {
+                SyncMlptProgressTracking();
+            }
+
+            if (e.PropertyName == nameof(IASAOptions.EnableMLPTDebugSimulator))
+            {
+                if (!modelBuilderOptions.EnableMLPTDebugSimulator)
+                {
+                    ClearMlptDebugSimulationSessionIfOwned();
+                }
+
+                SyncMlptProgressTracking();
+            }
+
+            if (e.PropertyName == nameof(IASAOptions.ActiveMLPTDurationSeconds)
+                || e.PropertyName == nameof(IASAOptions.ActiveMLPTPointCount))
+            {
+                SyncMlptProgressTracking();
+            }
+
             if (e.PropertyName == nameof(modelBuilderOptions.UseSync)
                 || e.PropertyName == nameof(modelBuilderOptions.SyncEastAltitude)
                 || e.PropertyName == nameof(modelBuilderOptions.SyncWestAltitude)
@@ -869,6 +907,8 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             {
                 this.DisplayModelPoints = new AsyncObservableCollection<ModelPoint>(this.ModelPoints);
             }
+
+            SyncMlptProgressTracking();
         }
 
         private void RefreshDisplayPathPoints()
@@ -938,6 +978,292 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             }
         }
 
+        private void MlptProgressTimer_Tick(object sender, EventArgs e)
+        {
+            UpdateMlptDebugSimulatorPoints();
+            RefreshMlptProgressLinePoints();
+        }
+
+        private static double NormalizeRightAscensionHours(double rightAscensionHours)
+        {
+            var normalized = rightAscensionHours % 24.0d;
+            if (normalized < 0.0d)
+            {
+                normalized += 24.0d;
+            }
+
+            return normalized;
+        }
+
+        private List<ModelPoint> GetEligibleMlptPlannedPoints()
+        {
+            return DisplayModelPoints?
+                .Where(point => point.PlannedCaptureTime != DateTime.MinValue)
+                .Where(point => point.ModelPointState != ModelPointStateEnum.BelowHorizon
+                             && point.ModelPointState != ModelPointStateEnum.OutsideAltitudeBounds
+                             && point.ModelPointState != ModelPointStateEnum.OutsideAzimuthBounds)
+                .OrderBy(point => point.PlannedCaptureTime)
+                .ThenBy(point => point.ModelIndex)
+                .ToList()
+                ?? new List<ModelPoint>();
+        }
+
+        private void EnsureMlptDebugSimulationSession()
+        {
+            if (!modelBuilderOptions.EnableMLPTDebugSimulator
+                || BuildInProgress
+                || !mlptPreviewPendingSend)
+            {
+                return;
+            }
+
+            var plannedPoints = GetEligibleMlptPlannedPoints();
+            if (plannedPoints.Count < 2 || plannedPoints.Any(point => point.ModelPointState == ModelPointStateEnum.AddedToModel))
+            {
+                return;
+            }
+
+            var firstPlannedCaptureTime = plannedPoints[0].PlannedCaptureTime;
+            var lastPlannedCaptureTime = plannedPoints[plannedPoints.Count - 1].PlannedCaptureTime;
+            var plannedDuration = lastPlannedCaptureTime - firstPlannedCaptureTime;
+            if (plannedDuration <= TimeSpan.Zero)
+            {
+                return;
+            }
+
+            var simulatedDurationSeconds = Math.Max(10.0d, Math.Min(45.0d, plannedPoints.Count * 2.0d));
+            var simulatedDuration = TimeSpan.FromSeconds(simulatedDurationSeconds);
+
+            mlptPreviewPendingSend = false;
+            mlptDebugSimulationSessionOwned = true;
+            modelBuilderOptions.ActiveMLPTDurationSeconds = simulatedDuration.TotalSeconds;
+            modelBuilderOptions.ActiveMLPTPointCount = plannedPoints.Count;
+            modelBuilderOptions.LastMLPT = DateTime.Now;
+            mlptSentAt = modelBuilderOptions.LastMLPT;
+            mlptPlannedDuration = simulatedDuration;
+
+            for (int pointIndex = 0; pointIndex < plannedPoints.Count; pointIndex++)
+            {
+                var point = plannedPoints[pointIndex];
+                var simulatedCaptureTime = mlptSentAt + (point.PlannedCaptureTime - firstPlannedCaptureTime);
+                ApplySimulatedMlptSolve(point, pointIndex, simulatedCaptureTime);
+            }
+
+            Logger.Info($"Started MLPT debug simulator for {plannedPoints.Count} points over {simulatedDuration:g} (planned MLPT duration {plannedDuration:g})");
+        }
+
+        private void ClearMlptDebugSimulationSessionIfOwned()
+        {
+            if (!mlptDebugSimulationSessionOwned)
+            {
+                return;
+            }
+
+            mlptDebugSimulationSessionOwned = false;
+            modelBuilderOptions.ActiveMLPTDurationSeconds = 0.0d;
+            modelBuilderOptions.ActiveMLPTPointCount = 0;
+            modelBuilderOptions.LastMLPT = DateTime.MinValue;
+        }
+
+        private static void ApplySimulatedMlptSolve(ModelPoint point, int pointIndex, DateTime captureTime)
+        {
+            var baseRightAscension = NormalizeRightAscensionHours(10.0d + (pointIndex * 0.173d));
+            var baseDeclination = Math.Max(-70.0d, Math.Min(70.0d, -25.0d + (pointIndex * 1.35d)));
+            var raErrorArcsec = (Math.Sin(pointIndex * 0.55d) * 10.0d) + (Math.Cos(pointIndex * 0.17d) * 2.0d);
+            var deErrorArcsec = (Math.Cos(pointIndex * 0.43d) * 8.0d) - (Math.Sin(pointIndex * 0.11d) * 1.5d);
+
+            point.ModelIndex = pointIndex + 1;
+            point.MountReportedRightAscension = baseRightAscension;
+            point.MountReportedDeclination = baseDeclination;
+            point.PlateSolvedRightAscension = NormalizeRightAscensionHours(baseRightAscension + (raErrorArcsec / (15.0d * 3600.0d)));
+            point.PlateSolvedDeclination = Math.Max(-90.0d, Math.Min(90.0d, baseDeclination + (deErrorArcsec / 3600.0d)));
+            point.CaptureTime = captureTime;
+            point.ModelPointState = ModelPointStateEnum.AddedToModel;
+        }
+
+        private void UpdateMlptDebugSimulatorPoints()
+        {
+            if (!modelBuilderOptions.EnableMLPTDebugSimulator
+                || BuildInProgress
+                || mlptSentAt == DateTime.MinValue
+                || mlptPlannedDuration <= TimeSpan.Zero
+                || !IsDisplayedPathCurrentActiveMlpt())
+            {
+                return;
+            }
+
+            var plannedPoints = GetEligibleMlptPlannedPoints();
+            if (plannedPoints.Count == 0)
+            {
+                return;
+            }
+
+            var firstPlannedCaptureTime = plannedPoints[0].PlannedCaptureTime;
+            var now = DateTime.Now;
+            for (int pointIndex = 0; pointIndex < plannedPoints.Count; pointIndex++)
+            {
+                var point = plannedPoints[pointIndex];
+                if (point.ModelPointState == ModelPointStateEnum.AddedToModel)
+                {
+                    continue;
+                }
+
+                var simulatedCaptureTime = mlptSentAt + (point.PlannedCaptureTime - firstPlannedCaptureTime);
+                if (simulatedCaptureTime > now)
+                {
+                    break;
+                }
+
+                ApplySimulatedMlptSolve(point, pointIndex, simulatedCaptureTime);
+            }
+        }
+
+        private void SyncMlptProgressTracking()
+        {
+            EnsureMlptDebugSimulationSession();
+
+            if (modelBuilderOptions.LastMLPT == DateTime.MinValue)
+            {
+                mlptDebugSimulationSessionOwned = false;
+                mlptSentAt = DateTime.MinValue;
+                mlptPlannedDuration = TimeSpan.Zero;
+                mlptProgressTimer.Stop();
+                RefreshMlptProgressLinePoints();
+                return;
+            }
+
+            mlptSentAt = modelBuilderOptions.LastMLPT;
+            mlptPlannedDuration = TimeSpan.FromSeconds(modelBuilderOptions.ActiveMLPTDurationSeconds);
+            if (mlptPlannedDuration <= TimeSpan.Zero || modelBuilderOptions.ActiveMLPTPointCount <= 0)
+            {
+                mlptPlannedDuration = TimeSpan.Zero;
+                RefreshMlptProgressLinePoints();
+                return;
+            }
+
+            UpdateMlptDebugSimulatorPoints();
+            RefreshMlptProgressLinePoints();
+            if (IsDisplayedPathCurrentActiveMlpt() && (DateTime.Now - mlptSentAt) < mlptPlannedDuration)
+            {
+                mlptProgressTimer.Start();
+            }
+            else
+            {
+                mlptProgressTimer.Stop();
+            }
+        }
+
+        private bool TryGetMlptPlannedDuration(out TimeSpan plannedDuration)
+        {
+            plannedDuration = TimeSpan.Zero;
+
+            var plannedPoints = GetEligibleMlptPlannedPoints();
+
+            if (plannedPoints == null || plannedPoints.Count < 2)
+            {
+                return false;
+            }
+
+            plannedDuration = plannedPoints[plannedPoints.Count - 1].PlannedCaptureTime - plannedPoints[0].PlannedCaptureTime;
+            return plannedDuration > TimeSpan.Zero;
+        }
+
+        private bool IsDisplayedPathCurrentActiveMlpt()
+        {
+            if (mlptPreviewPendingSend)
+            {
+                return false;
+            }
+
+            if (!TryGetMlptPlannedDuration(out var displayedDuration))
+            {
+                return false;
+            }
+
+            var displayedPointCount = GetEligibleMlptPlannedPoints().Count;
+
+            if (displayedPointCount <= 0 || displayedPointCount != modelBuilderOptions.ActiveMLPTPointCount)
+            {
+                return false;
+            }
+
+            if (mlptDebugSimulationSessionOwned)
+            {
+                return true;
+            }
+
+            return Math.Abs((displayedDuration - mlptPlannedDuration).TotalSeconds) <= 1.0d;
+        }
+
+        private void RefreshMlptProgressLinePoints()
+        {
+            if (mlptSentAt == DateTime.MinValue
+                || mlptPlannedDuration <= TimeSpan.Zero
+                || MlptPlannedImageCount <= 0
+                || !IsDisplayedPathCurrentActiveMlpt())
+            {
+                ShowMlptProgressMarker = false;
+                MlptElapsedMinutes = 0.0d;
+                MlptRemainingMinutes = 0.0d;
+                UpdateMlptProgressBandPoints(MlptRaProgressBandPoints, null);
+                UpdateMlptProgressBandPoints(MlptDeProgressBandPoints, null);
+                return;
+            }
+
+            var elapsed = DateTime.Now - mlptSentAt;
+            if (elapsed < TimeSpan.Zero)
+            {
+                elapsed = TimeSpan.Zero;
+            }
+
+            var progress = Math.Min(1.0d, elapsed.TotalSeconds / mlptPlannedDuration.TotalSeconds);
+            var xPosition = MlptPlannedImageCount <= 1
+                ? 1.0d
+                : 1.0d + ((MlptPlannedImageCount - 1) * progress);
+            var remaining = mlptPlannedDuration - elapsed;
+            if (remaining < TimeSpan.Zero)
+            {
+                remaining = TimeSpan.Zero;
+            }
+
+            MlptProgressXPosition = xPosition;
+            ShowMlptProgressMarker = true;
+            MlptElapsedMinutes = elapsed.TotalMinutes;
+            MlptRemainingMinutes = remaining.TotalMinutes;
+
+            if (progress >= 1.0d)
+            {
+                mlptProgressTimer.Stop();
+            }
+
+            UpdateMlptProgressBandPoints(MlptRaProgressBandPoints, new[]
+            {
+                new DataPoint(xPosition, MlptRaErrorAxisMinimumArcsec),
+                new DataPoint(xPosition, MlptRaErrorAxisLimitArcsec)
+            });
+
+            UpdateMlptProgressBandPoints(MlptDeProgressBandPoints, new[]
+            {
+                new DataPoint(xPosition, MlptDeErrorAxisMinimumArcsec),
+                new DataPoint(xPosition, MlptDeErrorAxisLimitArcsec)
+            });
+        }
+
+        private static void UpdateMlptProgressBandPoints(AsyncObservableCollection<DataPoint> points, IEnumerable<DataPoint> updatedPoints)
+        {
+            points.Clear();
+
+            if (updatedPoints == null)
+            {
+                return;
+            }
+
+            foreach (var point in updatedPoints)
+            {
+                points.Add(point);
+            }
+        }
+
         private void ProfileService_ProfileChanged(object sender, EventArgs e)
         {
             this.profileService.ActiveProfile.AstrometrySettings.PropertyChanged += AstrometrySettings_PropertyChanged;
@@ -1004,6 +1330,10 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
         {
             if (!this.disposed)
             {
+                this.mlptProgressTimer.Stop();
+                this.mlptProgressTimer.Tick -= MlptProgressTimer_Tick;
+                this.modelBuilder.PointNextUp -= ModelBuilder_PointNextUp;
+                this.modelBuilderOptions.PropertyChanged -= ModelBuilderOptions_PropertyChanged;
                 this.telescopeMediator.RemoveConsumer(this);
                 this.mountMediator.RemoveConsumer(this);
                 this.disposed = true;
@@ -1270,6 +1600,8 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             this.ModelPoints.Clear();
             this.DisplayModelPoints.Clear();
             hasValidGeneratedSiderealPath = false;
+            mlptPreviewPendingSend = false;
+            ClearMlptDebugSimulationSessionIfOwned();
             RefreshMlptPlannedImageCount();
             return Task.FromResult(true);
         }
@@ -1277,6 +1609,8 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
         private bool GenerateGoldenSpiral(int goldenSpiralStarCount, bool showNotifications)
         {
             hasValidGeneratedSiderealPath = false;
+            mlptPreviewPendingSend = false;
+            ClearMlptDebugSimulationSessionIfOwned();
             var localModelPoints = this.modelPointGenerator.GenerateGoldenSpiral(goldenSpiralStarCount, this.CustomHorizon);
             this.ModelPoints = ImmutableList.ToImmutableList(localModelPoints);
             if (!this.modelBuilderOptions.ShowRemovedPoints)
@@ -1305,6 +1639,8 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
         private bool GenerateAutoGrid(bool showNotifications)
         {
             hasValidGeneratedSiderealPath = false;
+            mlptPreviewPendingSend = false;
+            ClearMlptDebugSimulationSessionIfOwned();
             List<ModelPoint> localModelPoints;
             if (this.AutoGridInputMode == AutoGridInputModeEnum.DesiredPoints)
             {
@@ -1376,6 +1712,9 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
         private bool GenerateSiderealPath(bool showNotifications)
         {
             hasValidGeneratedSiderealPath = false;
+            mlptPreviewPendingSend = false;
+            ClearMlptDebugSimulationSessionIfOwned();
+            mlptPreviewPendingSend = true;
 
             //     if (Connected == false)
             //     { return false; }
@@ -1501,6 +1840,12 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 {
                     throw new Exception("Model build already in progress");
                 }
+
+                if (options.ModelPointGenerationType == ModelPointGenerationTypeEnum.SiderealPath)
+                {
+                    ClearMlptDebugSimulationSessionIfOwned();
+                }
+
                 Notification.ShowInformation("Model build started");
 
                 BuildInProgress = true;
@@ -1512,6 +1857,11 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 modelBuildTask = null;
                 modelBuildCts = null;
                 modelBuildStopCts = null;
+                if (options.ModelPointGenerationType == ModelPointGenerationTypeEnum.SiderealPath)
+                {
+                    mlptPreviewPendingSend = false;
+                    SyncMlptProgressTracking();
+                }
                 Notification.ShowInformation($"ASA model build completed");
                 return true;
             }
@@ -2984,6 +3334,14 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             public double Y2 { get; set; }
         }
 
+        public class PlotBandDataPoint
+        {
+            public double X { get; set; }
+            public double Y { get; set; }
+            public double X2 { get; set; }
+            public double Y2 { get; set; }
+        }
+
         private Angle domeShutterAzimuthForOpening;
 
         private AsyncObservableCollection<DomeShutterOpeningDataPoint> domeShutterOpeningDataPoints = new AsyncObservableCollection<DomeShutterOpeningDataPoint>();
@@ -3124,6 +3482,90 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                     mlptPlannedImageCount = value;
                     RaisePropertyChanged();
                 }
+            }
+        }
+
+        private double mlptProgressXPosition = 1.0d;
+
+        public double MlptProgressXPosition
+        {
+            get => mlptProgressXPosition;
+            private set
+            {
+                if (Math.Abs(mlptProgressXPosition - value) > double.Epsilon)
+                {
+                    mlptProgressXPosition = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private double mlptElapsedMinutes;
+
+        public double MlptElapsedMinutes
+        {
+            get => mlptElapsedMinutes;
+            private set
+            {
+                if (Math.Abs(mlptElapsedMinutes - value) > double.Epsilon)
+                {
+                    mlptElapsedMinutes = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private double mlptRemainingMinutes;
+
+        public double MlptRemainingMinutes
+        {
+            get => mlptRemainingMinutes;
+            private set
+            {
+                if (Math.Abs(mlptRemainingMinutes - value) > double.Epsilon)
+                {
+                    mlptRemainingMinutes = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private bool showMlptProgressMarker;
+
+        public bool ShowMlptProgressMarker
+        {
+            get => showMlptProgressMarker;
+            private set
+            {
+                if (showMlptProgressMarker != value)
+                {
+                    showMlptProgressMarker = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private AsyncObservableCollection<DataPoint> mlptRaProgressBandPoints = new AsyncObservableCollection<DataPoint>();
+
+        public AsyncObservableCollection<DataPoint> MlptRaProgressBandPoints
+        {
+            get => mlptRaProgressBandPoints;
+            private set
+            {
+                mlptRaProgressBandPoints = value;
+                RaisePropertyChanged();
+            }
+        }
+
+        private AsyncObservableCollection<DataPoint> mlptDeProgressBandPoints = new AsyncObservableCollection<DataPoint>();
+
+        public AsyncObservableCollection<DataPoint> MlptDeProgressBandPoints
+        {
+            get => mlptDeProgressBandPoints;
+            private set
+            {
+                mlptDeProgressBandPoints = value;
+                RaisePropertyChanged();
             }
         }
 

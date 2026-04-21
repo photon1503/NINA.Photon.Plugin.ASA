@@ -1,6 +1,15 @@
 
 # Changelog
 
+## 3.2.8.10 (2026-04-21)
+
+### MLPT Diagnostics / Simulator
+
+- Added an **MLPT Debug / Simulator** option to run generated MLPT paths locally without sending them to the controller.
+- MLPT diagnostics charts now render a live vertical progress marker for the active/simulated MLPT run.
+- Added **Elapsed** and **Remaining** readouts below the MLPT charts to make timeline/debug state visible while testing.
+- Moved MLPT run-state tracking to the actual controller-send phase and persisted active MLPT duration/point-count metadata so the diagnostics charts follow the active path instead of the preview.
+
 ## 3.2.8.7 (2026-03-09)
 
 - Fixed an issue where AutoGrid builds could still use legacy azimuth sweep immediately after selecting ASA Band Path.

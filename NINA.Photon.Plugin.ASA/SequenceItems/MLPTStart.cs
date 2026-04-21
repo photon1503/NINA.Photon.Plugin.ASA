@@ -492,7 +492,6 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             {
                 throw new Exception("ASA MLPT model build failed");
             }
-            options.LastMLPT = DateTime.Now;
         }
 
         private ImmutableList<ModelPoint> ModelPoints = ImmutableList.Create<ModelPoint>();

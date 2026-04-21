@@ -571,6 +571,21 @@ namespace NINA.Photon.Plugin.ASA.Model
             }
         }
 
+        private DateTime plannedCaptureTime = DateTime.MinValue;
+
+        public DateTime PlannedCaptureTime
+        {
+            get => plannedCaptureTime;
+            set
+            {
+                if (plannedCaptureTime != value)
+                {
+                    plannedCaptureTime = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
         public TopocentricCoordinates ToTopocentric(ICustomDateTime dateTime)
         {
             var telescopeInfo = telescopeMediator.GetInfo();
@@ -590,7 +605,7 @@ namespace NINA.Photon.Plugin.ASA.Model
 
         public override string ToString()
         {
-            return $"Alt={Altitude}, Az={Azimuth}, PlotAz={PlotAzimuth}, State={ModelPointState}, RMSError={RMSError}, ModelIndex={ModelIndex}, AutoGridBandIndex={AutoGridBandIndex}, AutoGridBandSequence={AutoGridBandSequence}, AutoGridBandPointCount={AutoGridBandPointCount}, AutoGridBandEastToWestOrder={AutoGridBandEastToWestOrder}, AutoGridHourAngleDegrees={AutoGridHourAngleDegrees}, AutoGridRadialBandIndex={AutoGridRadialBandIndex}, AutoGridRadialBandEastToWestOrder={AutoGridRadialBandEastToWestOrder}, MountRA={MountReportedRightAscension}, MountDEC={MountReportedDeclination}, MountLST={MountReportedLocalSiderealTime}, MountPier={MountReportedSideOfPier}, SolvedCoordinates={PlateSolvedCoordinates}, CaptureTime={CaptureTime}, ExpectedDomeSideOfPier={ExpectedDomeSideOfPier}, DesiredPierSide={DesiredPierSide}, IsDualSideOverlapPoint={IsDualSideOverlapPoint}";
+            return $"Alt={Altitude}, Az={Azimuth}, PlotAz={PlotAzimuth}, State={ModelPointState}, RMSError={RMSError}, ModelIndex={ModelIndex}, AutoGridBandIndex={AutoGridBandIndex}, AutoGridBandSequence={AutoGridBandSequence}, AutoGridBandPointCount={AutoGridBandPointCount}, AutoGridBandEastToWestOrder={AutoGridBandEastToWestOrder}, AutoGridHourAngleDegrees={AutoGridHourAngleDegrees}, AutoGridRadialBandIndex={AutoGridRadialBandIndex}, AutoGridRadialBandEastToWestOrder={AutoGridRadialBandEastToWestOrder}, MountRA={MountReportedRightAscension}, MountDEC={MountReportedDeclination}, MountLST={MountReportedLocalSiderealTime}, MountPier={MountReportedSideOfPier}, SolvedCoordinates={PlateSolvedCoordinates}, CaptureTime={CaptureTime}, PlannedCaptureTime={PlannedCaptureTime}, ExpectedDomeSideOfPier={ExpectedDomeSideOfPier}, DesiredPierSide={DesiredPierSide}, IsDualSideOverlapPoint={IsDualSideOverlapPoint}";
         }
 
         public ModelPoint Clone()
@@ -624,6 +639,7 @@ namespace NINA.Photon.Plugin.ASA.Model
                 PlateSolvedDeclination = PlateSolvedDeclination,
                 RMSError = RMSError,
                 CaptureTime = CaptureTime,
+                PlannedCaptureTime = PlannedCaptureTime,
                 IsSyncPoint = IsSyncPoint
             };
         }
@@ -657,6 +673,7 @@ namespace NINA.Photon.Plugin.ASA.Model
             PlateSolvedDeclination = p.PlateSolvedDeclination;
             RMSError = p.RMSError;
             CaptureTime = p.CaptureTime;
+            PlannedCaptureTime = p.PlannedCaptureTime;
             IsSyncPoint = p.IsSyncPoint;
         }
     }

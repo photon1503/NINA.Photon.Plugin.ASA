@@ -101,7 +101,10 @@ namespace NINA.Photon.Plugin.ASA
             decJitterSigmaDegrees = optionsAccessor.GetValueDouble(nameof(DecJitterSigmaDegrees), 1.0d);
             isLegacyDDM = optionsAccessor.GetValueBoolean("IsLegacyDDM", true);
             domeControlNINA = optionsAccessor.GetValueBoolean("DomeControlNINA", false);
+            enableMLPTDebugSimulator = optionsAccessor.GetValueBoolean(nameof(EnableMLPTDebugSimulator), false);
             lastMLPT = optionsAccessor.GetValueDateTime("LastMLPT", DateTime.MinValue);
+            activeMLPTDurationSeconds = optionsAccessor.GetValueDouble(nameof(ActiveMLPTDurationSeconds), 0.0d);
+            activeMLPTPointCount = optionsAccessor.GetValueInt32(nameof(ActiveMLPTPointCount), 0);
             highAltitudeStars = optionsAccessor.GetValueInt32("HighAltitudeStars", 10);
             highAltitudeMin = optionsAccessor.GetValueInt32("HighAltitudeMin", 70);
             highAltitudeMax = optionsAccessor.GetValueInt32("HighAltitudeMax", 89);
@@ -165,7 +168,10 @@ namespace NINA.Photon.Plugin.ASA
             DisableRefractionCorrection = false;
             IsLegacyDDM = true;
             DomeControlNINA = false;
+            EnableMLPTDebugSimulator = false;
             LastMLPT = DateTime.MinValue;
+            ActiveMLPTDurationSeconds = 0.0d;
+            ActiveMLPTPointCount = 0;
             MACAddress = "";
             IPAddress = "";
             WolBroadcastIP = "";
@@ -1230,6 +1236,22 @@ namespace NINA.Photon.Plugin.ASA
 
         private DateTime lastMLPT;
 
+        private bool enableMLPTDebugSimulator;
+
+        public bool EnableMLPTDebugSimulator
+        {
+            get => enableMLPTDebugSimulator;
+            set
+            {
+                if (enableMLPTDebugSimulator != value)
+                {
+                    enableMLPTDebugSimulator = value;
+                    optionsAccessor.SetValueBoolean(nameof(EnableMLPTDebugSimulator), enableMLPTDebugSimulator);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
         public DateTime LastMLPT
         {
             get => lastMLPT;
@@ -1239,6 +1261,38 @@ namespace NINA.Photon.Plugin.ASA
                 {
                     lastMLPT = value;
                     optionsAccessor.SetValueDateTime("LastMLPT", lastMLPT);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private double activeMLPTDurationSeconds;
+
+        public double ActiveMLPTDurationSeconds
+        {
+            get => activeMLPTDurationSeconds;
+            set
+            {
+                if (Math.Abs(activeMLPTDurationSeconds - value) > double.Epsilon)
+                {
+                    activeMLPTDurationSeconds = value;
+                    optionsAccessor.SetValueDouble(nameof(ActiveMLPTDurationSeconds), activeMLPTDurationSeconds);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private int activeMLPTPointCount;
+
+        public int ActiveMLPTPointCount
+        {
+            get => activeMLPTPointCount;
+            set
+            {
+                if (activeMLPTPointCount != value)
+                {
+                    activeMLPTPointCount = value;
+                    optionsAccessor.SetValueInt32(nameof(ActiveMLPTPointCount), activeMLPTPointCount);
                     RaisePropertyChanged();
                 }
             }

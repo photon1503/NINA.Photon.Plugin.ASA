@@ -675,6 +675,17 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                     }
                     else
                     {
+                        var plannedPoints = state.ValidPoints
+                            .Where(point => point.PlannedCaptureTime != DateTime.MinValue)
+                            .OrderBy(point => point.PlannedCaptureTime)
+                            .ToList();
+                        var activeDurationSeconds = plannedPoints.Count >= 2
+                            ? (plannedPoints[plannedPoints.Count - 1].PlannedCaptureTime - plannedPoints[0].PlannedCaptureTime).TotalSeconds
+                            : 0.0d;
+
+                        asaOptions.ActiveMLPTDurationSeconds = Math.Max(0.0d, activeDurationSeconds);
+                        asaOptions.ActiveMLPTPointCount = Math.Max(0, plannedPoints.Count);
+                        asaOptions.LastMLPT = DateTime.Now;
                         Logger.Info("MLPT pointings sent");
                         Notification.ShowSuccess("MLPT pointings sent");
                     }

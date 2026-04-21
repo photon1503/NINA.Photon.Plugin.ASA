@@ -273,7 +273,6 @@ namespace NINA.Photon.Plugin.ASA.MLTP
                 throw new Exception("ASA MLPT model build failed");
             }
             initialTime = DateTime.Now;
-            options.LastMLPT = DateTime.Now;
 
             if (Recenter)
             {

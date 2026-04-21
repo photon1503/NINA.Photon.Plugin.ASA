@@ -62,6 +62,7 @@
                 <TextBlock x:Key="AlternateDirectionsBetweenIterations_Tooltip" Text="Alternates sort direction between each retry iteration to reduce repeated slew paths" />
                 <TextBlock x:Key="LegacyDDM_Tooltip" Text="Enable compatibility behavior for older Autoslew versions (5.2.4.8)" />
                 <TextBlock x:Key="DomeControlNINA_Tooltip" Text="When enabled, NINA manages dome positioning during model operations instead of leaving control external" />
+                <TextBlock x:Key="EnableMLPTDebugSimulator_Tooltip" Text="When enabled, generated MLPT paths can run in a local simulator that synthesizes solved points and advances the MLPT timeline for chart debugging." />
                 <TextBlock x:Key="MLTPPathOffset_Tooltip" Text="Offset, in RA-minutes, used to shift the MLTP path start point. Negative values start in RA-, positive values in RA+" />
             </StackPanel.Resources>
 
@@ -297,6 +298,7 @@
                         <RowDefinition />
                         <RowDefinition />
                         <RowDefinition />
+                        <RowDefinition />
                     </Grid.RowDefinitions>
 
                     <TextBlock Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" Text="Legacy Autoslew" ToolTip="{StaticResource LegacyDDM_Tooltip}" />
@@ -307,8 +309,11 @@
                         <Binding Path="SiderealTrackPathOffsetMinutes" UpdateSourceTrigger="LostFocus" />
                     </ninactrl:UnitTextBox>
 
-                    <TextBlock Grid.Row="2" Grid.Column="0" VerticalAlignment="Center" Text="POX Output Directory" ToolTip="{StaticResource PoxOutputDirectory_Tooltip}" />
-                    <Grid Grid.Row="2" Grid.Column="1" Margin="5,5,0,0" HorizontalAlignment="Left" VerticalAlignment="Center">
+                    <TextBlock Grid.Row="2" Grid.Column="0" VerticalAlignment="Center" Text="MLPT Debug / Simulator" ToolTip="{StaticResource EnableMLPTDebugSimulator_Tooltip}" />
+                    <CheckBox Grid.Row="2" Grid.Column="1" MinWidth="80" Margin="5,5,0,0" HorizontalAlignment="Left" VerticalAlignment="Center" IsChecked="{Binding EnableMLPTDebugSimulator}" ToolTip="{StaticResource EnableMLPTDebugSimulator_Tooltip}" />
+
+                    <TextBlock Grid.Row="3" Grid.Column="0" VerticalAlignment="Center" Text="POX Output Directory" ToolTip="{StaticResource PoxOutputDirectory_Tooltip}" />
+                    <Grid Grid.Row="3" Grid.Column="1" Margin="5,5,0,0" HorizontalAlignment="Left" VerticalAlignment="Center">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition />
