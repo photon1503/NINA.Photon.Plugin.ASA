@@ -1,14 +1,15 @@
 
 # Changelog
 
-## 3.2.8.10 (2026-04-21)
+## 3.2.8.10 (2026-04-23)
 
 ### MLPT Diagnostics / Simulator
 
 - Added an **MLPT Debug / Simulator** option to run generated MLPT paths locally without sending them to the controller.
 - MLPT diagnostics charts now render a live vertical progress marker for the active/simulated MLPT run.
-- Added **Elapsed** and **Remaining** readouts below the MLPT charts to make timeline/debug state visible while testing.
+- Added **Elapsed**, **MLPT capture**, and **Remaining** readouts below the MLPT charts to make timeline/debug state visible while testing.
 - Moved MLPT run-state tracking to the actual controller-send phase and persisted active MLPT duration/point-count metadata so the diagnostics charts follow the active path instead of the preview.
+- Corrected MLPT remaining-time/progress calculation to use the first actual captured image as the controller timing reference once capture data is available.
 
 ## 3.2.8.7 (2026-03-09)
 

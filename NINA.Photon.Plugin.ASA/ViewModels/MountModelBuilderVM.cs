@@ -1195,6 +1195,30 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             return Math.Abs((displayedDuration - mlptPlannedDuration).TotalSeconds) <= 1.0d;
         }
 
+        private bool TryGetMlptCaptureElapsed(out TimeSpan captureElapsed)
+        {
+            captureElapsed = TimeSpan.Zero;
+
+            var firstCaptureTime = GetEligibleMlptPlannedPoints()
+                .Where(point => point.CaptureTime != DateTime.MinValue)
+                .OrderBy(point => point.CaptureTime)
+                .Select(point => point.CaptureTime)
+                .FirstOrDefault();
+
+            if (firstCaptureTime == DateTime.MinValue)
+            {
+                return false;
+            }
+
+            captureElapsed = DateTime.Now - firstCaptureTime;
+            if (captureElapsed < TimeSpan.Zero)
+            {
+                captureElapsed = TimeSpan.Zero;
+            }
+
+            return true;
+        }
+
         private void RefreshMlptProgressLinePoints()
         {
             if (mlptSentAt == DateTime.MinValue
@@ -1204,6 +1228,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             {
                 ShowMlptProgressMarker = false;
                 MlptElapsedMinutes = 0.0d;
+                MlptCaptureMinutes = 0.0d;
                 MlptRemainingMinutes = 0.0d;
                 UpdateMlptProgressBandPoints(MlptRaProgressBandPoints, null);
                 UpdateMlptProgressBandPoints(MlptDeProgressBandPoints, null);
@@ -1216,11 +1241,18 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 elapsed = TimeSpan.Zero;
             }
 
-            var progress = Math.Min(1.0d, elapsed.TotalSeconds / mlptPlannedDuration.TotalSeconds);
+            var captureElapsed = TryGetMlptCaptureElapsed(out var actualCaptureElapsed)
+                ? actualCaptureElapsed
+                : TimeSpan.Zero;
+            var controllerElapsed = captureElapsed > TimeSpan.Zero
+                ? captureElapsed
+                : elapsed;
+
+            var progress = Math.Min(1.0d, controllerElapsed.TotalSeconds / mlptPlannedDuration.TotalSeconds);
             var xPosition = MlptPlannedImageCount <= 1
                 ? 1.0d
                 : 1.0d + ((MlptPlannedImageCount - 1) * progress);
-            var remaining = mlptPlannedDuration - elapsed;
+            var remaining = mlptPlannedDuration - controllerElapsed;
             if (remaining < TimeSpan.Zero)
             {
                 remaining = TimeSpan.Zero;
@@ -1229,6 +1261,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             MlptProgressXPosition = xPosition;
             ShowMlptProgressMarker = true;
             MlptElapsedMinutes = elapsed.TotalMinutes;
+            MlptCaptureMinutes = captureElapsed.TotalMinutes;
             MlptRemainingMinutes = remaining.TotalMinutes;
 
             if (progress >= 1.0d)
@@ -3510,6 +3543,21 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 if (Math.Abs(mlptElapsedMinutes - value) > double.Epsilon)
                 {
                     mlptElapsedMinutes = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private double mlptCaptureMinutes;
+
+        public double MlptCaptureMinutes
+        {
+            get => mlptCaptureMinutes;
+            private set
+            {
+                if (Math.Abs(mlptCaptureMinutes - value) > double.Epsilon)
+                {
+                    mlptCaptureMinutes = value;
                     RaisePropertyChanged();
                 }
             }

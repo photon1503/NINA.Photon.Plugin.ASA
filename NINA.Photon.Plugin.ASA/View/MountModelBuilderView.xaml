@@ -1789,9 +1789,13 @@
                         Margin="0,6,0,0"
                         HorizontalAlignment="Center"
                         Orientation="Horizontal">
+                        <TextBlock Text="MLPT capture " />
+                        <TextBlock Text="{Binding MlptCaptureMinutes, StringFormat={}{0:0.0}}" />
+                        <TextBlock Margin="2,0,12,0" Text=" min" />
                         <TextBlock Text="Elapsed " />
                         <TextBlock Text="{Binding MlptElapsedMinutes, StringFormat={}{0:0.0}}" />
                         <TextBlock Margin="2,0,12,0" Text=" min" />
+                 
                         <TextBlock Text="Remaining " />
                         <TextBlock Text="{Binding MlptRemainingMinutes, StringFormat={}{0:0.0}}" />
                         <TextBlock Margin="2,0,0,0" Text=" min" />
