@@ -1,7 +1,21 @@
 
 # Changelog
 
-## 3.2.8.10 (2026-04-23)
+## 3.2.8.10 (2026-04-28)
+
+### Full-Sky Model Build Startup / Sync
+
+- Added **Force First Pier Side** to optionally force the pier side required by the first traversal point before a full-sky model build starts.
+- Added **Solve & Sync Before Start** to slew to the configured East/West sync coordinate, capture once, plate solve once, and perform a real NINA mount sync before normal traversal begins.
+- The pre-start sync point is now treated as a warmup/setup step only and is **not** added to the ASA model.
+- Added **Enable NINA Coordinate Sync During Build** to temporarily turn off NINA's telescope **Coordinate Sync** setting while a model build is running, then restore the previous value after completion.
+
+### Dedicated Plate-Solve Capture Settings
+
+- Added dedicated plate-solve capture settings for **full-sky model builds** with configurable exposure time, binning, gain, and offset.
+- Added a separate dedicated plate-solve capture settings group for **MLPT** with its own exposure time, binning, gain, and offset.
+- Full-sky and MLPT builds now use their selected dedicated capture settings for plate-solve image capture and plate-solve binning, while still falling back to NINA's standard plate-solve profile when the dedicated group is disabled.
+
 
 ### MLPT Diagnostics / Simulator
 

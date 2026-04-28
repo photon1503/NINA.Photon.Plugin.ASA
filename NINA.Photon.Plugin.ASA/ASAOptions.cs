@@ -35,9 +35,11 @@ namespace NINA.Photon.Plugin.ASA
         private const double DEFAULT_REF_WEST_AZIMUTH_DEGREES = 270.0d;
 
         private readonly PluginOptionsAccessor optionsAccessor;
+        private readonly IProfileService profileService;
 
         public ASAOptions(IProfileService profileService)
         {
+            this.profileService = profileService;
             var guid = PluginOptionsAccessor.GetAssemblyGuid(typeof(ASAOptions));
             if (guid == null)
             {
@@ -90,6 +92,17 @@ namespace NINA.Photon.Plugin.ASA
             plateSolveSubframePercentage = optionsAccessor.GetValueDouble("PlateSolveSubframePercentage", 1.0d);
             slewToCorrectPierSideBeforeStart = optionsAccessor.GetValueBoolean(nameof(SlewToCorrectPierSideBeforeStart), false);
             plateSolveAndSyncBeforeStart = optionsAccessor.GetValueBoolean(nameof(PlateSolveAndSyncBeforeStart), false);
+            enableNINACoordinateSyncDuringBuild = optionsAccessor.GetValueBoolean(nameof(EnableNINACoordinateSyncDuringBuild), false);
+            useDedicatedFullSkyPlateSolveSettings = optionsAccessor.GetValueBoolean(nameof(UseDedicatedFullSkyPlateSolveSettings), false);
+            fullSkyPlateSolveExposureTime = optionsAccessor.GetValueDouble(nameof(FullSkyPlateSolveExposureTime), GetDefaultProfilePlateSolveExposureTime());
+            fullSkyPlateSolveBinning = optionsAccessor.GetValueInt32(nameof(FullSkyPlateSolveBinning), GetDefaultProfilePlateSolveBinning());
+            fullSkyPlateSolveGain = optionsAccessor.GetValueInt32(nameof(FullSkyPlateSolveGain), GetDefaultProfilePlateSolveGain());
+            fullSkyPlateSolveOffset = optionsAccessor.GetValueInt32(nameof(FullSkyPlateSolveOffset), GetDefaultProfilePlateSolveOffset());
+            useDedicatedMLPTPlateSolveSettings = optionsAccessor.GetValueBoolean(nameof(UseDedicatedMLPTPlateSolveSettings), false);
+            mlptPlateSolveExposureTime = optionsAccessor.GetValueDouble(nameof(MLPTPlateSolveExposureTime), GetDefaultProfilePlateSolveExposureTime());
+            mlptPlateSolveBinning = optionsAccessor.GetValueInt32(nameof(MLPTPlateSolveBinning), GetDefaultProfilePlateSolveBinning());
+            mlptPlateSolveGain = optionsAccessor.GetValueInt32(nameof(MLPTPlateSolveGain), GetDefaultProfilePlateSolveGain());
+            mlptPlateSolveOffset = optionsAccessor.GetValueInt32(nameof(MLPTPlateSolveOffset), GetDefaultProfilePlateSolveOffset());
             alternateDirectionsBetweenIterations = optionsAccessor.GetValueBoolean("AlternateDirectionsBetweenIterations", true);
             minPointAzimuth = optionsAccessor.GetValueDouble("MinPointAzimuth", 0.5d);
             maxPointAzimuth = optionsAccessor.GetValueDouble("MaxPointAzimuth", 359.5d);
@@ -165,6 +178,17 @@ namespace NINA.Photon.Plugin.ASA
             PlateSolveSubframePercentage = 1.0d;
             SlewToCorrectPierSideBeforeStart = false;
             PlateSolveAndSyncBeforeStart = false;
+            EnableNINACoordinateSyncDuringBuild = false;
+            UseDedicatedFullSkyPlateSolveSettings = false;
+            FullSkyPlateSolveExposureTime = GetDefaultProfilePlateSolveExposureTime();
+            FullSkyPlateSolveBinning = GetDefaultProfilePlateSolveBinning();
+            FullSkyPlateSolveGain = GetDefaultProfilePlateSolveGain();
+            FullSkyPlateSolveOffset = GetDefaultProfilePlateSolveOffset();
+            UseDedicatedMLPTPlateSolveSettings = false;
+            MLPTPlateSolveExposureTime = GetDefaultProfilePlateSolveExposureTime();
+            MLPTPlateSolveBinning = GetDefaultProfilePlateSolveBinning();
+            MLPTPlateSolveGain = GetDefaultProfilePlateSolveGain();
+            MLPTPlateSolveOffset = GetDefaultProfilePlateSolveOffset();
             AlternateDirectionsBetweenIterations = true;
             MinPointAzimuth = 0.5d;
             MaxPointAzimuth = 359.5d;
@@ -742,6 +766,190 @@ namespace NINA.Photon.Plugin.ASA
                 }
             }
         }
+
+        private bool enableNINACoordinateSyncDuringBuild;
+
+        public bool EnableNINACoordinateSyncDuringBuild
+        {
+            get => enableNINACoordinateSyncDuringBuild;
+            set
+            {
+                if (enableNINACoordinateSyncDuringBuild != value)
+                {
+                    enableNINACoordinateSyncDuringBuild = value;
+                    optionsAccessor.SetValueBoolean(nameof(EnableNINACoordinateSyncDuringBuild), enableNINACoordinateSyncDuringBuild);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private bool useDedicatedFullSkyPlateSolveSettings;
+
+        public bool UseDedicatedFullSkyPlateSolveSettings
+        {
+            get => useDedicatedFullSkyPlateSolveSettings;
+            set
+            {
+                if (useDedicatedFullSkyPlateSolveSettings != value)
+                {
+                    useDedicatedFullSkyPlateSolveSettings = value;
+                    optionsAccessor.SetValueBoolean(nameof(UseDedicatedFullSkyPlateSolveSettings), useDedicatedFullSkyPlateSolveSettings);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private double fullSkyPlateSolveExposureTime;
+
+        public double FullSkyPlateSolveExposureTime
+        {
+            get => fullSkyPlateSolveExposureTime;
+            set
+            {
+                if (Math.Abs(fullSkyPlateSolveExposureTime - value) > double.Epsilon)
+                {
+                    fullSkyPlateSolveExposureTime = value;
+                    optionsAccessor.SetValueDouble(nameof(FullSkyPlateSolveExposureTime), fullSkyPlateSolveExposureTime);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private int fullSkyPlateSolveBinning;
+
+        public int FullSkyPlateSolveBinning
+        {
+            get => fullSkyPlateSolveBinning;
+            set
+            {
+                if (fullSkyPlateSolveBinning != value)
+                {
+                    fullSkyPlateSolveBinning = value;
+                    optionsAccessor.SetValueInt32(nameof(FullSkyPlateSolveBinning), fullSkyPlateSolveBinning);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private int fullSkyPlateSolveGain;
+
+        public int FullSkyPlateSolveGain
+        {
+            get => fullSkyPlateSolveGain;
+            set
+            {
+                if (fullSkyPlateSolveGain != value)
+                {
+                    fullSkyPlateSolveGain = value;
+                    optionsAccessor.SetValueInt32(nameof(FullSkyPlateSolveGain), fullSkyPlateSolveGain);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private int fullSkyPlateSolveOffset;
+
+        public int FullSkyPlateSolveOffset
+        {
+            get => fullSkyPlateSolveOffset;
+            set
+            {
+                if (fullSkyPlateSolveOffset != value)
+                {
+                    fullSkyPlateSolveOffset = value;
+                    optionsAccessor.SetValueInt32(nameof(FullSkyPlateSolveOffset), fullSkyPlateSolveOffset);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private bool useDedicatedMLPTPlateSolveSettings;
+
+        public bool UseDedicatedMLPTPlateSolveSettings
+        {
+            get => useDedicatedMLPTPlateSolveSettings;
+            set
+            {
+                if (useDedicatedMLPTPlateSolveSettings != value)
+                {
+                    useDedicatedMLPTPlateSolveSettings = value;
+                    optionsAccessor.SetValueBoolean(nameof(UseDedicatedMLPTPlateSolveSettings), useDedicatedMLPTPlateSolveSettings);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private double mlptPlateSolveExposureTime;
+
+        public double MLPTPlateSolveExposureTime
+        {
+            get => mlptPlateSolveExposureTime;
+            set
+            {
+                if (Math.Abs(mlptPlateSolveExposureTime - value) > double.Epsilon)
+                {
+                    mlptPlateSolveExposureTime = value;
+                    optionsAccessor.SetValueDouble(nameof(MLPTPlateSolveExposureTime), mlptPlateSolveExposureTime);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private int mlptPlateSolveBinning;
+
+        public int MLPTPlateSolveBinning
+        {
+            get => mlptPlateSolveBinning;
+            set
+            {
+                if (mlptPlateSolveBinning != value)
+                {
+                    mlptPlateSolveBinning = value;
+                    optionsAccessor.SetValueInt32(nameof(MLPTPlateSolveBinning), mlptPlateSolveBinning);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private int mlptPlateSolveGain;
+
+        public int MLPTPlateSolveGain
+        {
+            get => mlptPlateSolveGain;
+            set
+            {
+                if (mlptPlateSolveGain != value)
+                {
+                    mlptPlateSolveGain = value;
+                    optionsAccessor.SetValueInt32(nameof(MLPTPlateSolveGain), mlptPlateSolveGain);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private int mlptPlateSolveOffset;
+
+        public int MLPTPlateSolveOffset
+        {
+            get => mlptPlateSolveOffset;
+            set
+            {
+                if (mlptPlateSolveOffset != value)
+                {
+                    mlptPlateSolveOffset = value;
+                    optionsAccessor.SetValueInt32(nameof(MLPTPlateSolveOffset), mlptPlateSolveOffset);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private double GetDefaultProfilePlateSolveExposureTime() => profileService?.ActiveProfile?.PlateSolveSettings?.ExposureTime ?? 1.0d;
+
+        private int GetDefaultProfilePlateSolveBinning() => profileService?.ActiveProfile?.PlateSolveSettings?.Binning ?? 1;
+
+        private int GetDefaultProfilePlateSolveGain() => profileService?.ActiveProfile?.PlateSolveSettings?.Gain ?? -1;
+
+        private int GetDefaultProfilePlateSolveOffset() => profileService?.ActiveProfile?.CameraSettings?.Offset ?? -1;
 
         private double syncEastAltitude;
 

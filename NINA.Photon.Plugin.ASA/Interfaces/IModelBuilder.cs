@@ -34,6 +34,17 @@ namespace NINA.Photon.Plugin.ASA.Interfaces
         public double PlateSolveSubframePercentage { get; set; } = 1.0d;
         public bool SlewToCorrectPierSideBeforeStart { get; set; } = false;
         public bool PlateSolveAndSyncBeforeStart { get; set; } = false;
+        public bool EnableNINACoordinateSyncDuringBuild { get; set; } = false;
+        public bool UseDedicatedFullSkyPlateSolveSettings { get; set; } = false;
+        public double FullSkyPlateSolveExposureTime { get; set; } = 1.0d;
+        public int FullSkyPlateSolveBinning { get; set; } = 1;
+        public int FullSkyPlateSolveGain { get; set; } = -1;
+        public int FullSkyPlateSolveOffset { get; set; } = -1;
+        public bool UseDedicatedMLPTPlateSolveSettings { get; set; } = false;
+        public double MLPTPlateSolveExposureTime { get; set; } = 1.0d;
+        public int MLPTPlateSolveBinning { get; set; } = 1;
+        public int MLPTPlateSolveGain { get; set; } = -1;
+        public int MLPTPlateSolveOffset { get; set; } = -1;
         public bool AlternateDirectionsBetweenIterations { get; set; } = true;
         public bool DisableRefractionCorrection { get; set; } = false;
         public bool IsLegacyDDM { get; set; } = false;

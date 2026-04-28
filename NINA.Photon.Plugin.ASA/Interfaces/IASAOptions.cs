@@ -114,6 +114,20 @@ namespace NINA.Photon.Plugin.ASA.Interfaces
 
         bool PlateSolveAndSyncBeforeStart { get; set; }
 
+        bool EnableNINACoordinateSyncDuringBuild { get; set; }
+
+        bool UseDedicatedFullSkyPlateSolveSettings { get; set; }
+        double FullSkyPlateSolveExposureTime { get; set; }
+        int FullSkyPlateSolveBinning { get; set; }
+        int FullSkyPlateSolveGain { get; set; }
+        int FullSkyPlateSolveOffset { get; set; }
+
+        bool UseDedicatedMLPTPlateSolveSettings { get; set; }
+        double MLPTPlateSolveExposureTime { get; set; }
+        int MLPTPlateSolveBinning { get; set; }
+        int MLPTPlateSolveGain { get; set; }
+        int MLPTPlateSolveOffset { get; set; }
+
         bool AlternateDirectionsBetweenIterations { get; set; }
 
         bool DisableRefractionCorrection { get; set; }

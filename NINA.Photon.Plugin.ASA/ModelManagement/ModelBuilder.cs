@@ -54,6 +54,22 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
     {
         private static IComparer<double> DOUBLE_COMPARER = Comparer<double>.Default;
 
+        private readonly struct PlateSolveCaptureSettings
+        {
+            public PlateSolveCaptureSettings(double exposureTime, int binning, int gain, int offset)
+            {
+                ExposureTime = exposureTime;
+                Binning = Math.Max(1, binning);
+                Gain = gain;
+                Offset = offset;
+            }
+
+            public double ExposureTime { get; }
+            public int Binning { get; }
+            public int Gain { get; }
+            public int Offset { get; }
+        }
+
         private readonly IMount mount;
         private readonly IMountModelMediator mountModelMediator;
         private readonly IImagingMediator imagingMediator;
@@ -148,7 +164,8 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                     }
                     else
                     {
-                        var binning = profileService.ActiveProfile.PlateSolveSettings.Binning;
+                        var captureSettings = GetEffectivePlateSolveCaptureSettings(options, profileService);
+                        var binning = captureSettings.Binning;
 
                         Logger.Info($"Using {options.PlateSolveSubframePercentage * 100.0d}% subsampling with {binning}x binning for plate solves.");
                         var fullWidth = cameraInfo.XSize / binning;
@@ -234,6 +251,33 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             }
         }
 
+        private static bool IsMlptBuild(ModelBuilderOptions options)
+        {
+            return options.ModelPointGenerationType == ModelPointGenerationTypeEnum.SiderealPath;
+        }
+
+        private static PlateSolveCaptureSettings GetEffectivePlateSolveCaptureSettings(ModelBuilderOptions options, IProfileService profileService)
+        {
+            if (IsMlptBuild(options) && options.UseDedicatedMLPTPlateSolveSettings)
+            {
+                return new PlateSolveCaptureSettings(options.MLPTPlateSolveExposureTime, options.MLPTPlateSolveBinning, options.MLPTPlateSolveGain, options.MLPTPlateSolveOffset);
+            }
+
+            if (!IsMlptBuild(options) && options.UseDedicatedFullSkyPlateSolveSettings)
+            {
+                return new PlateSolveCaptureSettings(options.FullSkyPlateSolveExposureTime, options.FullSkyPlateSolveBinning, options.FullSkyPlateSolveGain, options.FullSkyPlateSolveOffset);
+            }
+
+            var plateSolveSettings = profileService.ActiveProfile.PlateSolveSettings;
+            var cameraSettings = profileService.ActiveProfile.CameraSettings;
+            return new PlateSolveCaptureSettings(plateSolveSettings.ExposureTime, plateSolveSettings.Binning, plateSolveSettings.Gain, cameraSettings.Offset ?? -1);
+        }
+
+        private PlateSolveCaptureSettings GetEffectivePlateSolveCaptureSettings(ModelBuilderOptions options)
+        {
+            return GetEffectivePlateSolveCaptureSettings(options, profileService);
+        }
+
         public async Task<LoadedAlignmentModel> Build(IList<ModelPoint> modelPoints, ModelBuilderOptions options, CancellationToken ct = default, CancellationToken stopToken = default, IProgress<ApplicationStatus> overallProgress = null, IProgress<ApplicationStatus> stepProgress = null)
         {
             ct.ThrowIfCancellationRequested();
@@ -303,6 +347,19 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             {
                 profileService.ActiveProfile.DomeSettings.SyncSlewDomeWhenMountSlews = false;
                 reenableDomeSyncSlew = true;
+            }
+
+            var restoreNINACoordinateSync = false;
+            var previousNINANoSync = profileService.ActiveProfile.TelescopeSettings.NoSync;
+            if (options.EnableNINACoordinateSyncDuringBuild)
+            {
+                restoreNINACoordinateSync = true;
+                if (previousNINANoSync)
+                {
+                    profileService.ActiveProfile.TelescopeSettings.NoSync = false;
+                    Logger.Info("Enabled NINA coordinate sync for ASA model build. It will be restored after completion");
+                    Notification.ShowInformation("Enabled NINA coordinate sync for ASA model build. It will be restored after completion");
+                }
             }
 
             if (reenableDomeFollower || reenableDomeSyncSlew)
@@ -378,6 +435,12 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 {
                     profileService.ActiveProfile.DomeSettings.SyncSlewDomeWhenMountSlews = true; ;
                     Logger.Info("Re-enabled dome sync slew after ASA model build");
+                }
+
+                if (restoreNINACoordinateSync)
+                {
+                    profileService.ActiveProfile.TelescopeSettings.NoSync = previousNINANoSync;
+                    Logger.Info($"Restored NINA coordinate sync setting after ASA model build. NoSync={previousNINANoSync}");
                 }
 
                 if (reenableRefractionCorrection)
@@ -734,7 +797,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                         writer.WriteLine($"\"'{point.CaptureTime:yyyy-MM-ddTHH:mm:ss.ff}'\"");
                         writer.WriteLine($"\"{point.CaptureTime:mm:ss.ff}\"");
 
-                        writer.WriteLine($"\"{profileService.ActiveProfile.PlateSolveSettings.ExposureTime}\"");
+                        writer.WriteLine($"\"{GetEffectivePlateSolveCaptureSettings(state.Options).ExposureTime}\"");
 
                         string psRA = point.PlateSolvedRightAscension.ToString().Replace(",", ".");
                         string psDEC = point.PlateSolvedDeclination.ToString().Replace(",", ".");
@@ -1976,13 +2039,18 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
 
             point.CaptureTime = mount.GetUTCTime();
             point.MountReportedLocalSiderealTime = telescopeMediator.GetInfo().SiderealTime; // mount.GetLocalSiderealTime();
+            var captureSettings = GetEffectivePlateSolveCaptureSettings(state.Options);
             var seq = new CaptureSequence(
-                profileService.ActiveProfile.PlateSolveSettings.ExposureTime,
+                captureSettings.ExposureTime,
                 CaptureSequence.ImageTypes.SNAPSHOT,
                 profileService.ActiveProfile.PlateSolveSettings.Filter,
-                new BinningMode(profileService.ActiveProfile.PlateSolveSettings.Binning, profileService.ActiveProfile.PlateSolveSettings.Binning),
+                new BinningMode((short)captureSettings.Binning, (short)captureSettings.Binning),
                 1
-            );
+            )
+            {
+                Gain = captureSettings.Gain,
+                Offset = captureSettings.Offset,
+            };
             if (state.PlateSolveSubsample != null)
             {
                 seq.SubSambleRectangle = state.PlateSolveSubsample;
@@ -1995,7 +2063,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 var exposureData = await this.imagingMediator.CaptureImage(seq, ct, stepProgress);
 
                 point.CaptureTime = exposureData.MetaData.Image.ExposureStart;
-                var midpoint = point.CaptureTime.AddSeconds(profileService.ActiveProfile.PlateSolveSettings.ExposureTime / 2);
+                var midpoint = point.CaptureTime.AddSeconds(captureSettings.ExposureTime / 2);
                 point.CaptureTime = midpoint;
                 // Fire and forget to prepare image, which will put the latest captured image in the imaging tab view
                 _ = Task.Run(async () =>
@@ -2016,12 +2084,13 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
 
         private async Task<PlateSolveResult> SolveImage(ModelBuilderOptions options, IExposureData exposureData, CancellationToken ct)
         {
+            var captureSettings = GetEffectivePlateSolveCaptureSettings(options);
             var plateSolver = plateSolverFactory.GetPlateSolver(profileService.ActiveProfile.PlateSolveSettings);
             var blindSolver = options.AllowBlindSolves ? plateSolverFactory.GetBlindSolver(profileService.ActiveProfile.PlateSolveSettings) : null;
             var solver = plateSolverFactory.GetImageSolver(plateSolver, blindSolver);
             var parameter = new PlateSolveParameter()
             {
-                Binning = profileService.ActiveProfile.PlateSolveSettings.Binning,
+                Binning = captureSettings.Binning,
                 Coordinates = telescopeMediator.GetCurrentPosition(),
                 DownSampleFactor = profileService.ActiveProfile.PlateSolveSettings.DownSampleFactor,
                 FocalLength = profileService.ActiveProfile.TelescopeSettings.FocalLength,
