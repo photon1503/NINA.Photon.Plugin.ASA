@@ -32,6 +32,8 @@ namespace NINA.Photon.Plugin.ASA.Interfaces
         public int MaxFailedPoints { get; set; } = 0;
         public bool RemoveHighRMSPointsAfterBuild { get; set; } = true;
         public double PlateSolveSubframePercentage { get; set; } = 1.0d;
+        public bool SlewToCorrectPierSideBeforeStart { get; set; } = false;
+        public bool PlateSolveAndSyncBeforeStart { get; set; } = false;
         public bool AlternateDirectionsBetweenIterations { get; set; } = true;
         public bool DisableRefractionCorrection { get; set; } = false;
         public bool IsLegacyDDM { get; set; } = false;

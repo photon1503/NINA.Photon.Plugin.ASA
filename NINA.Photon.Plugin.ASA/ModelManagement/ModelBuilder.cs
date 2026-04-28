@@ -337,6 +337,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
 
             try
             {
+                await RunPreStartSetupIfNecessary(state, stepProgress, linkedCts.Token);
                 return await DoBuild(state, linkedCts.Token, stopToken, overallProgress, stepProgress, startCoordinates);
             }
             finally
@@ -871,14 +872,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
 
         private async Task<bool> SlewTelescopeToPoint(ModelBuilderState state, ModelPoint point, CancellationToken ct)
         {
-            // Instead of issuing an AltAz slew directly (which requires direct communication with the mount), calculate refraction-adjusted RA/Dec coordinates and slew there instead
-            var nextPointCoordinates = point.ToCelestial(pressurehPa: state.PressurehPa, tempCelcius: state.Temperature, relativeHumidity: state.Humidity, wavelength: state.Wavelength, dateTime: nowProvider);
-            if (state.SyncSeparation != null)
-            {
-                var nextPointCoordinatesAdjusted = nextPointCoordinates + state.SyncSeparation;
-                Logger.Info($"Adjusted {nextPointCoordinates} to {nextPointCoordinatesAdjusted}");
-                nextPointCoordinates = nextPointCoordinatesAdjusted;
-            }
+            var nextPointCoordinates = GetPointCoordinates(state, point);
 
             if (state.Options.ModelPointGenerationType != ModelPointGenerationTypeEnum.SiderealPath)
             {
@@ -891,6 +885,178 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
 
             Logger.Info($"Slewing to {nextPointCoordinates} for point at Alt={point.Altitude:0.###}, Az={point.Azimuth:0.###}");
             return await this.telescopeMediator.SlewToCoordinatesAsync(nextPointCoordinates, ct);
+        }
+
+        private Coordinates GetPointCoordinates(ModelBuilderState state, ModelPoint point)
+        {
+            // Instead of issuing an AltAz slew directly (which requires direct communication with the mount), calculate refraction-adjusted RA/Dec coordinates and slew there instead
+            var pointCoordinates = point.ToCelestial(pressurehPa: state.PressurehPa, tempCelcius: state.Temperature, relativeHumidity: state.Humidity, wavelength: state.Wavelength, dateTime: nowProvider);
+            if (state.SyncSeparation != null)
+            {
+                var adjustedPointCoordinates = pointCoordinates + state.SyncSeparation;
+                Logger.Info($"Adjusted {pointCoordinates} to {adjustedPointCoordinates}");
+                pointCoordinates = adjustedPointCoordinates;
+            }
+
+            return pointCoordinates;
+        }
+
+        private async Task RunPreStartSetupIfNecessary(ModelBuilderState state, IProgress<ApplicationStatus> stepProgress, CancellationToken ct)
+        {
+            if (state.Options.ModelPointGenerationType == ModelPointGenerationTypeEnum.SiderealPath)
+            {
+                return;
+            }
+
+            if (!state.Options.SlewToCorrectPierSideBeforeStart && !state.Options.PlateSolveAndSyncBeforeStart)
+            {
+                return;
+            }
+
+            var initialPoint = GetFirstTraversalPoint(state);
+            if (initialPoint == null)
+            {
+                Logger.Warning("Skipping pre-start setup because no eligible traversal point was found");
+                Notification.ShowWarning("Skipping pre-start setup because no eligible model point was found");
+                return;
+            }
+
+            var initialPointCoordinates = GetPointCoordinates(state, initialPoint);
+            if (state.Options.SlewToCorrectPierSideBeforeStart)
+            {
+                Logger.Info($"Pre-start pier-side setup enabled. Forcing side {initialPoint.DesiredPierSide} based on first traversal point {initialPoint}");
+                TryForceNextPierSide(initialPoint, initialPointCoordinates);
+            }
+
+            if (state.Options.PlateSolveAndSyncBeforeStart)
+            {
+                await RunPreStartPlateSolveAndSync(state, initialPoint, stepProgress, ct);
+            }
+        }
+
+        private ModelPoint GetFirstTraversalPoint(ModelBuilderState state)
+        {
+            var eligiblePoints = state.ValidPoints.Where(IsPointEligibleForBuild).ToList();
+            var orderedPoints = BuildOrderedTraversalPoints(eligiblePoints, state.Options, state.PointAzimuthComparer, cloneNonSyncPoints: true);
+            var initialPoint = orderedPoints.FirstOrDefault(point => !point.IsSyncPoint);
+            if (initialPoint != null && initialPoint.DesiredPierSide == PierSide.pierUnknown)
+            {
+                var initialPointCoordinates = GetPointCoordinates(state, initialPoint);
+                var longitudeDegrees = profileService.ActiveProfile.AstrometrySettings.Longitude;
+                var lst = AstroUtil.GetLocalSiderealTimeNow(longitudeDegrees);
+                initialPoint.DesiredPierSide = MeridianFlip.ExpectedPierSide(initialPointCoordinates, Angle.ByHours(lst));
+            }
+
+            return initialPoint;
+        }
+
+        private async Task RunPreStartPlateSolveAndSync(ModelBuilderState state, ModelPoint initialPoint, IProgress<ApplicationStatus> stepProgress, CancellationToken ct)
+        {
+            var startupSyncPoint = CreatePreStartSyncPoint(state, initialPoint);
+            Logger.Info($"Pre-start plate solve and sync enabled. Using startup sync point Alt={startupSyncPoint.Altitude:0.###}, Az={startupSyncPoint.Azimuth:0.###}, PierSide={startupSyncPoint.DesiredPierSide}");
+
+            if (!await SlewTelescopeToPoint(state, startupSyncPoint, ct))
+            {
+                Logger.Warning("Failed to slew to startup sync point. Continuing model build without pre-start plate solve and sync");
+                Notification.ShowWarning("Failed to slew to startup sync point. Continuing model build without pre-start plate solve and sync");
+                return;
+            }
+
+            var processingSlotAcquired = false;
+            await state.ProcessingSemaphore.WaitAsync(ct);
+            processingSlotAcquired = true;
+            try
+            {
+                var exposureData = await CaptureImage(state, startupSyncPoint, stepProgress, ct);
+                if (exposureData == null)
+                {
+                    Logger.Warning("Failed to capture startup sync exposure. Continuing model build without pre-start plate solve and sync");
+                    Notification.ShowWarning("Failed to capture startup sync exposure. Continuing model build without pre-start plate solve and sync");
+                    if (processingSlotAcquired)
+                    {
+                        state.ProcessingSemaphore.Release();
+                    }
+                    return;
+                }
+
+                var success = await SolveAndSyncPreStartPoint(state, startupSyncPoint, exposureData, ct);
+                processingSlotAcquired = false;
+                if (!success)
+                {
+                    Logger.Warning("Failed to plate solve startup sync exposure. Continuing model build without pre-start plate solve and sync");
+                    Notification.ShowWarning("Failed to plate solve startup sync exposure. Continuing model build without pre-start plate solve and sync");
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception e)
+            {
+                Logger.Warning($"Startup plate solve and sync failed: {e.Message}");
+                Notification.ShowWarning("Startup plate solve and sync failed. Continuing model build");
+                if (processingSlotAcquired)
+                {
+                    state.ProcessingSemaphore.Release();
+                }
+            }
+        }
+
+        private async Task<bool> SolveAndSyncPreStartPoint(ModelBuilderState state, ModelPoint point, IExposureData exposureData, CancellationToken ct)
+        {
+            bool success = false;
+            try
+            {
+                Interlocked.Increment(ref processingInProgressCount);
+
+                ct.ThrowIfCancellationRequested();
+                point.ModelPointState = ModelPointStateEnum.Processing;
+                var plateSolveResult = await SolveImage(state.Options, exposureData, ct);
+                if (plateSolveResult?.Success != true)
+                {
+                    Logger.Error($"Failed to plate solve startup sync point: {point}");
+                    return false;
+                }
+
+                ct.ThrowIfCancellationRequested();
+                point.PlateSolvedRightAscension = plateSolveResult.Coordinates.RA;
+                point.PlateSolvedDeclination = plateSolveResult.Coordinates.Dec;
+
+                Logger.Info($"Performing NINA coordinate sync for startup point using solved coordinates {plateSolveResult.Coordinates}");
+                success = await telescopeMediator.Sync(plateSolveResult.Coordinates);
+                if (!success)
+                {
+                    Logger.Warning("NINA coordinate sync for startup point failed");
+                }
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            catch (Exception e)
+            {
+                Logger.Error($"Exception during startup solve and sync for point: {point}", e);
+            }
+            finally
+            {
+                point.ModelPointState = success ? ModelPointStateEnum.Generated : ModelPointStateEnum.Failed;
+                Interlocked.Decrement(ref processingInProgressCount);
+                state.ProcessingSemaphore.Release();
+            }
+
+            return success;
+        }
+
+        private ModelPoint CreatePreStartSyncPoint(ModelBuilderState state, ModelPoint initialPoint)
+        {
+            var syncOnEastSky = IsEastSkySide(initialPoint);
+            return new ModelPoint(telescopeMediator)
+            {
+                Altitude = syncOnEastSky ? state.Options.SyncEastAltitude : state.Options.SyncWestAltitude,
+                Azimuth = syncOnEastSky ? state.Options.SyncEastAzimuth : state.Options.SyncWestAzimuth,
+                IsSyncPoint = true,
+                DesiredPierSide = initialPoint.DesiredPierSide,
+                ModelPointState = ModelPointStateEnum.Generated
+            };
         }
 
         private void TryForceNextPierSide(ModelPoint point, Coordinates targetCoordinates)

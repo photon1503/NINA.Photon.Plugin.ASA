@@ -110,6 +110,10 @@ namespace NINA.Photon.Plugin.ASA.Interfaces
 
         double PlateSolveSubframePercentage { get; set; }
 
+        bool SlewToCorrectPierSideBeforeStart { get; set; }
+
+        bool PlateSolveAndSyncBeforeStart { get; set; }
+
         bool AlternateDirectionsBetweenIterations { get; set; }
 
         bool DisableRefractionCorrection { get; set; }

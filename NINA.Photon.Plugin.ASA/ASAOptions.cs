@@ -88,6 +88,8 @@ namespace NINA.Photon.Plugin.ASA
             siderealTrackEndTimeProvider = optionsAccessor.GetValueString("SiderealTrackEndTimeProvider", "Now");
             removeHighRMSPointsAfterBuild = optionsAccessor.GetValueBoolean("RemoveHighRMSPointsAfterBuild", true);
             plateSolveSubframePercentage = optionsAccessor.GetValueDouble("PlateSolveSubframePercentage", 1.0d);
+            slewToCorrectPierSideBeforeStart = optionsAccessor.GetValueBoolean(nameof(SlewToCorrectPierSideBeforeStart), false);
+            plateSolveAndSyncBeforeStart = optionsAccessor.GetValueBoolean(nameof(PlateSolveAndSyncBeforeStart), false);
             alternateDirectionsBetweenIterations = optionsAccessor.GetValueBoolean("AlternateDirectionsBetweenIterations", true);
             minPointAzimuth = optionsAccessor.GetValueDouble("MinPointAzimuth", 0.5d);
             maxPointAzimuth = optionsAccessor.GetValueDouble("MaxPointAzimuth", 359.5d);
@@ -161,6 +163,8 @@ namespace NINA.Photon.Plugin.ASA
             SiderealTrackEndTimeProvider = "Now";
             RemoveHighRMSPointsAfterBuild = true;
             PlateSolveSubframePercentage = 1.0d;
+            SlewToCorrectPierSideBeforeStart = false;
+            PlateSolveAndSyncBeforeStart = false;
             AlternateDirectionsBetweenIterations = true;
             MinPointAzimuth = 0.5d;
             MaxPointAzimuth = 359.5d;
@@ -702,6 +706,38 @@ namespace NINA.Photon.Plugin.ASA
                 {
                     useSync = value;
                     optionsAccessor.SetValueBoolean("UseSync", useSync);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private bool slewToCorrectPierSideBeforeStart;
+
+        public bool SlewToCorrectPierSideBeforeStart
+        {
+            get => slewToCorrectPierSideBeforeStart;
+            set
+            {
+                if (slewToCorrectPierSideBeforeStart != value)
+                {
+                    slewToCorrectPierSideBeforeStart = value;
+                    optionsAccessor.SetValueBoolean(nameof(SlewToCorrectPierSideBeforeStart), slewToCorrectPierSideBeforeStart);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private bool plateSolveAndSyncBeforeStart;
+
+        public bool PlateSolveAndSyncBeforeStart
+        {
+            get => plateSolveAndSyncBeforeStart;
+            set
+            {
+                if (plateSolveAndSyncBeforeStart != value)
+                {
+                    plateSolveAndSyncBeforeStart = value;
+                    optionsAccessor.SetValueBoolean(nameof(PlateSolveAndSyncBeforeStart), plateSolveAndSyncBeforeStart);
                     RaisePropertyChanged();
                 }
             }
