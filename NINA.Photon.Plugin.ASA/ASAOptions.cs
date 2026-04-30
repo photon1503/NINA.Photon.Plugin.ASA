@@ -90,9 +90,7 @@ namespace NINA.Photon.Plugin.ASA
             siderealTrackEndTimeProvider = optionsAccessor.GetValueString("SiderealTrackEndTimeProvider", "Now");
             removeHighRMSPointsAfterBuild = optionsAccessor.GetValueBoolean("RemoveHighRMSPointsAfterBuild", true);
             plateSolveSubframePercentage = optionsAccessor.GetValueDouble("PlateSolveSubframePercentage", 1.0d);
-            slewToCorrectPierSideBeforeStart = optionsAccessor.GetValueBoolean(nameof(SlewToCorrectPierSideBeforeStart), false);
-            plateSolveAndSyncBeforeStart = optionsAccessor.GetValueBoolean(nameof(PlateSolveAndSyncBeforeStart), false);
-            enableNINACoordinateSyncDuringBuild = optionsAccessor.GetValueBoolean(nameof(EnableNINACoordinateSyncDuringBuild), false);
+            syncBeforeModelBuild = optionsAccessor.GetValueBoolean(nameof(SyncBeforeModelBuild), GetLegacySyncBeforeModelBuildDefault());
             useDedicatedFullSkyPlateSolveSettings = optionsAccessor.GetValueBoolean(nameof(UseDedicatedFullSkyPlateSolveSettings), false);
             fullSkyPlateSolveExposureTime = optionsAccessor.GetValueDouble(nameof(FullSkyPlateSolveExposureTime), GetDefaultProfilePlateSolveExposureTime());
             fullSkyPlateSolveBinning = optionsAccessor.GetValueInt32(nameof(FullSkyPlateSolveBinning), GetDefaultProfilePlateSolveBinning());
@@ -176,9 +174,7 @@ namespace NINA.Photon.Plugin.ASA
             SiderealTrackEndTimeProvider = "Now";
             RemoveHighRMSPointsAfterBuild = true;
             PlateSolveSubframePercentage = 1.0d;
-            SlewToCorrectPierSideBeforeStart = false;
-            PlateSolveAndSyncBeforeStart = false;
-            EnableNINACoordinateSyncDuringBuild = false;
+            SyncBeforeModelBuild = false;
             UseDedicatedFullSkyPlateSolveSettings = false;
             FullSkyPlateSolveExposureTime = GetDefaultProfilePlateSolveExposureTime();
             FullSkyPlateSolveBinning = GetDefaultProfilePlateSolveBinning();
@@ -233,8 +229,14 @@ namespace NINA.Photon.Plugin.ASA
         {
             var programdata = System.Environment.GetFolderPath(System.Environment.SpecialFolder.CommonApplicationData);
             var filePath = System.IO.Path.Combine(programdata, "ASA", "Sequence", "PointingPics");
-
             return filePath;
+        }
+
+        private bool GetLegacySyncBeforeModelBuildDefault()
+        {
+            return optionsAccessor.GetValueBoolean("SlewToCorrectPierSideBeforeStart", false)
+                || optionsAccessor.GetValueBoolean("PlateSolveAndSyncBeforeStart", false)
+                || optionsAccessor.GetValueBoolean("EnableNINACoordinateSyncDuringBuild", false);
         }
 
         private void ApplyLegacyZeroSyncReferenceDefaults()
@@ -735,49 +737,17 @@ namespace NINA.Photon.Plugin.ASA
             }
         }
 
-        private bool slewToCorrectPierSideBeforeStart;
+        private bool syncBeforeModelBuild;
 
-        public bool SlewToCorrectPierSideBeforeStart
+        public bool SyncBeforeModelBuild
         {
-            get => slewToCorrectPierSideBeforeStart;
+            get => syncBeforeModelBuild;
             set
             {
-                if (slewToCorrectPierSideBeforeStart != value)
+                if (syncBeforeModelBuild != value)
                 {
-                    slewToCorrectPierSideBeforeStart = value;
-                    optionsAccessor.SetValueBoolean(nameof(SlewToCorrectPierSideBeforeStart), slewToCorrectPierSideBeforeStart);
-                    RaisePropertyChanged();
-                }
-            }
-        }
-
-        private bool plateSolveAndSyncBeforeStart;
-
-        public bool PlateSolveAndSyncBeforeStart
-        {
-            get => plateSolveAndSyncBeforeStart;
-            set
-            {
-                if (plateSolveAndSyncBeforeStart != value)
-                {
-                    plateSolveAndSyncBeforeStart = value;
-                    optionsAccessor.SetValueBoolean(nameof(PlateSolveAndSyncBeforeStart), plateSolveAndSyncBeforeStart);
-                    RaisePropertyChanged();
-                }
-            }
-        }
-
-        private bool enableNINACoordinateSyncDuringBuild;
-
-        public bool EnableNINACoordinateSyncDuringBuild
-        {
-            get => enableNINACoordinateSyncDuringBuild;
-            set
-            {
-                if (enableNINACoordinateSyncDuringBuild != value)
-                {
-                    enableNINACoordinateSyncDuringBuild = value;
-                    optionsAccessor.SetValueBoolean(nameof(EnableNINACoordinateSyncDuringBuild), enableNINACoordinateSyncDuringBuild);
+                    syncBeforeModelBuild = value;
+                    optionsAccessor.SetValueBoolean(nameof(SyncBeforeModelBuild), syncBeforeModelBuild);
                     RaisePropertyChanged();
                 }
             }

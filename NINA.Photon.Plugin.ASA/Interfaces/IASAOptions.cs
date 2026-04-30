@@ -110,11 +110,7 @@ namespace NINA.Photon.Plugin.ASA.Interfaces
 
         double PlateSolveSubframePercentage { get; set; }
 
-        bool SlewToCorrectPierSideBeforeStart { get; set; }
-
-        bool PlateSolveAndSyncBeforeStart { get; set; }
-
-        bool EnableNINACoordinateSyncDuringBuild { get; set; }
+        bool SyncBeforeModelBuild { get; set; }
 
         bool UseDedicatedFullSkyPlateSolveSettings { get; set; }
         double FullSkyPlateSolveExposureTime { get; set; }

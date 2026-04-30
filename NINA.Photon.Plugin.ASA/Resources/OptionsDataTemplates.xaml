@@ -59,9 +59,7 @@
                 <TextBlock x:Key="MinimizeMeridianFlips_Tooltip" Text="If enabled, points stay on the current meridian side until exhausted, reducing side switches" />
                 <TextBlock x:Key="WestToEast_Tooltip" Text="By default points are processed east-to-west. Enable to reverse that order" />
                 <TextBlock x:Key="PlateSolveSubframePercentage_Tooltip" Text="What percentage of full camera resolution to use for plate-solve exposures" />
-                <TextBlock x:Key="SlewToCorrectPierSideBeforeStart_Tooltip" Text="Before a model build starts, force the pier side required by the first traversal point when the mount supports that ASCOM action" />
-                <TextBlock x:Key="PlateSolveAndSyncBeforeStart_Tooltip" Text="Before a model build starts, slew to the matching Sync East/West coordinates, capture once, solve once, and perform a real NINA coordinate sync to the mount" />
-                <TextBlock x:Key="EnableNINACoordinateSyncDuringBuild_Tooltip" Text="Temporarily turn off NINA's telescope No Sync setting for the duration of a model build so sync operations issue a real mount sync, then restore the previous setting afterward" />
+                <TextBlock x:Key="SyncBeforeModelBuild_Tooltip" Text="Before a model build starts, force the pier side required by the first traversal point, slew to the same hemisphere-aware 50 degree meridian sync point used by Final Sync, capture and solve once, perform a real NINA coordinate sync, and restore NINA's previous No Sync setting after the build" />
                 <TextBlock x:Key="UseDedicatedFullSkyPlateSolveSettings_Tooltip" Text="Use a dedicated exposure, binning, gain, and offset for full-sky model plate-solve captures instead of NINA's general plate-solve capture settings" />
                 <TextBlock x:Key="UseDedicatedMLPTPlateSolveSettings_Tooltip" Text="Use a dedicated exposure, binning, gain, and offset for MLPT plate-solve captures instead of NINA's general plate-solve capture settings" />
                 <TextBlock x:Key="DedicatedPlateSolveExposureTime_Tooltip" Text="Exposure time, in seconds, used for dedicated plate-solve captures when the corresponding dedicated settings group is enabled" />
@@ -85,8 +83,6 @@
                         <ColumnDefinition Width="Auto" SharedSizeGroup="OptionsCol1" />
                     </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
-                        <RowDefinition />
-                        <RowDefinition />
                         <RowDefinition />
                         <RowDefinition />
                         <RowDefinition />
@@ -122,14 +118,8 @@
                         </Binding>
                     </ninactrl:UnitTextBox>
 
-                    <TextBlock Grid.Row="4" Grid.Column="0" VerticalAlignment="Center" Text="Force First Pier Side" ToolTip="{StaticResource SlewToCorrectPierSideBeforeStart_Tooltip}" />
-                    <CheckBox Grid.Row="4" Grid.Column="1" MinWidth="80" Margin="5,5,0,0" HorizontalAlignment="Left" VerticalAlignment="Center" IsChecked="{Binding SlewToCorrectPierSideBeforeStart}" ToolTip="{StaticResource SlewToCorrectPierSideBeforeStart_Tooltip}" />
-
-                    <TextBlock Grid.Row="5" Grid.Column="0" VerticalAlignment="Center" Text="Solve &amp; Sync Before Start" ToolTip="{StaticResource PlateSolveAndSyncBeforeStart_Tooltip}" />
-                    <CheckBox Grid.Row="5" Grid.Column="1" MinWidth="80" Margin="5,5,0,0" HorizontalAlignment="Left" VerticalAlignment="Center" IsChecked="{Binding PlateSolveAndSyncBeforeStart}" ToolTip="{StaticResource PlateSolveAndSyncBeforeStart_Tooltip}" />
-
-                    <TextBlock Grid.Row="6" Grid.Column="0" VerticalAlignment="Center" Text="Enable NINA Coordinate Sync During Build" ToolTip="{StaticResource EnableNINACoordinateSyncDuringBuild_Tooltip}" />
-                    <CheckBox Grid.Row="6" Grid.Column="1" MinWidth="80" Margin="5,5,0,0" HorizontalAlignment="Left" VerticalAlignment="Center" IsChecked="{Binding EnableNINACoordinateSyncDuringBuild}" ToolTip="{StaticResource EnableNINACoordinateSyncDuringBuild_Tooltip}" />
+                    <TextBlock Grid.Row="4" Grid.Column="0" VerticalAlignment="Center" Text="Sync Before Model Build" ToolTip="{StaticResource SyncBeforeModelBuild_Tooltip}" />
+                    <CheckBox Grid.Row="4" Grid.Column="1" MinWidth="80" Margin="5,5,0,0" HorizontalAlignment="Left" VerticalAlignment="Center" IsChecked="{Binding SyncBeforeModelBuild}" ToolTip="{StaticResource SyncBeforeModelBuild_Tooltip}" />
                 </Grid>
             </GroupBox>
 

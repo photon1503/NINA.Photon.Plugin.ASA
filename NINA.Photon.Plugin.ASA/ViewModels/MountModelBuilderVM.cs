@@ -186,6 +186,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             this.BuildCommand = new AsyncRelayCommand(BuildModel);
             this.CancelBuildCommand = new AsyncRelayCommand(CancelBuildModel);
             this.StopBuildCommand = new AsyncRelayCommand(StopBuildModel);
+            this.SyncAfterModelBuildCommand = new AsyncRelayCommand(SyncAfterModelBuild);
             this.CoordsFromFramingCommand = new AsyncRelayCommand(CoordsFromFraming);
             this.CoordsFromScopeCommand = new AsyncRelayCommand(CoordsFromScope);
             this.ImportCommand = new AsyncRelayCommand(ImportPoints);
@@ -935,9 +936,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 MaxFailedPoints = MaxFailedPoints,
                 RemoveHighRMSPointsAfterBuild = modelBuilderOptions.RemoveHighRMSPointsAfterBuild,
                 PlateSolveSubframePercentage = modelBuilderOptions.PlateSolveSubframePercentage,
-                SlewToCorrectPierSideBeforeStart = modelBuilderOptions.SlewToCorrectPierSideBeforeStart,
-                PlateSolveAndSyncBeforeStart = modelBuilderOptions.PlateSolveAndSyncBeforeStart,
-                EnableNINACoordinateSyncDuringBuild = modelBuilderOptions.EnableNINACoordinateSyncDuringBuild,
+                SyncBeforeModelBuild = modelBuilderOptions.SyncBeforeModelBuild,
                 UseDedicatedFullSkyPlateSolveSettings = modelBuilderOptions.UseDedicatedFullSkyPlateSolveSettings,
                 FullSkyPlateSolveExposureTime = modelBuilderOptions.FullSkyPlateSolveExposureTime,
                 FullSkyPlateSolveBinning = modelBuilderOptions.FullSkyPlateSolveBinning,
@@ -1908,17 +1907,20 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                     mlptPreviewPendingSend = false;
                     SyncMlptProgressTracking();
                 }
+                SyncAfterModelBuildAvailable = modelBuilder.HasPendingPostBuildSync;
                 Notification.ShowInformation($"ASA model build completed");
                 return true;
             }
             catch (OperationCanceledException)
             {
+                SyncAfterModelBuildAvailable = modelBuilder.HasPendingPostBuildSync;
                 Notification.ShowInformation("Model build cancelled");
                 Logger.Info("Model build cancelled");
                 return false;
             }
             catch (Exception e)
             {
+                SyncAfterModelBuildAvailable = modelBuilder.HasPendingPostBuildSync;
                 Notification.ShowError($"Failed to build model. {e.Message}");
                 Logger.Error($"Failed to build model", e);
                 return false;
@@ -1954,9 +1956,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 MaxFailedPoints = MaxFailedPoints,
                 RemoveHighRMSPointsAfterBuild = modelBuilderOptions.RemoveHighRMSPointsAfterBuild,
                 PlateSolveSubframePercentage = modelBuilderOptions.PlateSolveSubframePercentage,
-                SlewToCorrectPierSideBeforeStart = modelBuilderOptions.SlewToCorrectPierSideBeforeStart,
-                PlateSolveAndSyncBeforeStart = modelBuilderOptions.PlateSolveAndSyncBeforeStart,
-                EnableNINACoordinateSyncDuringBuild = modelBuilderOptions.EnableNINACoordinateSyncDuringBuild,
+                SyncBeforeModelBuild = modelBuilderOptions.SyncBeforeModelBuild,
                 UseDedicatedFullSkyPlateSolveSettings = modelBuilderOptions.UseDedicatedFullSkyPlateSolveSettings,
                 FullSkyPlateSolveExposureTime = modelBuilderOptions.FullSkyPlateSolveExposureTime,
                 FullSkyPlateSolveBinning = modelBuilderOptions.FullSkyPlateSolveBinning,
@@ -1983,6 +1983,36 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             };
             var modelPoints = ModelPoints.ToList();
             return DoBuildModel(modelPoints, options, CancellationToken.None);
+        }
+
+        private async Task SyncAfterModelBuild()
+        {
+            if (BuildInProgress || SyncAfterModelBuildInProgress || !SyncAfterModelBuildAvailable)
+            {
+                return;
+            }
+
+            try
+            {
+                SyncAfterModelBuildInProgress = true;
+                SyncAfterModelBuildAvailable = false;
+                await modelBuilder.SyncAfterModelBuild(CancellationToken.None, stepProgress);
+            }
+            catch (OperationCanceledException)
+            {
+                Notification.ShowInformation("Post-build sync cancelled");
+                Logger.Info("Post-build sync cancelled");
+            }
+            catch (Exception e)
+            {
+                Notification.ShowError($"Failed to run post-build sync. {e.Message}");
+                Logger.Error("Failed to run post-build sync", e);
+            }
+            finally
+            {
+                SyncAfterModelBuildInProgress = false;
+                TelescopeInfo = telescopeMediator.GetInfo();
+            }
         }
 
         private async Task<bool> CancelBuildModel()
@@ -3787,6 +3817,36 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             }
         }
 
+        private bool syncAfterModelBuildAvailable;
+
+        public bool SyncAfterModelBuildAvailable
+        {
+            get => syncAfterModelBuildAvailable;
+            private set
+            {
+                if (syncAfterModelBuildAvailable != value)
+                {
+                    syncAfterModelBuildAvailable = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private bool syncAfterModelBuildInProgress;
+
+        public bool SyncAfterModelBuildInProgress
+        {
+            get => syncAfterModelBuildInProgress;
+            private set
+            {
+                if (syncAfterModelBuildInProgress != value)
+                {
+                    syncAfterModelBuildInProgress = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
         private InputCoordinates siderealPathObjectCoordinates;
 
         public InputCoordinates SiderealPathObjectCoordinates
@@ -3891,6 +3951,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
         public ICommand BuildCommand { get; private set; }
         public ICommand CancelBuildCommand { get; private set; }
         public ICommand StopBuildCommand { get; private set; }
+        public ICommand SyncAfterModelBuildCommand { get; private set; }
         public ICommand CoordsFromFramingCommand { get; private set; }
         public ICommand CoordsFromScopeCommand { get; private set; }
         public ICommand ExportCommand { get; private set; }

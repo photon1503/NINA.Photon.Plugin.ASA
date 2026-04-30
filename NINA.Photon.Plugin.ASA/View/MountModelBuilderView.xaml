@@ -1087,7 +1087,7 @@
                             </Binding>
                         </ninactrl:UnitTextBox>
 
-                        <UniformGrid Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="3" Rows="1" Columns="2">
+                        <UniformGrid Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="3" Rows="1" Columns="3">
                             <ninactrl:CancellableButton
                                 Height="30"
                                 Margin="10,10,5,10"
@@ -1116,6 +1116,25 @@
                                         Fill="{StaticResource PrimaryBrush}"
                                         Stretch="Uniform" />
                                 </Grid>
+                            </Button>
+                            <Button
+                                Height="30"
+                                Margin="5,10,10,10"
+                                Command="{Binding SyncAfterModelBuildCommand}">
+                                <Button.IsEnabled>
+                                    <MultiBinding Converter="{StaticResource BooleanAndConverter}">
+                                        <Binding Path="TelescopeInfo.Connected" />
+                                        <Binding Path="SyncAfterModelBuildAvailable" />
+                                        <Binding Path="BuildInProgress" Converter="{StaticResource InverseBooleanConverter}" />
+                                        <Binding Path="SyncAfterModelBuildInProgress" Converter="{StaticResource InverseBooleanConverter}" />
+                                    </MultiBinding>
+                                </Button.IsEnabled>
+                                <Button.ToolTip>
+                                    <ToolTip ToolTipService.ShowOnDisabled="True">
+                                        <TextBlock Text="Available only after a new POX file is created. Enables NINA sync, slews to the hemisphere-aware meridian sync point at 50 degrees without changing pier side, plate solves, syncs the mount, then restores NINA's sync setting" />
+                                    </ToolTip>
+                                </Button.ToolTip>
+                                <TextBlock Foreground="{StaticResource ButtonForegroundBrush}" Text="Final Sync" ToolTip="Run post-build sync" />
                             </Button>
                         </UniformGrid>
                     </Grid>

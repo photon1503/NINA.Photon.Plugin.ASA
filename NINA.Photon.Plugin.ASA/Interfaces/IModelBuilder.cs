@@ -32,9 +32,7 @@ namespace NINA.Photon.Plugin.ASA.Interfaces
         public int MaxFailedPoints { get; set; } = 0;
         public bool RemoveHighRMSPointsAfterBuild { get; set; } = true;
         public double PlateSolveSubframePercentage { get; set; } = 1.0d;
-        public bool SlewToCorrectPierSideBeforeStart { get; set; } = false;
-        public bool PlateSolveAndSyncBeforeStart { get; set; } = false;
-        public bool EnableNINACoordinateSyncDuringBuild { get; set; } = false;
+        public bool SyncBeforeModelBuild { get; set; } = false;
         public bool UseDedicatedFullSkyPlateSolveSettings { get; set; } = false;
         public double FullSkyPlateSolveExposureTime { get; set; } = 1.0d;
         public int FullSkyPlateSolveBinning { get; set; } = 1;
@@ -73,7 +71,11 @@ namespace NINA.Photon.Plugin.ASA.Interfaces
 
     public interface IModelBuilder
     {
+        bool HasPendingPostBuildSync { get; }
+
         Task<LoadedAlignmentModel> Build(IList<ModelPoint> modelPoints, ModelBuilderOptions options, CancellationToken ct = default, CancellationToken stopToken = default, IProgress<ApplicationStatus> overallProgress = null, IProgress<ApplicationStatus> stepProgress = null);
+
+        Task<bool> SyncAfterModelBuild(CancellationToken ct = default, IProgress<ApplicationStatus> stepProgress = null);
 
         IList<ModelPoint> GetPreviewOrder(IList<ModelPoint> modelPoints, ModelBuilderOptions options);
 

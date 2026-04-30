@@ -53,6 +53,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
     public class ModelBuilder : IModelBuilder
     {
         private static IComparer<double> DOUBLE_COMPARER = Comparer<double>.Default;
+        private const double POST_BUILD_SYNC_ALTITUDE_DEGREES = 50.0d;
 
         private readonly struct PlateSolveCaptureSettings
         {
@@ -89,8 +90,11 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
         private volatile int processingInProgressCount;
         private bool IsTelescopePositionRestored = false;
         private bool forceNextPierSideAvailable = true;
+        private bool hasPendingPostBuildSync;
 
         private List<ModelPoint> modelPoints1 = new List<ModelPoint>();
+
+        public bool HasPendingPostBuildSync => hasPendingPostBuildSync;
 
         public event EventHandler<PointNextUpEventArgs> PointNextUp;
 
@@ -114,6 +118,115 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             this.guiderMediator = guiderMediator;
 
             this.asaOptions = asaOptions;
+        }
+
+        public async Task<bool> SyncAfterModelBuild(CancellationToken ct = default, IProgress<ApplicationStatus> stepProgress = null)
+        {
+            var previousNINANoSync = profileService.ActiveProfile.TelescopeSettings.NoSync;
+            var currentPierSide = telescopeMediator.GetInfo().SideOfPier;
+            var syncAzimuth = GetPostBuildSyncAzimuthDegrees();
+            var syncPoint = new ModelPoint(telescopeMediator)
+            {
+                Altitude = POST_BUILD_SYNC_ALTITUDE_DEGREES,
+                Azimuth = syncAzimuth,
+                IsSyncPoint = true,
+                DesiredPierSide = currentPierSide,
+                ModelPointState = ModelPointStateEnum.Generated,
+            };
+            var options = CreatePostBuildSyncOptions();
+            var state = new ModelBuilderState(
+                options,
+                new List<ModelPoint>() { syncPoint },
+                mount,
+                domeMediator,
+                weatherDataMediator,
+                cameraMediator,
+                profileService,
+                asaOptions);
+
+            try
+            {
+                if (previousNINANoSync)
+                {
+                    profileService.ActiveProfile.TelescopeSettings.NoSync = false;
+                    Logger.Info("Enabled NINA coordinate sync for post-build model sync. It will be restored after completion");
+                }
+
+                var targetCoordinates = GetPointCoordinates(state, syncPoint);
+                if (currentPierSide != PierSide.pierUnknown)
+                {
+                    Logger.Info($"Post-build sync forcing current pier side {currentPierSide} before slewing to Alt={POST_BUILD_SYNC_ALTITUDE_DEGREES:0.###}, Az={syncAzimuth:0.###}");
+                    TryForceNextPierSide(currentPierSide, "post-build sync");
+                }
+                else
+                {
+                    Logger.Warning("Current pier side is unknown. Post-build sync will slew without forcing the current side");
+                }
+
+                if (!await telescopeMediator.SlewToCoordinatesAsync(targetCoordinates, ct))
+                {
+                    Logger.Warning("Failed to slew to the post-build sync position");
+                    Notification.ShowWarning("Failed to slew to the post-build sync position");
+                    return false;
+                }
+
+                var processingSlotAcquired = false;
+                await state.ProcessingSemaphore.WaitAsync(ct);
+                processingSlotAcquired = true;
+                try
+                {
+                    var exposureData = await CaptureImage(state, syncPoint, stepProgress, ct);
+                    if (exposureData == null)
+                    {
+                        Logger.Warning("Failed to capture the post-build sync exposure");
+                        Notification.ShowWarning("Failed to capture the post-build sync exposure");
+                        if (processingSlotAcquired)
+                        {
+                            state.ProcessingSemaphore.Release();
+                        }
+                        return false;
+                    }
+
+                    var success = await SolveAndSyncPostBuildPoint(state, syncPoint, exposureData, ct);
+                    processingSlotAcquired = false;
+                    if (success)
+                    {
+                        Notification.ShowInformation("Post-build sync completed. In Autoslew, also set the new homeposition.");
+                        Logger.Info("Post-build sync completed. Reminder: set the new homeposition in Autoslew");
+                    }
+                    else
+                    {
+                        Notification.ShowWarning("Post-build sync failed");
+                    }
+
+                    return success;
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
+                catch (Exception e)
+                {
+                    Logger.Error("Post-build sync failed", e);
+                    Notification.ShowWarning("Post-build sync failed");
+                    if (processingSlotAcquired)
+                    {
+                        state.ProcessingSemaphore.Release();
+                    }
+                    return false;
+                }
+            }
+            finally
+            {
+                hasPendingPostBuildSync = false;
+                profileService.ActiveProfile.TelescopeSettings.NoSync = previousNINANoSync;
+                Logger.Info($"Restored NINA coordinate sync setting after post-build sync. NoSync={previousNINANoSync}");
+            }
+        }
+
+        private double GetPostBuildSyncAzimuthDegrees()
+        {
+            return profileService.ActiveProfile.AstrometrySettings.Latitude >= 0.0d ? 180.0d : 0.0d;
         }
 
         private class ModelBuilderState
@@ -351,7 +464,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
 
             var restoreNINACoordinateSync = false;
             var previousNINANoSync = profileService.ActiveProfile.TelescopeSettings.NoSync;
-            if (options.EnableNINACoordinateSyncDuringBuild)
+            if (options.SyncBeforeModelBuild)
             {
                 restoreNINACoordinateSync = true;
                 if (previousNINANoSync)
@@ -506,6 +619,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             var options = state.Options;
 
             IsTelescopePositionRestored = false;
+            hasPendingPostBuildSync = false;
 
             var stopOrCancelCts = CancellationTokenSource.CreateLinkedTokenSource(ct, stopToken);
             var stopOrCancelCt = stopOrCancelCts.Token;
@@ -823,6 +937,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
 
                 Logger.Info($"POX file {filePath} created!");
                 Notification.ShowSuccess($"POX file {filePath} created!");
+                hasPendingPostBuildSync = true;
                 return;
             }
             else
@@ -971,7 +1086,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 return;
             }
 
-            if (!state.Options.SlewToCorrectPierSideBeforeStart && !state.Options.PlateSolveAndSyncBeforeStart)
+            if (!state.Options.SyncBeforeModelBuild)
             {
                 return;
             }
@@ -985,16 +1100,25 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             }
 
             var initialPointCoordinates = GetPointCoordinates(state, initialPoint);
-            if (state.Options.SlewToCorrectPierSideBeforeStart)
-            {
-                Logger.Info($"Pre-start pier-side setup enabled. Forcing side {initialPoint.DesiredPierSide} based on first traversal point {initialPoint}");
-                TryForceNextPierSide(initialPoint, initialPointCoordinates);
-            }
+            Logger.Info($"Pre-start model-build sync enabled. Forcing side {initialPoint.DesiredPierSide} based on first traversal point {initialPoint}");
+            TryForceNextPierSide(initialPoint, initialPointCoordinates);
 
-            if (state.Options.PlateSolveAndSyncBeforeStart)
+            await RunPreStartPlateSolveAndSync(state, initialPoint, stepProgress, ct);
+        }
+
+        private ModelBuilderOptions CreatePostBuildSyncOptions()
+        {
+            return new ModelBuilderOptions()
             {
-                await RunPreStartPlateSolveAndSync(state, initialPoint, stepProgress, ct);
-            }
+                AllowBlindSolves = asaOptions.AllowBlindSolves,
+                MaxConcurrency = 1,
+                PlateSolveSubframePercentage = asaOptions.PlateSolveSubframePercentage,
+                UseDedicatedFullSkyPlateSolveSettings = asaOptions.UseDedicatedFullSkyPlateSolveSettings,
+                FullSkyPlateSolveExposureTime = asaOptions.FullSkyPlateSolveExposureTime,
+                FullSkyPlateSolveBinning = asaOptions.FullSkyPlateSolveBinning,
+                FullSkyPlateSolveGain = asaOptions.FullSkyPlateSolveGain,
+                FullSkyPlateSolveOffset = asaOptions.FullSkyPlateSolveOffset,
+            };
         }
 
         private ModelPoint GetFirstTraversalPoint(ModelBuilderState state)
@@ -1109,13 +1233,57 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             return success;
         }
 
+        private async Task<bool> SolveAndSyncPostBuildPoint(ModelBuilderState state, ModelPoint point, IExposureData exposureData, CancellationToken ct)
+        {
+            bool success = false;
+            try
+            {
+                Interlocked.Increment(ref processingInProgressCount);
+
+                ct.ThrowIfCancellationRequested();
+                point.ModelPointState = ModelPointStateEnum.Processing;
+                var plateSolveResult = await SolveImage(state.Options, exposureData, ct);
+                if (plateSolveResult?.Success != true)
+                {
+                    Logger.Error($"Failed to plate solve post-build sync point: {point}");
+                    return false;
+                }
+
+                ct.ThrowIfCancellationRequested();
+                point.PlateSolvedRightAscension = plateSolveResult.Coordinates.RA;
+                point.PlateSolvedDeclination = plateSolveResult.Coordinates.Dec;
+
+                Logger.Info($"Performing NINA coordinate sync for post-build sync point using solved coordinates {plateSolveResult.Coordinates}");
+                success = await telescopeMediator.Sync(plateSolveResult.Coordinates);
+                if (!success)
+                {
+                    Logger.Warning("NINA coordinate sync for post-build sync point failed");
+                }
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            catch (Exception e)
+            {
+                Logger.Error($"Exception during post-build solve and sync for point: {point}", e);
+            }
+            finally
+            {
+                point.ModelPointState = success ? ModelPointStateEnum.Generated : ModelPointStateEnum.Failed;
+                Interlocked.Decrement(ref processingInProgressCount);
+                state.ProcessingSemaphore.Release();
+            }
+
+            return success;
+        }
+
         private ModelPoint CreatePreStartSyncPoint(ModelBuilderState state, ModelPoint initialPoint)
         {
-            var syncOnEastSky = IsEastSkySide(initialPoint);
+            var syncAzimuth = GetPostBuildSyncAzimuthDegrees();
             return new ModelPoint(telescopeMediator)
             {
-                Altitude = syncOnEastSky ? state.Options.SyncEastAltitude : state.Options.SyncWestAltitude,
-                Azimuth = syncOnEastSky ? state.Options.SyncEastAzimuth : state.Options.SyncWestAzimuth,
+                Altitude = POST_BUILD_SYNC_ALTITUDE_DEGREES,
+                Azimuth = syncAzimuth,
                 IsSyncPoint = true,
                 DesiredPierSide = initialPoint.DesiredPierSide,
                 ModelPointState = ModelPointStateEnum.Generated
@@ -1138,11 +1306,21 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 point.DesiredPierSide = desiredPierSide;
             }
 
+            TryForceNextPierSide(desiredPierSide, "model build");
+        }
+
+        private void TryForceNextPierSide(PierSide desiredPierSide, string operation)
+        {
+            if (!forceNextPierSideAvailable || desiredPierSide == PierSide.pierUnknown)
+            {
+                return;
+            }
+
             var forceNextSideResult = mount.ForceNextPierSide(desiredPierSide);
             if (!forceNextSideResult)
             {
                 forceNextPierSideAvailable = false;
-                Logger.Warning("Disabling forced pier-side slews for this build because ASCOM action forcenextpierside failed");
+                Logger.Warning($"Disabling forced pier-side slews because ASCOM action forcenextpierside failed during {operation}");
             }
         }
 

@@ -1,14 +1,19 @@
 
 # Changelog
 
-## 3.2.8.10 (2026-04-28)
+## 3.2.8.11 (2026-04-28)
 
 ### Full-Sky Model Build Startup / Sync
 
-- Added **Force First Pier Side** to optionally force the pier side required by the first traversal point before a full-sky model build starts.
-- Added **Solve & Sync Before Start** to slew to the configured East/West sync coordinate, capture once, plate solve once, and perform a real NINA mount sync before normal traversal begins.
+- Added **Sync Before Model Build** to run the full pre-start sync workflow before a full-sky model build starts.
+- When enabled, the builder forces the pier side required by the first traversal point, slews to the same hemisphere-aware 50° meridian sync point used by **Final Sync**, captures once, plate solves once, and performs a real NINA mount sync before normal traversal begins.
 - The pre-start sync point is now treated as a warmup/setup step only and is **not** added to the ASA model.
-- Added **Enable NINA Coordinate Sync During Build** to temporarily turn off NINA's telescope **Coordinate Sync** setting while a model build is running, then restore the previous value after completion.
+- The pre-start sync point stays on the same pier side as the first real model point so the handoff into normal traversal does not require an extra flip.
+- The builder temporarily turns off NINA's telescope **Coordinate Sync** setting while the model build is running, then restores the previous value after completion.
+- Added a dock button **Final Sync** to run a one-shot post-build sync workflow after the user creates and loads a new model in Autoslew.
+- **Final Sync** is enabled only after a new full-sky POX file is written and disables again after it is used once.
+- Both sync workflows use the same fixed meridian sync position at 50° altitude: south in the northern hemisphere, north in the southern hemisphere.
+- The dock action enables NINA sync temporarily, slews to that shared sync point on the current pier side, plate solves once, syncs the mount, restores NINA's previous sync setting, and reminds the user to also set a new homeposition in Autoslew.
 
 ### Dedicated Plate-Solve Capture Settings
 
