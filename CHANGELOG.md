@@ -1,7 +1,7 @@
 
 # Changelog
 
-## 3.2.8.11 (2026-04-28)
+## 3.2.8.11 (2026-04-30)
 
 ### Full-Sky Model Build Startup / Sync
 
