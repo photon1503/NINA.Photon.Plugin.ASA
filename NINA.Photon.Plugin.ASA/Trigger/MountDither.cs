@@ -114,6 +114,8 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             {
                 lastTriggerId = history.ImageHistory.Count;
 
+                var stoppedGuiding = await guiderMediator.StopGuiding(token);
+
                 var directGuider = new DirectGuider(profileService, telescopeMediator);
                 double ditherPixels = profileService.ActiveProfile.GuiderSettings.DitherPixels;
                 double ditherSettleTime = profileService.ActiveProfile.GuiderSettings.SettleTime;
@@ -137,11 +139,25 @@ namespace NINA.Photon.Plugin.ASA.MLTP
                     }
                 }
 
-                await directGuider.Dither(ditherPixels, timeSpan, ditherRAOnly, progress, token);
-
-                while (telescopeMediator.GetInfo().IsPulseGuiding || telescopeMediator.GetInfo().Slewing)
+                try
                 {
-                    await CoreUtil.Delay(TimeSpan.FromMilliseconds(100), token);
+                    await directGuider.Dither(ditherPixels, timeSpan, ditherRAOnly, progress, token);
+
+                    while (telescopeMediator.GetInfo().IsPulseGuiding || telescopeMediator.GetInfo().Slewing)
+                    {
+                        await CoreUtil.Delay(TimeSpan.FromMilliseconds(100), token);
+                    }
+                }
+                finally
+                {
+                    if (stoppedGuiding)
+                    {
+                        var restartedGuiding = await guiderMediator.StartGuiding(false, progress, token);
+                        if (!restartedGuiding)
+                        {
+                            throw new Exception("Failed to resume guiding after mount dither");
+                        }
+                    }
                 }
             }
             else

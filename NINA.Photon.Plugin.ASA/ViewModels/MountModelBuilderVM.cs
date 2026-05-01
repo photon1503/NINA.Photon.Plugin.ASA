@@ -878,6 +878,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             }
 
             if (e.PropertyName == nameof(IASAOptions.ActiveMLPTDurationSeconds)
+                || e.PropertyName == nameof(IASAOptions.ActiveMLPTCaptureDurationSeconds)
                 || e.PropertyName == nameof(IASAOptions.ActiveMLPTPointCount))
             {
                 SyncMlptProgressTracking();
@@ -1049,6 +1050,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             mlptPreviewPendingSend = false;
             mlptDebugSimulationSessionOwned = true;
             modelBuilderOptions.ActiveMLPTDurationSeconds = simulatedDuration.TotalSeconds;
+            modelBuilderOptions.ActiveMLPTCaptureDurationSeconds = 0.0d;
             modelBuilderOptions.ActiveMLPTPointCount = plannedPoints.Count;
             modelBuilderOptions.LastMLPT = DateTime.Now;
             mlptSentAt = modelBuilderOptions.LastMLPT;
@@ -1073,6 +1075,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
 
             mlptDebugSimulationSessionOwned = false;
             modelBuilderOptions.ActiveMLPTDurationSeconds = 0.0d;
+            modelBuilderOptions.ActiveMLPTCaptureDurationSeconds = 0.0d;
             modelBuilderOptions.ActiveMLPTPointCount = 0;
             modelBuilderOptions.LastMLPT = DateTime.MinValue;
         }
@@ -1207,30 +1210,6 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             return Math.Abs((displayedDuration - mlptPlannedDuration).TotalSeconds) <= 1.0d;
         }
 
-        private bool TryGetMlptCaptureElapsed(out TimeSpan captureElapsed)
-        {
-            captureElapsed = TimeSpan.Zero;
-
-            var firstCaptureTime = GetEligibleMlptPlannedPoints()
-                .Where(point => point.CaptureTime != DateTime.MinValue)
-                .OrderBy(point => point.CaptureTime)
-                .Select(point => point.CaptureTime)
-                .FirstOrDefault();
-
-            if (firstCaptureTime == DateTime.MinValue)
-            {
-                return false;
-            }
-
-            captureElapsed = DateTime.Now - firstCaptureTime;
-            if (captureElapsed < TimeSpan.Zero)
-            {
-                captureElapsed = TimeSpan.Zero;
-            }
-
-            return true;
-        }
-
         private void RefreshMlptProgressLinePoints()
         {
             if (mlptSentAt == DateTime.MinValue
@@ -1253,12 +1232,8 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 elapsed = TimeSpan.Zero;
             }
 
-            var captureElapsed = TryGetMlptCaptureElapsed(out var actualCaptureElapsed)
-                ? actualCaptureElapsed
-                : TimeSpan.Zero;
-            var controllerElapsed = captureElapsed > TimeSpan.Zero
-                ? captureElapsed
-                : elapsed;
+            var captureElapsed = TimeSpan.FromSeconds(Math.Max(0.0d, modelBuilderOptions.ActiveMLPTCaptureDurationSeconds));
+            var controllerElapsed = elapsed;
 
             var progress = Math.Min(1.0d, controllerElapsed.TotalSeconds / mlptPlannedDuration.TotalSeconds);
             var xPosition = MlptPlannedImageCount <= 1
@@ -2924,6 +2899,19 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 if (this.modelBuilderOptions.SyncEveryHA != value)
                 {
                     this.modelBuilderOptions.SyncEveryHA = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        public bool SyncBeforeModelBuild
+        {
+            get => this.modelBuilderOptions.SyncBeforeModelBuild;
+            set
+            {
+                if (this.modelBuilderOptions.SyncBeforeModelBuild != value)
+                {
+                    this.modelBuilderOptions.SyncBeforeModelBuild = value;
                     RaisePropertyChanged();
                 }
             }

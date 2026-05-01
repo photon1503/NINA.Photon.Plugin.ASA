@@ -1,7 +1,7 @@
 
 # Changelog
 
-## 3.2.8.11 (2026-04-30)
+## 3.2.8.12 (2026-05-01)
 
 ### Full-Sky Model Build Startup / Sync
 
@@ -21,14 +21,18 @@
 - Added a separate dedicated plate-solve capture settings group for **MLPT** with its own exposure time, binning, gain, and offset.
 - Full-sky and MLPT builds now use their selected dedicated capture settings for plate-solve image capture and plate-solve binning, while still falling back to NINA's standard plate-solve profile when the dedicated group is disabled.
 
-
 ### MLPT Diagnostics / Simulator
 
-- Added an **MLPT Debug / Simulator** option to run generated MLPT paths locally without sending them to the controller.
 - MLPT diagnostics charts now render a live vertical progress marker for the active/simulated MLPT run.
 - Added **Elapsed**, **MLPT capture**, and **Remaining** readouts below the MLPT charts to make timeline/debug state visible while testing.
 - Moved MLPT run-state tracking to the actual controller-send phase and persisted active MLPT duration/point-count metadata so the diagnostics charts follow the active path instead of the preview.
 - Corrected MLPT remaining-time/progress calculation to use the first actual captured image as the controller timing reference once capture data is available.
+  
+- Added an **MLPT Debug / Simulator** option to run generated MLPT paths locally without sending them to the controller.
+
+### Mount Dither Trigger
+
+- Updated **Mount Dither After x Exposures** to pause N.I.N.A. autoguiding before the dither operation and resume guiding afterward, including proper cleanup/restart handling if the dither flow throws.
 
 ## 3.2.8.7 (2026-03-09)
 

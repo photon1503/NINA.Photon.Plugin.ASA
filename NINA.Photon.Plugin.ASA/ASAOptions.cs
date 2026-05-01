@@ -117,6 +117,7 @@ namespace NINA.Photon.Plugin.ASA
             enableMLPTDebugSimulator = optionsAccessor.GetValueBoolean(nameof(EnableMLPTDebugSimulator), false);
             lastMLPT = optionsAccessor.GetValueDateTime("LastMLPT", DateTime.MinValue);
             activeMLPTDurationSeconds = optionsAccessor.GetValueDouble(nameof(ActiveMLPTDurationSeconds), 0.0d);
+            activeMLPTCaptureDurationSeconds = optionsAccessor.GetValueDouble(nameof(ActiveMLPTCaptureDurationSeconds), 0.0d);
             activeMLPTPointCount = optionsAccessor.GetValueInt32(nameof(ActiveMLPTPointCount), 0);
             highAltitudeStars = optionsAccessor.GetValueInt32("HighAltitudeStars", 10);
             highAltitudeMin = optionsAccessor.GetValueInt32("HighAltitudeMin", 70);
@@ -195,6 +196,7 @@ namespace NINA.Photon.Plugin.ASA
             EnableMLPTDebugSimulator = false;
             LastMLPT = DateTime.MinValue;
             ActiveMLPTDurationSeconds = 0.0d;
+            ActiveMLPTCaptureDurationSeconds = 0.0d;
             ActiveMLPTPointCount = 0;
             MACAddress = "";
             IPAddress = "";
@@ -1491,6 +1493,22 @@ namespace NINA.Photon.Plugin.ASA
                 {
                     activeMLPTDurationSeconds = value;
                     optionsAccessor.SetValueDouble(nameof(ActiveMLPTDurationSeconds), activeMLPTDurationSeconds);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private double activeMLPTCaptureDurationSeconds;
+
+        public double ActiveMLPTCaptureDurationSeconds
+        {
+            get => activeMLPTCaptureDurationSeconds;
+            set
+            {
+                if (Math.Abs(activeMLPTCaptureDurationSeconds - value) > double.Epsilon)
+                {
+                    activeMLPTCaptureDurationSeconds = value;
+                    optionsAccessor.SetValueDouble(nameof(ActiveMLPTCaptureDurationSeconds), activeMLPTCaptureDurationSeconds);
                     RaisePropertyChanged();
                 }
             }

@@ -242,6 +242,7 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             initialTime = DateTime.MinValue;
             options.LastMLPT = DateTime.MinValue;
             options.ActiveMLPTDurationSeconds = 0.0d;
+            options.ActiveMLPTCaptureDurationSeconds = 0.0d;
             options.ActiveMLPTPointCount = 0;
 
             try

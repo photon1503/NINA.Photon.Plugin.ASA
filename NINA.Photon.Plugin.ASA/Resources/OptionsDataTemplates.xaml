@@ -87,7 +87,6 @@
                         <RowDefinition />
                         <RowDefinition />
                         <RowDefinition />
-                        <RowDefinition />
                     </Grid.RowDefinitions>
 
                     <TextBlock Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" Text="Log Commands" ToolTip="{StaticResource LogCommands_Tooltip}" />
@@ -118,8 +117,6 @@
                         </Binding>
                     </ninactrl:UnitTextBox>
 
-                    <TextBlock Grid.Row="4" Grid.Column="0" VerticalAlignment="Center" Text="Sync Before Model Build" ToolTip="{StaticResource SyncBeforeModelBuild_Tooltip}" />
-                    <CheckBox Grid.Row="4" Grid.Column="1" MinWidth="80" Margin="5,5,0,0" HorizontalAlignment="Left" VerticalAlignment="Center" IsChecked="{Binding SyncBeforeModelBuild}" ToolTip="{StaticResource SyncBeforeModelBuild_Tooltip}" />
                 </Grid>
             </GroupBox>
 

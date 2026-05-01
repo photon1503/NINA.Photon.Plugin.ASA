@@ -978,36 +978,6 @@
                             IsChecked="{Binding SiderealTrackPreBalanceFarEndSlew}"
                             ToolTip="When enabled, MLPT does an initial far-end slew and returns to the first point to pre-balance for the final pier-side change (last Wechsel)." />
 
-                        <TextBlock
-                            Grid.Row="8" Grid.Column="0"
-                            Margin="0,5,0,0"
-                            HorizontalAlignment="Left"
-                            VerticalAlignment="Center"
-                            Text="Relative"
-                            ToolTip="When enabled, uses the first solved point as zero reference for MLPT error charts" />
-                        <CheckBox
-                            Grid.Row="8" Grid.Column="1"
-                            Margin="10,5,0,0"
-                            HorizontalAlignment="Left"
-                            VerticalAlignment="Center"
-                            IsChecked="{Binding UseRelativeMlptErrors}"
-                            ToolTip="When enabled, uses the first solved point as zero reference for MLPT error charts" />
-
-                        <TextBlock
-                            Grid.Row="9" Grid.Column="0"
-                            Margin="0,5,0,0"
-                            HorizontalAlignment="Left"
-                            VerticalAlignment="Center"
-                            Text="Match Y-axis scale"
-                            ToolTip="When enabled, both MLPT error charts use the same Y-axis limit based on the larger max error" />
-                        <CheckBox
-                            Grid.Row="9" Grid.Column="1"
-                            Margin="10,5,0,0"
-                            HorizontalAlignment="Left"
-                            VerticalAlignment="Center"
-                            IsChecked="{Binding UseUnifiedMlptErrorScale}"
-                            ToolTip="When enabled, both MLPT error charts use the same Y-axis limit based on the larger max error" />
-
                 
                     </Grid>
                 </GroupBox>
@@ -1038,8 +1008,8 @@
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
                             <RowDefinition />
-                            <RowDefinition Style="{StaticResource HideOnNoRetries}" />
                             <RowDefinition />
+                            <RowDefinition Style="{StaticResource HideOnNoRetries}" />
                             <RowDefinition />
                             <RowDefinition />
                             <RowDefinition />
@@ -1069,10 +1039,25 @@
                             Grid.Row="1" Grid.Column="0"
                             HorizontalAlignment="Left"
                             VerticalAlignment="Center"
+                            Text="Sync Before Model Build"
+                            ToolTip="Before a model build starts, force the pier side required by the first traversal point, slew to the same hemisphere-aware 50 degree meridian sync point used by Final Sync, capture and solve once, perform a real NINA coordinate sync, and restore NINA's previous No Sync setting after the build"
+                            Visibility="{Binding IsSyncOptionsVisible, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}" />
+                        <CheckBox
+                            Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"
+                            Margin="10,5,0,0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            IsChecked="{Binding SyncBeforeModelBuild}"
+                            ToolTip="Before a model build starts, force the pier side required by the first traversal point, slew to the same hemisphere-aware 50 degree meridian sync point used by Final Sync, capture and solve once, perform a real NINA coordinate sync, and restore NINA's previous No Sync setting after the build"
+                            Visibility="{Binding IsSyncOptionsVisible, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}" />
+                        <TextBlock
+                            Grid.Row="2" Grid.Column="0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
                             Text="Max Failed Points"
                             ToolTip="{StaticResource MaxFailedPoints_Tooltip}" />
                         <ninactrl:UnitTextBox
-                            Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"
+                            Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2"
                             MinWidth="80"
                             Margin="10,5,0,0"
                             HorizontalAlignment="Left"
@@ -1215,6 +1200,8 @@
                             <RowDefinition />
                             <RowDefinition />
                             <RowDefinition />
+                            <RowDefinition />
+                            <RowDefinition />
                         </Grid.RowDefinitions>
 
                         <TextBlock
@@ -1328,6 +1315,40 @@
                             HorizontalAlignment="Left"
                             VerticalAlignment="Center"
                             IsChecked="{Binding ShowMeridianLimitsInCharts}" />
+
+                        <TextBlock
+                            Grid.Row="7" Grid.Column="0"
+                            Margin="0,5,0,0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Text="Relative"
+                            ToolTip="When enabled, uses the first solved point as zero reference for MLPT error charts"
+                            Visibility="{Binding AreMlptErrorChartsVisible, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}" />
+                        <CheckBox
+                            Grid.Row="7" Grid.Column="1" Grid.ColumnSpan="2"
+                            Margin="10,5,0,0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            IsChecked="{Binding UseRelativeMlptErrors}"
+                            ToolTip="When enabled, uses the first solved point as zero reference for MLPT error charts"
+                            Visibility="{Binding AreMlptErrorChartsVisible, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}" />
+
+                        <TextBlock
+                            Grid.Row="8" Grid.Column="0"
+                            Margin="0,5,0,0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Text="Match Y-axis scale"
+                            ToolTip="When enabled, both MLPT error charts use the same Y-axis limit based on the larger max error"
+                            Visibility="{Binding AreMlptErrorChartsVisible, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}" />
+                        <CheckBox
+                            Grid.Row="8" Grid.Column="1" Grid.ColumnSpan="2"
+                            Margin="10,5,0,0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            IsChecked="{Binding UseUnifiedMlptErrorScale}"
+                            ToolTip="When enabled, both MLPT error charts use the same Y-axis limit based on the larger max error"
+                            Visibility="{Binding AreMlptErrorChartsVisible, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}" />
                     </Grid>
                 </GroupBox>
 

@@ -369,6 +369,31 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             return options.ModelPointGenerationType == ModelPointGenerationTypeEnum.SiderealPath;
         }
 
+        private static bool IsAutoGridBuild(ModelBuilderOptions options)
+        {
+            return options.ModelPointGenerationType == ModelPointGenerationTypeEnum.AutoGrid;
+        }
+
+        private static DateTime NormalizeToUtcAssumingUtcIfUnspecified(DateTime value)
+        {
+            if (value == DateTime.MinValue)
+            {
+                return value;
+            }
+
+            if (value.Kind == DateTimeKind.Utc)
+            {
+                return value;
+            }
+
+            if (value.Kind == DateTimeKind.Local)
+            {
+                return value.ToUniversalTime();
+            }
+
+            return DateTime.SpecifyKind(value, DateTimeKind.Utc);
+        }
+
         private static PlateSolveCaptureSettings GetEffectivePlateSolveCaptureSettings(ModelBuilderOptions options, IProfileService profileService)
         {
             if (IsMlptBuild(options) && options.UseDedicatedMLPTPlateSolveSettings)
@@ -443,6 +468,15 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 Logger.Info($"Filter before building model set to {oldFilter.Name}, and will be restored after completion");
             }
 
+            if (IsMlptBuild(options))
+            {
+                asaOptions.ActiveMLPTCaptureDurationSeconds = 0.0d;
+                foreach (var modelPoint in modelPoints)
+                {
+                    modelPoint.CaptureTime = DateTime.MinValue;
+                }
+            }
+
             var reenableDomeFollower = false;
             var state = new ModelBuilderState(options, modelPoints, mount, domeMediator, weatherDataMediator, cameraMediator, profileService, asaOptions);
             if (state.UseDome && domeMediator.IsFollowingScope)
@@ -462,9 +496,10 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 reenableDomeSyncSlew = true;
             }
 
+            var enablePreStartNinaCoordinateSync = options.SyncBeforeModelBuild && IsAutoGridBuild(options);
             var restoreNINACoordinateSync = false;
             var previousNINANoSync = profileService.ActiveProfile.TelescopeSettings.NoSync;
-            if (options.SyncBeforeModelBuild)
+            if (enablePreStartNinaCoordinateSync)
             {
                 restoreNINACoordinateSync = true;
                 if (previousNINANoSync)
@@ -857,13 +892,25 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                             .Where(point => point.PlannedCaptureTime != DateTime.MinValue)
                             .OrderBy(point => point.PlannedCaptureTime)
                             .ToList();
+                        var sentAtLocal = DateTime.Now;
+                        var sentAtUtc = sentAtLocal.ToUniversalTime();
+                        var firstCaptureTime = state.ValidPoints
+                            .Where(point => point.CaptureTime != DateTime.MinValue)
+                            .OrderBy(point => point.CaptureTime)
+                            .Select(point => point.CaptureTime)
+                            .FirstOrDefault();
+                        var firstCaptureTimeUtc = NormalizeToUtcAssumingUtcIfUnspecified(firstCaptureTime);
                         var activeDurationSeconds = plannedPoints.Count >= 2
                             ? (plannedPoints[plannedPoints.Count - 1].PlannedCaptureTime - plannedPoints[0].PlannedCaptureTime).TotalSeconds
                             : 0.0d;
+                        var activeCaptureDurationSeconds = firstCaptureTimeUtc != DateTime.MinValue
+                            ? Math.Max(0.0d, (sentAtUtc - firstCaptureTimeUtc).TotalSeconds)
+                            : 0.0d;
 
                         asaOptions.ActiveMLPTDurationSeconds = Math.Max(0.0d, activeDurationSeconds);
+                        asaOptions.ActiveMLPTCaptureDurationSeconds = activeCaptureDurationSeconds;
                         asaOptions.ActiveMLPTPointCount = Math.Max(0, plannedPoints.Count);
-                        asaOptions.LastMLPT = DateTime.Now;
+                        asaOptions.LastMLPT = sentAtLocal;
                         Logger.Info("MLPT pointings sent");
                         Notification.ShowSuccess("MLPT pointings sent");
                     }
@@ -1081,12 +1128,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
 
         private async Task RunPreStartSetupIfNecessary(ModelBuilderState state, IProgress<ApplicationStatus> stepProgress, CancellationToken ct)
         {
-            if (state.Options.ModelPointGenerationType == ModelPointGenerationTypeEnum.SiderealPath)
-            {
-                return;
-            }
-
-            if (!state.Options.SyncBeforeModelBuild)
+            if (!IsAutoGridBuild(state.Options) || !state.Options.SyncBeforeModelBuild)
             {
                 return;
             }
@@ -2215,7 +2257,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             point.MountReportedDeclination = mnt.Dec; // mount.GetDeclination();
             point.MountReportedRightAscension = mnt.RA;
 
-            point.CaptureTime = mount.GetUTCTime();
+            point.CaptureTime = NormalizeToUtcAssumingUtcIfUnspecified(mount.GetUTCTime());
             point.MountReportedLocalSiderealTime = telescopeMediator.GetInfo().SiderealTime; // mount.GetLocalSiderealTime();
             var captureSettings = GetEffectivePlateSolveCaptureSettings(state.Options);
             var seq = new CaptureSequence(
@@ -2240,9 +2282,8 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 point.ModelPointState = ModelPointStateEnum.Exposing;
                 var exposureData = await this.imagingMediator.CaptureImage(seq, ct, stepProgress);
 
-                point.CaptureTime = exposureData.MetaData.Image.ExposureStart;
-                var midpoint = point.CaptureTime.AddSeconds(captureSettings.ExposureTime / 2);
-                point.CaptureTime = midpoint;
+                var exposureStartUtc = NormalizeToUtcAssumingUtcIfUnspecified(exposureData.MetaData.Image.ExposureStart);
+                point.CaptureTime = exposureStartUtc.AddSeconds(captureSettings.ExposureTime / 2);
                 // Fire and forget to prepare image, which will put the latest captured image in the imaging tab view
                 _ = Task.Run(async () =>
                 {
