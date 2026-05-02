@@ -35,9 +35,11 @@ namespace NINA.Photon.Plugin.ASA
         private const double DEFAULT_REF_WEST_AZIMUTH_DEGREES = 270.0d;
 
         private readonly PluginOptionsAccessor optionsAccessor;
+        private readonly IProfileService profileService;
 
         public ASAOptions(IProfileService profileService)
         {
+            this.profileService = profileService;
             var guid = PluginOptionsAccessor.GetAssemblyGuid(typeof(ASAOptions));
             if (guid == null)
             {
@@ -88,6 +90,17 @@ namespace NINA.Photon.Plugin.ASA
             siderealTrackEndTimeProvider = optionsAccessor.GetValueString("SiderealTrackEndTimeProvider", "Now");
             removeHighRMSPointsAfterBuild = optionsAccessor.GetValueBoolean("RemoveHighRMSPointsAfterBuild", true);
             plateSolveSubframePercentage = optionsAccessor.GetValueDouble("PlateSolveSubframePercentage", 1.0d);
+            syncBeforeModelBuild = optionsAccessor.GetValueBoolean(nameof(SyncBeforeModelBuild), GetLegacySyncBeforeModelBuildDefault());
+            useDedicatedFullSkyPlateSolveSettings = optionsAccessor.GetValueBoolean(nameof(UseDedicatedFullSkyPlateSolveSettings), false);
+            fullSkyPlateSolveExposureTime = optionsAccessor.GetValueDouble(nameof(FullSkyPlateSolveExposureTime), GetDefaultProfilePlateSolveExposureTime());
+            fullSkyPlateSolveBinning = optionsAccessor.GetValueInt32(nameof(FullSkyPlateSolveBinning), GetDefaultProfilePlateSolveBinning());
+            fullSkyPlateSolveGain = optionsAccessor.GetValueInt32(nameof(FullSkyPlateSolveGain), GetDefaultProfilePlateSolveGain());
+            fullSkyPlateSolveOffset = optionsAccessor.GetValueInt32(nameof(FullSkyPlateSolveOffset), GetDefaultProfilePlateSolveOffset());
+            useDedicatedMLPTPlateSolveSettings = optionsAccessor.GetValueBoolean(nameof(UseDedicatedMLPTPlateSolveSettings), false);
+            mlptPlateSolveExposureTime = optionsAccessor.GetValueDouble(nameof(MLPTPlateSolveExposureTime), GetDefaultProfilePlateSolveExposureTime());
+            mlptPlateSolveBinning = optionsAccessor.GetValueInt32(nameof(MLPTPlateSolveBinning), GetDefaultProfilePlateSolveBinning());
+            mlptPlateSolveGain = optionsAccessor.GetValueInt32(nameof(MLPTPlateSolveGain), GetDefaultProfilePlateSolveGain());
+            mlptPlateSolveOffset = optionsAccessor.GetValueInt32(nameof(MLPTPlateSolveOffset), GetDefaultProfilePlateSolveOffset());
             alternateDirectionsBetweenIterations = optionsAccessor.GetValueBoolean("AlternateDirectionsBetweenIterations", true);
             minPointAzimuth = optionsAccessor.GetValueDouble("MinPointAzimuth", 0.5d);
             maxPointAzimuth = optionsAccessor.GetValueDouble("MaxPointAzimuth", 359.5d);
@@ -101,7 +114,11 @@ namespace NINA.Photon.Plugin.ASA
             decJitterSigmaDegrees = optionsAccessor.GetValueDouble(nameof(DecJitterSigmaDegrees), 1.0d);
             isLegacyDDM = optionsAccessor.GetValueBoolean("IsLegacyDDM", true);
             domeControlNINA = optionsAccessor.GetValueBoolean("DomeControlNINA", false);
+            enableMLPTDebugSimulator = optionsAccessor.GetValueBoolean(nameof(EnableMLPTDebugSimulator), false);
             lastMLPT = optionsAccessor.GetValueDateTime("LastMLPT", DateTime.MinValue);
+            activeMLPTDurationSeconds = optionsAccessor.GetValueDouble(nameof(ActiveMLPTDurationSeconds), 0.0d);
+            activeMLPTCaptureDurationSeconds = optionsAccessor.GetValueDouble(nameof(ActiveMLPTCaptureDurationSeconds), 0.0d);
+            activeMLPTPointCount = optionsAccessor.GetValueInt32(nameof(ActiveMLPTPointCount), 0);
             highAltitudeStars = optionsAccessor.GetValueInt32("HighAltitudeStars", 10);
             highAltitudeMin = optionsAccessor.GetValueInt32("HighAltitudeMin", 70);
             highAltitudeMax = optionsAccessor.GetValueInt32("HighAltitudeMax", 89);
@@ -158,6 +175,17 @@ namespace NINA.Photon.Plugin.ASA
             SiderealTrackEndTimeProvider = "Now";
             RemoveHighRMSPointsAfterBuild = true;
             PlateSolveSubframePercentage = 1.0d;
+            SyncBeforeModelBuild = false;
+            UseDedicatedFullSkyPlateSolveSettings = false;
+            FullSkyPlateSolveExposureTime = GetDefaultProfilePlateSolveExposureTime();
+            FullSkyPlateSolveBinning = GetDefaultProfilePlateSolveBinning();
+            FullSkyPlateSolveGain = GetDefaultProfilePlateSolveGain();
+            FullSkyPlateSolveOffset = GetDefaultProfilePlateSolveOffset();
+            UseDedicatedMLPTPlateSolveSettings = false;
+            MLPTPlateSolveExposureTime = GetDefaultProfilePlateSolveExposureTime();
+            MLPTPlateSolveBinning = GetDefaultProfilePlateSolveBinning();
+            MLPTPlateSolveGain = GetDefaultProfilePlateSolveGain();
+            MLPTPlateSolveOffset = GetDefaultProfilePlateSolveOffset();
             AlternateDirectionsBetweenIterations = true;
             MinPointAzimuth = 0.5d;
             MaxPointAzimuth = 359.5d;
@@ -165,7 +193,11 @@ namespace NINA.Photon.Plugin.ASA
             DisableRefractionCorrection = false;
             IsLegacyDDM = true;
             DomeControlNINA = false;
+            EnableMLPTDebugSimulator = false;
             LastMLPT = DateTime.MinValue;
+            ActiveMLPTDurationSeconds = 0.0d;
+            ActiveMLPTCaptureDurationSeconds = 0.0d;
+            ActiveMLPTPointCount = 0;
             MACAddress = "";
             IPAddress = "";
             WolBroadcastIP = "";
@@ -199,8 +231,14 @@ namespace NINA.Photon.Plugin.ASA
         {
             var programdata = System.Environment.GetFolderPath(System.Environment.SpecialFolder.CommonApplicationData);
             var filePath = System.IO.Path.Combine(programdata, "ASA", "Sequence", "PointingPics");
-
             return filePath;
+        }
+
+        private bool GetLegacySyncBeforeModelBuildDefault()
+        {
+            return optionsAccessor.GetValueBoolean("SlewToCorrectPierSideBeforeStart", false)
+                || optionsAccessor.GetValueBoolean("PlateSolveAndSyncBeforeStart", false)
+                || optionsAccessor.GetValueBoolean("EnableNINACoordinateSyncDuringBuild", false);
         }
 
         private void ApplyLegacyZeroSyncReferenceDefaults()
@@ -700,6 +738,190 @@ namespace NINA.Photon.Plugin.ASA
                 }
             }
         }
+
+        private bool syncBeforeModelBuild;
+
+        public bool SyncBeforeModelBuild
+        {
+            get => syncBeforeModelBuild;
+            set
+            {
+                if (syncBeforeModelBuild != value)
+                {
+                    syncBeforeModelBuild = value;
+                    optionsAccessor.SetValueBoolean(nameof(SyncBeforeModelBuild), syncBeforeModelBuild);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private bool useDedicatedFullSkyPlateSolveSettings;
+
+        public bool UseDedicatedFullSkyPlateSolveSettings
+        {
+            get => useDedicatedFullSkyPlateSolveSettings;
+            set
+            {
+                if (useDedicatedFullSkyPlateSolveSettings != value)
+                {
+                    useDedicatedFullSkyPlateSolveSettings = value;
+                    optionsAccessor.SetValueBoolean(nameof(UseDedicatedFullSkyPlateSolveSettings), useDedicatedFullSkyPlateSolveSettings);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private double fullSkyPlateSolveExposureTime;
+
+        public double FullSkyPlateSolveExposureTime
+        {
+            get => fullSkyPlateSolveExposureTime;
+            set
+            {
+                if (Math.Abs(fullSkyPlateSolveExposureTime - value) > double.Epsilon)
+                {
+                    fullSkyPlateSolveExposureTime = value;
+                    optionsAccessor.SetValueDouble(nameof(FullSkyPlateSolveExposureTime), fullSkyPlateSolveExposureTime);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private int fullSkyPlateSolveBinning;
+
+        public int FullSkyPlateSolveBinning
+        {
+            get => fullSkyPlateSolveBinning;
+            set
+            {
+                if (fullSkyPlateSolveBinning != value)
+                {
+                    fullSkyPlateSolveBinning = value;
+                    optionsAccessor.SetValueInt32(nameof(FullSkyPlateSolveBinning), fullSkyPlateSolveBinning);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private int fullSkyPlateSolveGain;
+
+        public int FullSkyPlateSolveGain
+        {
+            get => fullSkyPlateSolveGain;
+            set
+            {
+                if (fullSkyPlateSolveGain != value)
+                {
+                    fullSkyPlateSolveGain = value;
+                    optionsAccessor.SetValueInt32(nameof(FullSkyPlateSolveGain), fullSkyPlateSolveGain);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private int fullSkyPlateSolveOffset;
+
+        public int FullSkyPlateSolveOffset
+        {
+            get => fullSkyPlateSolveOffset;
+            set
+            {
+                if (fullSkyPlateSolveOffset != value)
+                {
+                    fullSkyPlateSolveOffset = value;
+                    optionsAccessor.SetValueInt32(nameof(FullSkyPlateSolveOffset), fullSkyPlateSolveOffset);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private bool useDedicatedMLPTPlateSolveSettings;
+
+        public bool UseDedicatedMLPTPlateSolveSettings
+        {
+            get => useDedicatedMLPTPlateSolveSettings;
+            set
+            {
+                if (useDedicatedMLPTPlateSolveSettings != value)
+                {
+                    useDedicatedMLPTPlateSolveSettings = value;
+                    optionsAccessor.SetValueBoolean(nameof(UseDedicatedMLPTPlateSolveSettings), useDedicatedMLPTPlateSolveSettings);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private double mlptPlateSolveExposureTime;
+
+        public double MLPTPlateSolveExposureTime
+        {
+            get => mlptPlateSolveExposureTime;
+            set
+            {
+                if (Math.Abs(mlptPlateSolveExposureTime - value) > double.Epsilon)
+                {
+                    mlptPlateSolveExposureTime = value;
+                    optionsAccessor.SetValueDouble(nameof(MLPTPlateSolveExposureTime), mlptPlateSolveExposureTime);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private int mlptPlateSolveBinning;
+
+        public int MLPTPlateSolveBinning
+        {
+            get => mlptPlateSolveBinning;
+            set
+            {
+                if (mlptPlateSolveBinning != value)
+                {
+                    mlptPlateSolveBinning = value;
+                    optionsAccessor.SetValueInt32(nameof(MLPTPlateSolveBinning), mlptPlateSolveBinning);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private int mlptPlateSolveGain;
+
+        public int MLPTPlateSolveGain
+        {
+            get => mlptPlateSolveGain;
+            set
+            {
+                if (mlptPlateSolveGain != value)
+                {
+                    mlptPlateSolveGain = value;
+                    optionsAccessor.SetValueInt32(nameof(MLPTPlateSolveGain), mlptPlateSolveGain);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private int mlptPlateSolveOffset;
+
+        public int MLPTPlateSolveOffset
+        {
+            get => mlptPlateSolveOffset;
+            set
+            {
+                if (mlptPlateSolveOffset != value)
+                {
+                    mlptPlateSolveOffset = value;
+                    optionsAccessor.SetValueInt32(nameof(MLPTPlateSolveOffset), mlptPlateSolveOffset);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private double GetDefaultProfilePlateSolveExposureTime() => profileService?.ActiveProfile?.PlateSolveSettings?.ExposureTime ?? 1.0d;
+
+        private int GetDefaultProfilePlateSolveBinning() => profileService?.ActiveProfile?.PlateSolveSettings?.Binning ?? 1;
+
+        private int GetDefaultProfilePlateSolveGain() => profileService?.ActiveProfile?.PlateSolveSettings?.Gain ?? -1;
+
+        private int GetDefaultProfilePlateSolveOffset() => profileService?.ActiveProfile?.CameraSettings?.Offset ?? -1;
 
         private double syncEastAltitude;
 
@@ -1230,6 +1452,22 @@ namespace NINA.Photon.Plugin.ASA
 
         private DateTime lastMLPT;
 
+        private bool enableMLPTDebugSimulator;
+
+        public bool EnableMLPTDebugSimulator
+        {
+            get => enableMLPTDebugSimulator;
+            set
+            {
+                if (enableMLPTDebugSimulator != value)
+                {
+                    enableMLPTDebugSimulator = value;
+                    optionsAccessor.SetValueBoolean(nameof(EnableMLPTDebugSimulator), enableMLPTDebugSimulator);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
         public DateTime LastMLPT
         {
             get => lastMLPT;
@@ -1239,6 +1477,54 @@ namespace NINA.Photon.Plugin.ASA
                 {
                     lastMLPT = value;
                     optionsAccessor.SetValueDateTime("LastMLPT", lastMLPT);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private double activeMLPTDurationSeconds;
+
+        public double ActiveMLPTDurationSeconds
+        {
+            get => activeMLPTDurationSeconds;
+            set
+            {
+                if (Math.Abs(activeMLPTDurationSeconds - value) > double.Epsilon)
+                {
+                    activeMLPTDurationSeconds = value;
+                    optionsAccessor.SetValueDouble(nameof(ActiveMLPTDurationSeconds), activeMLPTDurationSeconds);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private double activeMLPTCaptureDurationSeconds;
+
+        public double ActiveMLPTCaptureDurationSeconds
+        {
+            get => activeMLPTCaptureDurationSeconds;
+            set
+            {
+                if (Math.Abs(activeMLPTCaptureDurationSeconds - value) > double.Epsilon)
+                {
+                    activeMLPTCaptureDurationSeconds = value;
+                    optionsAccessor.SetValueDouble(nameof(ActiveMLPTCaptureDurationSeconds), activeMLPTCaptureDurationSeconds);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private int activeMLPTPointCount;
+
+        public int ActiveMLPTPointCount
+        {
+            get => activeMLPTPointCount;
+            set
+            {
+                if (activeMLPTPointCount != value)
+                {
+                    activeMLPTPointCount = value;
+                    optionsAccessor.SetValueInt32(nameof(ActiveMLPTPointCount), activeMLPTPointCount);
                     RaisePropertyChanged();
                 }
             }

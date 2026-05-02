@@ -53,6 +53,23 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
     public class ModelBuilder : IModelBuilder
     {
         private static IComparer<double> DOUBLE_COMPARER = Comparer<double>.Default;
+        private const double POST_BUILD_SYNC_ALTITUDE_DEGREES = 50.0d;
+
+        private readonly struct PlateSolveCaptureSettings
+        {
+            public PlateSolveCaptureSettings(double exposureTime, int binning, int gain, int offset)
+            {
+                ExposureTime = exposureTime;
+                Binning = Math.Max(1, binning);
+                Gain = gain;
+                Offset = offset;
+            }
+
+            public double ExposureTime { get; }
+            public int Binning { get; }
+            public int Gain { get; }
+            public int Offset { get; }
+        }
 
         private readonly IMount mount;
         private readonly IMountModelMediator mountModelMediator;
@@ -73,8 +90,11 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
         private volatile int processingInProgressCount;
         private bool IsTelescopePositionRestored = false;
         private bool forceNextPierSideAvailable = true;
+        private bool hasPendingPostBuildSync;
 
         private List<ModelPoint> modelPoints1 = new List<ModelPoint>();
+
+        public bool HasPendingPostBuildSync => hasPendingPostBuildSync;
 
         public event EventHandler<PointNextUpEventArgs> PointNextUp;
 
@@ -98,6 +118,115 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             this.guiderMediator = guiderMediator;
 
             this.asaOptions = asaOptions;
+        }
+
+        public async Task<bool> SyncAfterModelBuild(CancellationToken ct = default, IProgress<ApplicationStatus> stepProgress = null)
+        {
+            var previousNINANoSync = profileService.ActiveProfile.TelescopeSettings.NoSync;
+            var currentPierSide = telescopeMediator.GetInfo().SideOfPier;
+            var syncAzimuth = GetPostBuildSyncAzimuthDegrees();
+            var syncPoint = new ModelPoint(telescopeMediator)
+            {
+                Altitude = POST_BUILD_SYNC_ALTITUDE_DEGREES,
+                Azimuth = syncAzimuth,
+                IsSyncPoint = true,
+                DesiredPierSide = currentPierSide,
+                ModelPointState = ModelPointStateEnum.Generated,
+            };
+            var options = CreatePostBuildSyncOptions();
+            var state = new ModelBuilderState(
+                options,
+                new List<ModelPoint>() { syncPoint },
+                mount,
+                domeMediator,
+                weatherDataMediator,
+                cameraMediator,
+                profileService,
+                asaOptions);
+
+            try
+            {
+                if (previousNINANoSync)
+                {
+                    profileService.ActiveProfile.TelescopeSettings.NoSync = false;
+                    Logger.Info("Enabled NINA coordinate sync for post-build model sync. It will be restored after completion");
+                }
+
+                var targetCoordinates = GetPointCoordinates(state, syncPoint);
+                if (currentPierSide != PierSide.pierUnknown)
+                {
+                    Logger.Info($"Post-build sync forcing current pier side {currentPierSide} before slewing to Alt={POST_BUILD_SYNC_ALTITUDE_DEGREES:0.###}, Az={syncAzimuth:0.###}");
+                    TryForceNextPierSide(currentPierSide, "post-build sync");
+                }
+                else
+                {
+                    Logger.Warning("Current pier side is unknown. Post-build sync will slew without forcing the current side");
+                }
+
+                if (!await telescopeMediator.SlewToCoordinatesAsync(targetCoordinates, ct))
+                {
+                    Logger.Warning("Failed to slew to the post-build sync position");
+                    Notification.ShowWarning("Failed to slew to the post-build sync position");
+                    return false;
+                }
+
+                var processingSlotAcquired = false;
+                await state.ProcessingSemaphore.WaitAsync(ct);
+                processingSlotAcquired = true;
+                try
+                {
+                    var exposureData = await CaptureImage(state, syncPoint, stepProgress, ct);
+                    if (exposureData == null)
+                    {
+                        Logger.Warning("Failed to capture the post-build sync exposure");
+                        Notification.ShowWarning("Failed to capture the post-build sync exposure");
+                        if (processingSlotAcquired)
+                        {
+                            state.ProcessingSemaphore.Release();
+                        }
+                        return false;
+                    }
+
+                    var success = await SolveAndSyncPostBuildPoint(state, syncPoint, exposureData, ct);
+                    processingSlotAcquired = false;
+                    if (success)
+                    {
+                        Notification.ShowInformation("Post-build sync completed. In Autoslew, also set the new homeposition.");
+                        Logger.Info("Post-build sync completed. Reminder: set the new homeposition in Autoslew");
+                    }
+                    else
+                    {
+                        Notification.ShowWarning("Post-build sync failed");
+                    }
+
+                    return success;
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
+                catch (Exception e)
+                {
+                    Logger.Error("Post-build sync failed", e);
+                    Notification.ShowWarning("Post-build sync failed");
+                    if (processingSlotAcquired)
+                    {
+                        state.ProcessingSemaphore.Release();
+                    }
+                    return false;
+                }
+            }
+            finally
+            {
+                hasPendingPostBuildSync = false;
+                profileService.ActiveProfile.TelescopeSettings.NoSync = previousNINANoSync;
+                Logger.Info($"Restored NINA coordinate sync setting after post-build sync. NoSync={previousNINANoSync}");
+            }
+        }
+
+        private double GetPostBuildSyncAzimuthDegrees()
+        {
+            return profileService.ActiveProfile.AstrometrySettings.Latitude >= 0.0d ? 180.0d : 0.0d;
         }
 
         private class ModelBuilderState
@@ -148,7 +277,8 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                     }
                     else
                     {
-                        var binning = profileService.ActiveProfile.PlateSolveSettings.Binning;
+                        var captureSettings = GetEffectivePlateSolveCaptureSettings(options, profileService);
+                        var binning = captureSettings.Binning;
 
                         Logger.Info($"Using {options.PlateSolveSubframePercentage * 100.0d}% subsampling with {binning}x binning for plate solves.");
                         var fullWidth = cameraInfo.XSize / binning;
@@ -234,6 +364,58 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             }
         }
 
+        private static bool IsMlptBuild(ModelBuilderOptions options)
+        {
+            return options.ModelPointGenerationType == ModelPointGenerationTypeEnum.SiderealPath;
+        }
+
+        private static bool IsAutoGridBuild(ModelBuilderOptions options)
+        {
+            return options.ModelPointGenerationType == ModelPointGenerationTypeEnum.AutoGrid;
+        }
+
+        private static DateTime NormalizeToUtcAssumingUtcIfUnspecified(DateTime value)
+        {
+            if (value == DateTime.MinValue)
+            {
+                return value;
+            }
+
+            if (value.Kind == DateTimeKind.Utc)
+            {
+                return value;
+            }
+
+            if (value.Kind == DateTimeKind.Local)
+            {
+                return value.ToUniversalTime();
+            }
+
+            return DateTime.SpecifyKind(value, DateTimeKind.Utc);
+        }
+
+        private static PlateSolveCaptureSettings GetEffectivePlateSolveCaptureSettings(ModelBuilderOptions options, IProfileService profileService)
+        {
+            if (IsMlptBuild(options) && options.UseDedicatedMLPTPlateSolveSettings)
+            {
+                return new PlateSolveCaptureSettings(options.MLPTPlateSolveExposureTime, options.MLPTPlateSolveBinning, options.MLPTPlateSolveGain, options.MLPTPlateSolveOffset);
+            }
+
+            if (!IsMlptBuild(options) && options.UseDedicatedFullSkyPlateSolveSettings)
+            {
+                return new PlateSolveCaptureSettings(options.FullSkyPlateSolveExposureTime, options.FullSkyPlateSolveBinning, options.FullSkyPlateSolveGain, options.FullSkyPlateSolveOffset);
+            }
+
+            var plateSolveSettings = profileService.ActiveProfile.PlateSolveSettings;
+            var cameraSettings = profileService.ActiveProfile.CameraSettings;
+            return new PlateSolveCaptureSettings(plateSolveSettings.ExposureTime, plateSolveSettings.Binning, plateSolveSettings.Gain, cameraSettings.Offset ?? -1);
+        }
+
+        private PlateSolveCaptureSettings GetEffectivePlateSolveCaptureSettings(ModelBuilderOptions options)
+        {
+            return GetEffectivePlateSolveCaptureSettings(options, profileService);
+        }
+
         public async Task<LoadedAlignmentModel> Build(IList<ModelPoint> modelPoints, ModelBuilderOptions options, CancellationToken ct = default, CancellationToken stopToken = default, IProgress<ApplicationStatus> overallProgress = null, IProgress<ApplicationStatus> stepProgress = null)
         {
             ct.ThrowIfCancellationRequested();
@@ -286,6 +468,15 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 Logger.Info($"Filter before building model set to {oldFilter.Name}, and will be restored after completion");
             }
 
+            if (IsMlptBuild(options))
+            {
+                asaOptions.ActiveMLPTCaptureDurationSeconds = 0.0d;
+                foreach (var modelPoint in modelPoints)
+                {
+                    modelPoint.CaptureTime = DateTime.MinValue;
+                }
+            }
+
             var reenableDomeFollower = false;
             var state = new ModelBuilderState(options, modelPoints, mount, domeMediator, weatherDataMediator, cameraMediator, profileService, asaOptions);
             if (state.UseDome && domeMediator.IsFollowingScope)
@@ -303,6 +494,20 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             {
                 profileService.ActiveProfile.DomeSettings.SyncSlewDomeWhenMountSlews = false;
                 reenableDomeSyncSlew = true;
+            }
+
+            var enablePreStartNinaCoordinateSync = options.SyncBeforeModelBuild && IsAutoGridBuild(options);
+            var restoreNINACoordinateSync = false;
+            var previousNINANoSync = profileService.ActiveProfile.TelescopeSettings.NoSync;
+            if (enablePreStartNinaCoordinateSync)
+            {
+                restoreNINACoordinateSync = true;
+                if (previousNINANoSync)
+                {
+                    profileService.ActiveProfile.TelescopeSettings.NoSync = false;
+                    Logger.Info("Enabled NINA coordinate sync for ASA model build. It will be restored after completion");
+                    Notification.ShowInformation("Enabled NINA coordinate sync for ASA model build. It will be restored after completion");
+                }
             }
 
             if (reenableDomeFollower || reenableDomeSyncSlew)
@@ -337,6 +542,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
 
             try
             {
+                await RunPreStartSetupIfNecessary(state, stepProgress, linkedCts.Token);
                 return await DoBuild(state, linkedCts.Token, stopToken, overallProgress, stepProgress, startCoordinates);
             }
             finally
@@ -377,6 +583,12 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 {
                     profileService.ActiveProfile.DomeSettings.SyncSlewDomeWhenMountSlews = true; ;
                     Logger.Info("Re-enabled dome sync slew after ASA model build");
+                }
+
+                if (restoreNINACoordinateSync)
+                {
+                    profileService.ActiveProfile.TelescopeSettings.NoSync = previousNINANoSync;
+                    Logger.Info($"Restored NINA coordinate sync setting after ASA model build. NoSync={previousNINANoSync}");
                 }
 
                 if (reenableRefractionCorrection)
@@ -442,6 +654,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             var options = state.Options;
 
             IsTelescopePositionRestored = false;
+            hasPendingPostBuildSync = false;
 
             var stopOrCancelCts = CancellationTokenSource.CreateLinkedTokenSource(ct, stopToken);
             var stopOrCancelCt = stopOrCancelCts.Token;
@@ -675,6 +888,29 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                     }
                     else
                     {
+                        var plannedPoints = state.ValidPoints
+                            .Where(point => point.PlannedCaptureTime != DateTime.MinValue)
+                            .OrderBy(point => point.PlannedCaptureTime)
+                            .ToList();
+                        var sentAtLocal = DateTime.Now;
+                        var sentAtUtc = sentAtLocal.ToUniversalTime();
+                        var firstCaptureTime = state.ValidPoints
+                            .Where(point => point.CaptureTime != DateTime.MinValue)
+                            .OrderBy(point => point.CaptureTime)
+                            .Select(point => point.CaptureTime)
+                            .FirstOrDefault();
+                        var firstCaptureTimeUtc = NormalizeToUtcAssumingUtcIfUnspecified(firstCaptureTime);
+                        var activeDurationSeconds = plannedPoints.Count >= 2
+                            ? (plannedPoints[plannedPoints.Count - 1].PlannedCaptureTime - plannedPoints[0].PlannedCaptureTime).TotalSeconds
+                            : 0.0d;
+                        var activeCaptureDurationSeconds = firstCaptureTimeUtc != DateTime.MinValue
+                            ? Math.Max(0.0d, (sentAtUtc - firstCaptureTimeUtc).TotalSeconds)
+                            : 0.0d;
+
+                        asaOptions.ActiveMLPTDurationSeconds = Math.Max(0.0d, activeDurationSeconds);
+                        asaOptions.ActiveMLPTCaptureDurationSeconds = activeCaptureDurationSeconds;
+                        asaOptions.ActiveMLPTPointCount = Math.Max(0, plannedPoints.Count);
+                        asaOptions.LastMLPT = sentAtLocal;
                         Logger.Info("MLPT pointings sent");
                         Notification.ShowSuccess("MLPT pointings sent");
                     }
@@ -722,7 +958,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                         writer.WriteLine($"\"'{point.CaptureTime:yyyy-MM-ddTHH:mm:ss.ff}'\"");
                         writer.WriteLine($"\"{point.CaptureTime:mm:ss.ff}\"");
 
-                        writer.WriteLine($"\"{profileService.ActiveProfile.PlateSolveSettings.ExposureTime}\"");
+                        writer.WriteLine($"\"{GetEffectivePlateSolveCaptureSettings(state.Options).ExposureTime}\"");
 
                         string psRA = point.PlateSolvedRightAscension.ToString().Replace(",", ".");
                         string psDEC = point.PlateSolvedDeclination.ToString().Replace(",", ".");
@@ -748,6 +984,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
 
                 Logger.Info($"POX file {filePath} created!");
                 Notification.ShowSuccess($"POX file {filePath} created!");
+                hasPendingPostBuildSync = true;
                 return;
             }
             else
@@ -860,14 +1097,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
 
         private async Task<bool> SlewTelescopeToPoint(ModelBuilderState state, ModelPoint point, CancellationToken ct)
         {
-            // Instead of issuing an AltAz slew directly (which requires direct communication with the mount), calculate refraction-adjusted RA/Dec coordinates and slew there instead
-            var nextPointCoordinates = point.ToCelestial(pressurehPa: state.PressurehPa, tempCelcius: state.Temperature, relativeHumidity: state.Humidity, wavelength: state.Wavelength, dateTime: nowProvider);
-            if (state.SyncSeparation != null)
-            {
-                var nextPointCoordinatesAdjusted = nextPointCoordinates + state.SyncSeparation;
-                Logger.Info($"Adjusted {nextPointCoordinates} to {nextPointCoordinatesAdjusted}");
-                nextPointCoordinates = nextPointCoordinatesAdjusted;
-            }
+            var nextPointCoordinates = GetPointCoordinates(state, point);
 
             if (state.Options.ModelPointGenerationType != ModelPointGenerationTypeEnum.SiderealPath)
             {
@@ -880,6 +1110,226 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
 
             Logger.Info($"Slewing to {nextPointCoordinates} for point at Alt={point.Altitude:0.###}, Az={point.Azimuth:0.###}");
             return await this.telescopeMediator.SlewToCoordinatesAsync(nextPointCoordinates, ct);
+        }
+
+        private Coordinates GetPointCoordinates(ModelBuilderState state, ModelPoint point)
+        {
+            // Instead of issuing an AltAz slew directly (which requires direct communication with the mount), calculate refraction-adjusted RA/Dec coordinates and slew there instead
+            var pointCoordinates = point.ToCelestial(pressurehPa: state.PressurehPa, tempCelcius: state.Temperature, relativeHumidity: state.Humidity, wavelength: state.Wavelength, dateTime: nowProvider);
+            if (state.SyncSeparation != null)
+            {
+                var adjustedPointCoordinates = pointCoordinates + state.SyncSeparation;
+                Logger.Info($"Adjusted {pointCoordinates} to {adjustedPointCoordinates}");
+                pointCoordinates = adjustedPointCoordinates;
+            }
+
+            return pointCoordinates;
+        }
+
+        private async Task RunPreStartSetupIfNecessary(ModelBuilderState state, IProgress<ApplicationStatus> stepProgress, CancellationToken ct)
+        {
+            if (!IsAutoGridBuild(state.Options) || !state.Options.SyncBeforeModelBuild)
+            {
+                return;
+            }
+
+            var initialPoint = GetFirstTraversalPoint(state);
+            if (initialPoint == null)
+            {
+                Logger.Warning("Skipping pre-start setup because no eligible traversal point was found");
+                Notification.ShowWarning("Skipping pre-start setup because no eligible model point was found");
+                return;
+            }
+
+            var initialPointCoordinates = GetPointCoordinates(state, initialPoint);
+            Logger.Info($"Pre-start model-build sync enabled. Forcing side {initialPoint.DesiredPierSide} based on first traversal point {initialPoint}");
+            TryForceNextPierSide(initialPoint, initialPointCoordinates);
+
+            await RunPreStartPlateSolveAndSync(state, initialPoint, stepProgress, ct);
+        }
+
+        private ModelBuilderOptions CreatePostBuildSyncOptions()
+        {
+            return new ModelBuilderOptions()
+            {
+                AllowBlindSolves = asaOptions.AllowBlindSolves,
+                MaxConcurrency = 1,
+                PlateSolveSubframePercentage = asaOptions.PlateSolveSubframePercentage,
+                UseDedicatedFullSkyPlateSolveSettings = asaOptions.UseDedicatedFullSkyPlateSolveSettings,
+                FullSkyPlateSolveExposureTime = asaOptions.FullSkyPlateSolveExposureTime,
+                FullSkyPlateSolveBinning = asaOptions.FullSkyPlateSolveBinning,
+                FullSkyPlateSolveGain = asaOptions.FullSkyPlateSolveGain,
+                FullSkyPlateSolveOffset = asaOptions.FullSkyPlateSolveOffset,
+            };
+        }
+
+        private ModelPoint GetFirstTraversalPoint(ModelBuilderState state)
+        {
+            var eligiblePoints = state.ValidPoints.Where(IsPointEligibleForBuild).ToList();
+            var orderedPoints = BuildOrderedTraversalPoints(eligiblePoints, state.Options, state.PointAzimuthComparer, cloneNonSyncPoints: true);
+            var initialPoint = orderedPoints.FirstOrDefault(point => !point.IsSyncPoint);
+            if (initialPoint != null && initialPoint.DesiredPierSide == PierSide.pierUnknown)
+            {
+                var initialPointCoordinates = GetPointCoordinates(state, initialPoint);
+                var longitudeDegrees = profileService.ActiveProfile.AstrometrySettings.Longitude;
+                var lst = AstroUtil.GetLocalSiderealTimeNow(longitudeDegrees);
+                initialPoint.DesiredPierSide = MeridianFlip.ExpectedPierSide(initialPointCoordinates, Angle.ByHours(lst));
+            }
+
+            return initialPoint;
+        }
+
+        private async Task RunPreStartPlateSolveAndSync(ModelBuilderState state, ModelPoint initialPoint, IProgress<ApplicationStatus> stepProgress, CancellationToken ct)
+        {
+            var startupSyncPoint = CreatePreStartSyncPoint(state, initialPoint);
+            Logger.Info($"Pre-start plate solve and sync enabled. Using startup sync point Alt={startupSyncPoint.Altitude:0.###}, Az={startupSyncPoint.Azimuth:0.###}, PierSide={startupSyncPoint.DesiredPierSide}");
+
+            if (!await SlewTelescopeToPoint(state, startupSyncPoint, ct))
+            {
+                Logger.Warning("Failed to slew to startup sync point. Continuing model build without pre-start plate solve and sync");
+                Notification.ShowWarning("Failed to slew to startup sync point. Continuing model build without pre-start plate solve and sync");
+                return;
+            }
+
+            var processingSlotAcquired = false;
+            await state.ProcessingSemaphore.WaitAsync(ct);
+            processingSlotAcquired = true;
+            try
+            {
+                var exposureData = await CaptureImage(state, startupSyncPoint, stepProgress, ct);
+                if (exposureData == null)
+                {
+                    Logger.Warning("Failed to capture startup sync exposure. Continuing model build without pre-start plate solve and sync");
+                    Notification.ShowWarning("Failed to capture startup sync exposure. Continuing model build without pre-start plate solve and sync");
+                    if (processingSlotAcquired)
+                    {
+                        state.ProcessingSemaphore.Release();
+                    }
+                    return;
+                }
+
+                var success = await SolveAndSyncPreStartPoint(state, startupSyncPoint, exposureData, ct);
+                processingSlotAcquired = false;
+                if (!success)
+                {
+                    Logger.Warning("Failed to plate solve startup sync exposure. Continuing model build without pre-start plate solve and sync");
+                    Notification.ShowWarning("Failed to plate solve startup sync exposure. Continuing model build without pre-start plate solve and sync");
+                }
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (Exception e)
+            {
+                Logger.Warning($"Startup plate solve and sync failed: {e.Message}");
+                Notification.ShowWarning("Startup plate solve and sync failed. Continuing model build");
+                if (processingSlotAcquired)
+                {
+                    state.ProcessingSemaphore.Release();
+                }
+            }
+        }
+
+        private async Task<bool> SolveAndSyncPreStartPoint(ModelBuilderState state, ModelPoint point, IExposureData exposureData, CancellationToken ct)
+        {
+            bool success = false;
+            try
+            {
+                Interlocked.Increment(ref processingInProgressCount);
+
+                ct.ThrowIfCancellationRequested();
+                point.ModelPointState = ModelPointStateEnum.Processing;
+                var plateSolveResult = await SolveImage(state.Options, exposureData, ct);
+                if (plateSolveResult?.Success != true)
+                {
+                    Logger.Error($"Failed to plate solve startup sync point: {point}");
+                    return false;
+                }
+
+                ct.ThrowIfCancellationRequested();
+                point.PlateSolvedRightAscension = plateSolveResult.Coordinates.RA;
+                point.PlateSolvedDeclination = plateSolveResult.Coordinates.Dec;
+
+                Logger.Info($"Performing NINA coordinate sync for startup point using solved coordinates {plateSolveResult.Coordinates}");
+                success = await telescopeMediator.Sync(plateSolveResult.Coordinates);
+                if (!success)
+                {
+                    Logger.Warning("NINA coordinate sync for startup point failed");
+                }
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            catch (Exception e)
+            {
+                Logger.Error($"Exception during startup solve and sync for point: {point}", e);
+            }
+            finally
+            {
+                point.ModelPointState = success ? ModelPointStateEnum.Generated : ModelPointStateEnum.Failed;
+                Interlocked.Decrement(ref processingInProgressCount);
+                state.ProcessingSemaphore.Release();
+            }
+
+            return success;
+        }
+
+        private async Task<bool> SolveAndSyncPostBuildPoint(ModelBuilderState state, ModelPoint point, IExposureData exposureData, CancellationToken ct)
+        {
+            bool success = false;
+            try
+            {
+                Interlocked.Increment(ref processingInProgressCount);
+
+                ct.ThrowIfCancellationRequested();
+                point.ModelPointState = ModelPointStateEnum.Processing;
+                var plateSolveResult = await SolveImage(state.Options, exposureData, ct);
+                if (plateSolveResult?.Success != true)
+                {
+                    Logger.Error($"Failed to plate solve post-build sync point: {point}");
+                    return false;
+                }
+
+                ct.ThrowIfCancellationRequested();
+                point.PlateSolvedRightAscension = plateSolveResult.Coordinates.RA;
+                point.PlateSolvedDeclination = plateSolveResult.Coordinates.Dec;
+
+                Logger.Info($"Performing NINA coordinate sync for post-build sync point using solved coordinates {plateSolveResult.Coordinates}");
+                success = await telescopeMediator.Sync(plateSolveResult.Coordinates);
+                if (!success)
+                {
+                    Logger.Warning("NINA coordinate sync for post-build sync point failed");
+                }
+            }
+            catch (OperationCanceledException)
+            {
+            }
+            catch (Exception e)
+            {
+                Logger.Error($"Exception during post-build solve and sync for point: {point}", e);
+            }
+            finally
+            {
+                point.ModelPointState = success ? ModelPointStateEnum.Generated : ModelPointStateEnum.Failed;
+                Interlocked.Decrement(ref processingInProgressCount);
+                state.ProcessingSemaphore.Release();
+            }
+
+            return success;
+        }
+
+        private ModelPoint CreatePreStartSyncPoint(ModelBuilderState state, ModelPoint initialPoint)
+        {
+            var syncAzimuth = GetPostBuildSyncAzimuthDegrees();
+            return new ModelPoint(telescopeMediator)
+            {
+                Altitude = POST_BUILD_SYNC_ALTITUDE_DEGREES,
+                Azimuth = syncAzimuth,
+                IsSyncPoint = true,
+                DesiredPierSide = initialPoint.DesiredPierSide,
+                ModelPointState = ModelPointStateEnum.Generated
+            };
         }
 
         private void TryForceNextPierSide(ModelPoint point, Coordinates targetCoordinates)
@@ -898,11 +1348,21 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 point.DesiredPierSide = desiredPierSide;
             }
 
+            TryForceNextPierSide(desiredPierSide, "model build");
+        }
+
+        private void TryForceNextPierSide(PierSide desiredPierSide, string operation)
+        {
+            if (!forceNextPierSideAvailable || desiredPierSide == PierSide.pierUnknown)
+            {
+                return;
+            }
+
             var forceNextSideResult = mount.ForceNextPierSide(desiredPierSide);
             if (!forceNextSideResult)
             {
                 forceNextPierSideAvailable = false;
-                Logger.Warning("Disabling forced pier-side slews for this build because ASCOM action forcenextpierside failed");
+                Logger.Warning($"Disabling forced pier-side slews because ASCOM action forcenextpierside failed during {operation}");
             }
         }
 
@@ -1797,15 +2257,20 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             point.MountReportedDeclination = mnt.Dec; // mount.GetDeclination();
             point.MountReportedRightAscension = mnt.RA;
 
-            point.CaptureTime = mount.GetUTCTime();
+            point.CaptureTime = NormalizeToUtcAssumingUtcIfUnspecified(mount.GetUTCTime());
             point.MountReportedLocalSiderealTime = telescopeMediator.GetInfo().SiderealTime; // mount.GetLocalSiderealTime();
+            var captureSettings = GetEffectivePlateSolveCaptureSettings(state.Options);
             var seq = new CaptureSequence(
-                profileService.ActiveProfile.PlateSolveSettings.ExposureTime,
+                captureSettings.ExposureTime,
                 CaptureSequence.ImageTypes.SNAPSHOT,
                 profileService.ActiveProfile.PlateSolveSettings.Filter,
-                new BinningMode(profileService.ActiveProfile.PlateSolveSettings.Binning, profileService.ActiveProfile.PlateSolveSettings.Binning),
+                new BinningMode((short)captureSettings.Binning, (short)captureSettings.Binning),
                 1
-            );
+            )
+            {
+                Gain = captureSettings.Gain,
+                Offset = captureSettings.Offset,
+            };
             if (state.PlateSolveSubsample != null)
             {
                 seq.SubSambleRectangle = state.PlateSolveSubsample;
@@ -1817,9 +2282,8 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 point.ModelPointState = ModelPointStateEnum.Exposing;
                 var exposureData = await this.imagingMediator.CaptureImage(seq, ct, stepProgress);
 
-                point.CaptureTime = exposureData.MetaData.Image.ExposureStart;
-                var midpoint = point.CaptureTime.AddSeconds(profileService.ActiveProfile.PlateSolveSettings.ExposureTime / 2);
-                point.CaptureTime = midpoint;
+                var exposureStartUtc = NormalizeToUtcAssumingUtcIfUnspecified(exposureData.MetaData.Image.ExposureStart);
+                point.CaptureTime = exposureStartUtc.AddSeconds(captureSettings.ExposureTime / 2);
                 // Fire and forget to prepare image, which will put the latest captured image in the imaging tab view
                 _ = Task.Run(async () =>
                 {
@@ -1839,12 +2303,13 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
 
         private async Task<PlateSolveResult> SolveImage(ModelBuilderOptions options, IExposureData exposureData, CancellationToken ct)
         {
+            var captureSettings = GetEffectivePlateSolveCaptureSettings(options);
             var plateSolver = plateSolverFactory.GetPlateSolver(profileService.ActiveProfile.PlateSolveSettings);
             var blindSolver = options.AllowBlindSolves ? plateSolverFactory.GetBlindSolver(profileService.ActiveProfile.PlateSolveSettings) : null;
             var solver = plateSolverFactory.GetImageSolver(plateSolver, blindSolver);
             var parameter = new PlateSolveParameter()
             {
-                Binning = profileService.ActiveProfile.PlateSolveSettings.Binning,
+                Binning = captureSettings.Binning,
                 Coordinates = telescopeMediator.GetCurrentPosition(),
                 DownSampleFactor = profileService.ActiveProfile.PlateSolveSettings.DownSampleFactor,
                 FocalLength = profileService.ActiveProfile.TelescopeSettings.FocalLength,

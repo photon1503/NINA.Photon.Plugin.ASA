@@ -228,6 +228,9 @@ namespace NINA.Photon.Plugin.ASA.MLTP
             //initialized = false;
             //initialTime = DateTime.MinValue;
             options.LastMLPT = DateTime.MinValue;
+            options.ActiveMLPTDurationSeconds = 0.0d;
+            options.ActiveMLPTCaptureDurationSeconds = 0.0d;
+            options.ActiveMLPTPointCount = 0;
             base.SequenceBlockTeardown();
         }
         */
@@ -279,7 +282,6 @@ namespace NINA.Photon.Plugin.ASA.MLTP
                 throw new Exception("ASA MLPT model build failed");
             }
             initialTime = DateTime.Now;
-            options.LastMLPT = DateTime.Now;
 
             if (Recenter)
             {

@@ -978,36 +978,6 @@
                             IsChecked="{Binding SiderealTrackPreBalanceFarEndSlew}"
                             ToolTip="When enabled, MLPT does an initial far-end slew and returns to the first point to pre-balance for the final pier-side change (last Wechsel)." />
 
-                        <TextBlock
-                            Grid.Row="8" Grid.Column="0"
-                            Margin="0,5,0,0"
-                            HorizontalAlignment="Left"
-                            VerticalAlignment="Center"
-                            Text="Relative"
-                            ToolTip="When enabled, uses the first solved point as zero reference for MLPT error charts" />
-                        <CheckBox
-                            Grid.Row="8" Grid.Column="1"
-                            Margin="10,5,0,0"
-                            HorizontalAlignment="Left"
-                            VerticalAlignment="Center"
-                            IsChecked="{Binding UseRelativeMlptErrors}"
-                            ToolTip="When enabled, uses the first solved point as zero reference for MLPT error charts" />
-
-                        <TextBlock
-                            Grid.Row="9" Grid.Column="0"
-                            Margin="0,5,0,0"
-                            HorizontalAlignment="Left"
-                            VerticalAlignment="Center"
-                            Text="Match Y-axis scale"
-                            ToolTip="When enabled, both MLPT error charts use the same Y-axis limit based on the larger max error" />
-                        <CheckBox
-                            Grid.Row="9" Grid.Column="1"
-                            Margin="10,5,0,0"
-                            HorizontalAlignment="Left"
-                            VerticalAlignment="Center"
-                            IsChecked="{Binding UseUnifiedMlptErrorScale}"
-                            ToolTip="When enabled, both MLPT error charts use the same Y-axis limit based on the larger max error" />
-
                 
                     </Grid>
                 </GroupBox>
@@ -1038,8 +1008,8 @@
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
                             <RowDefinition />
-                            <RowDefinition Style="{StaticResource HideOnNoRetries}" />
                             <RowDefinition />
+                            <RowDefinition Style="{StaticResource HideOnNoRetries}" />
                             <RowDefinition />
                             <RowDefinition />
                             <RowDefinition />
@@ -1069,10 +1039,25 @@
                             Grid.Row="1" Grid.Column="0"
                             HorizontalAlignment="Left"
                             VerticalAlignment="Center"
+                            Text="Sync Before Model Build"
+                            ToolTip="Before a model build starts, force the pier side required by the first traversal point, slew to the same hemisphere-aware 50 degree meridian sync point used by Final Sync, capture and solve once, perform a real NINA coordinate sync, and restore NINA's previous No Sync setting after the build"
+                            Visibility="{Binding IsSyncOptionsVisible, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}" />
+                        <CheckBox
+                            Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"
+                            Margin="10,5,0,0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            IsChecked="{Binding SyncBeforeModelBuild}"
+                            ToolTip="Before a model build starts, force the pier side required by the first traversal point, slew to the same hemisphere-aware 50 degree meridian sync point used by Final Sync, capture and solve once, perform a real NINA coordinate sync, and restore NINA's previous No Sync setting after the build"
+                            Visibility="{Binding IsSyncOptionsVisible, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}" />
+                        <TextBlock
+                            Grid.Row="2" Grid.Column="0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
                             Text="Max Failed Points"
                             ToolTip="{StaticResource MaxFailedPoints_Tooltip}" />
                         <ninactrl:UnitTextBox
-                            Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"
+                            Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="2"
                             MinWidth="80"
                             Margin="10,5,0,0"
                             HorizontalAlignment="Left"
@@ -1087,7 +1072,7 @@
                             </Binding>
                         </ninactrl:UnitTextBox>
 
-                        <UniformGrid Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="3" Rows="1" Columns="2">
+                        <UniformGrid Grid.Row="6" Grid.Column="0" Grid.ColumnSpan="3" Rows="1" Columns="3">
                             <ninactrl:CancellableButton
                                 Height="30"
                                 Margin="10,10,5,10"
@@ -1116,6 +1101,25 @@
                                         Fill="{StaticResource PrimaryBrush}"
                                         Stretch="Uniform" />
                                 </Grid>
+                            </Button>
+                            <Button
+                                Height="30"
+                                Margin="5,10,10,10"
+                                Command="{Binding SyncAfterModelBuildCommand}">
+                                <Button.IsEnabled>
+                                    <MultiBinding Converter="{StaticResource BooleanAndConverter}">
+                                        <Binding Path="TelescopeInfo.Connected" />
+                                        <Binding Path="SyncAfterModelBuildAvailable" />
+                                        <Binding Path="BuildInProgress" Converter="{StaticResource InverseBooleanConverter}" />
+                                        <Binding Path="SyncAfterModelBuildInProgress" Converter="{StaticResource InverseBooleanConverter}" />
+                                    </MultiBinding>
+                                </Button.IsEnabled>
+                                <Button.ToolTip>
+                                    <ToolTip ToolTipService.ShowOnDisabled="True">
+                                        <TextBlock Text="Available only after a new POX file is created. Enables NINA sync, slews to the hemisphere-aware meridian sync point at 50 degrees without changing pier side, plate solves, syncs the mount, then restores NINA's sync setting" />
+                                    </ToolTip>
+                                </Button.ToolTip>
+                                <TextBlock Foreground="{StaticResource ButtonForegroundBrush}" Text="Final Sync" ToolTip="Run post-build sync" />
                             </Button>
                         </UniformGrid>
                     </Grid>
@@ -1189,6 +1193,8 @@
                             <ColumnDefinition Width="Auto" SharedSizeGroup="SettingsCol2" />
                         </Grid.ColumnDefinitions>
                         <Grid.RowDefinitions>
+                            <RowDefinition />
+                            <RowDefinition />
                             <RowDefinition />
                             <RowDefinition />
                             <RowDefinition />
@@ -1309,6 +1315,40 @@
                             HorizontalAlignment="Left"
                             VerticalAlignment="Center"
                             IsChecked="{Binding ShowMeridianLimitsInCharts}" />
+
+                        <TextBlock
+                            Grid.Row="7" Grid.Column="0"
+                            Margin="0,5,0,0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Text="Relative"
+                            ToolTip="When enabled, uses the first solved point as zero reference for MLPT error charts"
+                            Visibility="{Binding AreMlptErrorChartsVisible, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}" />
+                        <CheckBox
+                            Grid.Row="7" Grid.Column="1" Grid.ColumnSpan="2"
+                            Margin="10,5,0,0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            IsChecked="{Binding UseRelativeMlptErrors}"
+                            ToolTip="When enabled, uses the first solved point as zero reference for MLPT error charts"
+                            Visibility="{Binding AreMlptErrorChartsVisible, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}" />
+
+                        <TextBlock
+                            Grid.Row="8" Grid.Column="0"
+                            Margin="0,5,0,0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            Text="Match Y-axis scale"
+                            ToolTip="When enabled, both MLPT error charts use the same Y-axis limit based on the larger max error"
+                            Visibility="{Binding AreMlptErrorChartsVisible, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}" />
+                        <CheckBox
+                            Grid.Row="8" Grid.Column="1" Grid.ColumnSpan="2"
+                            Margin="10,5,0,0"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Center"
+                            IsChecked="{Binding UseUnifiedMlptErrorScale}"
+                            ToolTip="When enabled, both MLPT error charts use the same Y-axis limit based on the larger max error"
+                            Visibility="{Binding AreMlptErrorChartsVisible, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}" />
                     </Grid>
                 </GroupBox>
 
@@ -1688,6 +1728,13 @@
                                 MarkerType="Circle"
                                 MarkerSize="3"
                                 TrackerFormatString="{}Image #{X:0}&#x0a;RA Error: {Y:0.##} arcsec" />
+                            <oxy:LineSeries
+                                ItemsSource="{Binding MlptRaProgressBandPoints}"
+                                DataFieldX="X"
+                                DataFieldY="Y"
+                                Color="#FFFFA000"
+                                StrokeThickness="4"
+                                TrackerFormatString="" />
                         </oxy:Plot.Series>
                         <oxy:Plot.Annotations>
                             <oxy:LineAnnotation
@@ -1704,6 +1751,7 @@
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="*" />
+                        <RowDefinition Height="Auto" />
                     </Grid.RowDefinitions>
                     <TextBlock
                         Grid.Row="0"
@@ -1759,6 +1807,13 @@
                                 MarkerType="Circle"
                                 MarkerSize="3"
                                 TrackerFormatString="{}Image #{X:0}&#x0a;DE Error: {Y:0.##} arcsec" />
+                            <oxy:LineSeries
+                                ItemsSource="{Binding MlptDeProgressBandPoints}"
+                                DataFieldX="X"
+                                DataFieldY="Y"
+                                Color="#FFFFA000"
+                                StrokeThickness="4"
+                                TrackerFormatString="" />
                         </oxy:Plot.Series>
                         <oxy:Plot.Annotations>
                             <oxy:LineAnnotation
@@ -1769,6 +1824,22 @@
                                 Color="{Binding Path=Color, Source={StaticResource PrimaryBrush}, Converter={StaticResource SetAlphaToColorConverter}, ConverterParameter=70}" />
                         </oxy:Plot.Annotations>
                     </oxy:Plot>
+                    <StackPanel
+                        Grid.Row="2"
+                        Margin="0,6,0,0"
+                        HorizontalAlignment="Center"
+                        Orientation="Horizontal">
+                        <TextBlock Text="MLPT capture " />
+                        <TextBlock Text="{Binding MlptCaptureMinutes, StringFormat={}{0:0.0}}" />
+                        <TextBlock Margin="2,0,12,0" Text=" min" />
+                        <TextBlock Text="Elapsed " />
+                        <TextBlock Text="{Binding MlptElapsedMinutes, StringFormat={}{0:0.0}}" />
+                        <TextBlock Margin="2,0,12,0" Text=" min" />
+                 
+                        <TextBlock Text="Remaining " />
+                        <TextBlock Text="{Binding MlptRemainingMinutes, StringFormat={}{0:0.0}}" />
+                        <TextBlock Margin="2,0,0,0" Text=" min" />
+                    </StackPanel>
                 </Grid>
 
                 <Grid Grid.Row="3" Grid.Column="0">

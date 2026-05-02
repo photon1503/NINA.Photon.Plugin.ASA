@@ -59,9 +59,17 @@
                 <TextBlock x:Key="MinimizeMeridianFlips_Tooltip" Text="If enabled, points stay on the current meridian side until exhausted, reducing side switches" />
                 <TextBlock x:Key="WestToEast_Tooltip" Text="By default points are processed east-to-west. Enable to reverse that order" />
                 <TextBlock x:Key="PlateSolveSubframePercentage_Tooltip" Text="What percentage of full camera resolution to use for plate-solve exposures" />
+                <TextBlock x:Key="SyncBeforeModelBuild_Tooltip" Text="Before a model build starts, force the pier side required by the first traversal point, slew to the same hemisphere-aware 50 degree meridian sync point used by Final Sync, capture and solve once, perform a real NINA coordinate sync, and restore NINA's previous No Sync setting after the build" />
+                <TextBlock x:Key="UseDedicatedFullSkyPlateSolveSettings_Tooltip" Text="Use a dedicated exposure, binning, gain, and offset for full-sky model plate-solve captures instead of NINA's general plate-solve capture settings" />
+                <TextBlock x:Key="UseDedicatedMLPTPlateSolveSettings_Tooltip" Text="Use a dedicated exposure, binning, gain, and offset for MLPT plate-solve captures instead of NINA's general plate-solve capture settings" />
+                <TextBlock x:Key="DedicatedPlateSolveExposureTime_Tooltip" Text="Exposure time, in seconds, used for dedicated plate-solve captures when the corresponding dedicated settings group is enabled" />
+                <TextBlock x:Key="DedicatedPlateSolveBinning_Tooltip" Text="Camera binning used for dedicated plate-solve captures when the corresponding dedicated settings group is enabled" />
+                <TextBlock x:Key="DedicatedPlateSolveGain_Tooltip" Text="Camera gain used for dedicated plate-solve captures when the corresponding dedicated settings group is enabled" />
+                <TextBlock x:Key="DedicatedPlateSolveOffset_Tooltip" Text="Camera offset used for dedicated plate-solve captures when the corresponding dedicated settings group is enabled" />
                 <TextBlock x:Key="AlternateDirectionsBetweenIterations_Tooltip" Text="Alternates sort direction between each retry iteration to reduce repeated slew paths" />
                 <TextBlock x:Key="LegacyDDM_Tooltip" Text="Enable compatibility behavior for older Autoslew versions (5.2.4.8)" />
                 <TextBlock x:Key="DomeControlNINA_Tooltip" Text="When enabled, NINA manages dome positioning during model operations instead of leaving control external" />
+                <TextBlock x:Key="EnableMLPTDebugSimulator_Tooltip" Text="When enabled, generated MLPT paths can run in a local simulator that synthesizes solved points and advances the MLPT timeline for chart debugging." />
                 <TextBlock x:Key="MLTPPathOffset_Tooltip" Text="Offset, in RA-minutes, used to shift the MLTP path start point. Negative values start in RA-, positive values in RA+" />
             </StackPanel.Resources>
 
@@ -105,6 +113,141 @@
                                         <rules:DoubleRangeChecker Maximum="100" Minimum="0.1" />
                                     </rules:DoubleRangeRule.ValidRange>
                                 </rules:DoubleRangeRule>
+                            </Binding.ValidationRules>
+                        </Binding>
+                    </ninactrl:UnitTextBox>
+
+                </Grid>
+            </GroupBox>
+
+            <GroupBox Margin="0,0,0,8">
+                <GroupBox.Header>
+                    <TextBlock FontSize="16" Text="Dedicated Plate Solve Capture" />
+                </GroupBox.Header>
+                <Grid Margin="5">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" SharedSizeGroup="OptionsCol0" />
+                        <ColumnDefinition Width="Auto" SharedSizeGroup="OptionsCol1" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition />
+                        <RowDefinition />
+                        <RowDefinition />
+                        <RowDefinition />
+                        <RowDefinition />
+                        <RowDefinition />
+                        <RowDefinition />
+                        <RowDefinition />
+                        <RowDefinition />
+                        <RowDefinition />
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" Text="Use Dedicated Full-Sky Settings" ToolTip="{StaticResource UseDedicatedFullSkyPlateSolveSettings_Tooltip}" />
+                    <CheckBox Grid.Row="0" Grid.Column="1" MinWidth="80" Margin="5,5,0,0" HorizontalAlignment="Left" VerticalAlignment="Center" IsChecked="{Binding UseDedicatedFullSkyPlateSolveSettings}" ToolTip="{StaticResource UseDedicatedFullSkyPlateSolveSettings_Tooltip}" />
+
+                    <TextBlock Grid.Row="1" Grid.Column="0" VerticalAlignment="Center" Text="Full-Sky Exposure" ToolTip="{StaticResource DedicatedPlateSolveExposureTime_Tooltip}" />
+                    <ninactrl:UnitTextBox Grid.Row="1" Grid.Column="1" MinWidth="80" Margin="5,5,0,0" HorizontalAlignment="Left" VerticalAlignment="Center" ToolTip="{StaticResource DedicatedPlateSolveExposureTime_Tooltip}" Unit="s">
+                        <Binding Path="FullSkyPlateSolveExposureTime" UpdateSourceTrigger="LostFocus">
+                            <Binding.ValidationRules>
+                                <rules:DoubleRangeRule>
+                                    <rules:DoubleRangeRule.ValidRange>
+                                        <rules:DoubleRangeChecker Maximum="3600" Minimum="0.001" />
+                                    </rules:DoubleRangeRule.ValidRange>
+                                </rules:DoubleRangeRule>
+                            </Binding.ValidationRules>
+                        </Binding>
+                    </ninactrl:UnitTextBox>
+
+                    <TextBlock Grid.Row="2" Grid.Column="0" VerticalAlignment="Center" Text="Full-Sky Binning" ToolTip="{StaticResource DedicatedPlateSolveBinning_Tooltip}" />
+                    <ninactrl:UnitTextBox Grid.Row="2" Grid.Column="1" MinWidth="80" Margin="5,5,0,0" HorizontalAlignment="Left" VerticalAlignment="Center" ToolTip="{StaticResource DedicatedPlateSolveBinning_Tooltip}" Unit="x">
+                        <Binding Path="FullSkyPlateSolveBinning" UpdateSourceTrigger="LostFocus">
+                            <Binding.ValidationRules>
+                                <rules:IntRangeRule>
+                                    <rules:IntRangeRule.ValidRange>
+                                        <rules:IntRangeChecker Maximum="16" Minimum="1" />
+                                    </rules:IntRangeRule.ValidRange>
+                                </rules:IntRangeRule>
+                            </Binding.ValidationRules>
+                        </Binding>
+                    </ninactrl:UnitTextBox>
+
+                    <TextBlock Grid.Row="3" Grid.Column="0" VerticalAlignment="Center" Text="Full-Sky Gain" ToolTip="{StaticResource DedicatedPlateSolveGain_Tooltip}" />
+                    <ninactrl:UnitTextBox Grid.Row="3" Grid.Column="1" MinWidth="80" Margin="5,5,0,0" HorizontalAlignment="Left" VerticalAlignment="Center" ToolTip="{StaticResource DedicatedPlateSolveGain_Tooltip}" Unit="gain">
+                        <Binding Path="FullSkyPlateSolveGain" UpdateSourceTrigger="LostFocus">
+                            <Binding.ValidationRules>
+                                <rules:IntRangeRule>
+                                    <rules:IntRangeRule.ValidRange>
+                                        <rules:IntRangeChecker Maximum="65535" Minimum="-1" />
+                                    </rules:IntRangeRule.ValidRange>
+                                </rules:IntRangeRule>
+                            </Binding.ValidationRules>
+                        </Binding>
+                    </ninactrl:UnitTextBox>
+
+                    <TextBlock Grid.Row="4" Grid.Column="0" VerticalAlignment="Center" Text="Full-Sky Offset" ToolTip="{StaticResource DedicatedPlateSolveOffset_Tooltip}" />
+                    <ninactrl:UnitTextBox Grid.Row="4" Grid.Column="1" MinWidth="80" Margin="5,5,0,0" HorizontalAlignment="Left" VerticalAlignment="Center" ToolTip="{StaticResource DedicatedPlateSolveOffset_Tooltip}" Unit="offset">
+                        <Binding Path="FullSkyPlateSolveOffset" UpdateSourceTrigger="LostFocus">
+                            <Binding.ValidationRules>
+                                <rules:IntRangeRule>
+                                    <rules:IntRangeRule.ValidRange>
+                                        <rules:IntRangeChecker Maximum="65535" Minimum="-1" />
+                                    </rules:IntRangeRule.ValidRange>
+                                </rules:IntRangeRule>
+                            </Binding.ValidationRules>
+                        </Binding>
+                    </ninactrl:UnitTextBox>
+
+                    <TextBlock Grid.Row="5" Grid.Column="0" VerticalAlignment="Center" Text="Use Dedicated MLPT Settings" ToolTip="{StaticResource UseDedicatedMLPTPlateSolveSettings_Tooltip}" />
+                    <CheckBox Grid.Row="5" Grid.Column="1" MinWidth="80" Margin="5,5,0,0" HorizontalAlignment="Left" VerticalAlignment="Center" IsChecked="{Binding UseDedicatedMLPTPlateSolveSettings}" ToolTip="{StaticResource UseDedicatedMLPTPlateSolveSettings_Tooltip}" />
+
+                    <TextBlock Grid.Row="6" Grid.Column="0" VerticalAlignment="Center" Text="MLPT Exposure" ToolTip="{StaticResource DedicatedPlateSolveExposureTime_Tooltip}" />
+                    <ninactrl:UnitTextBox Grid.Row="6" Grid.Column="1" MinWidth="80" Margin="5,5,0,0" HorizontalAlignment="Left" VerticalAlignment="Center" ToolTip="{StaticResource DedicatedPlateSolveExposureTime_Tooltip}" Unit="s">
+                        <Binding Path="MLPTPlateSolveExposureTime" UpdateSourceTrigger="LostFocus">
+                            <Binding.ValidationRules>
+                                <rules:DoubleRangeRule>
+                                    <rules:DoubleRangeRule.ValidRange>
+                                        <rules:DoubleRangeChecker Maximum="3600" Minimum="0.001" />
+                                    </rules:DoubleRangeRule.ValidRange>
+                                </rules:DoubleRangeRule>
+                            </Binding.ValidationRules>
+                        </Binding>
+                    </ninactrl:UnitTextBox>
+
+                    <TextBlock Grid.Row="7" Grid.Column="0" VerticalAlignment="Center" Text="MLPT Binning" ToolTip="{StaticResource DedicatedPlateSolveBinning_Tooltip}" />
+                    <ninactrl:UnitTextBox Grid.Row="7" Grid.Column="1" MinWidth="80" Margin="5,5,0,0" HorizontalAlignment="Left" VerticalAlignment="Center" ToolTip="{StaticResource DedicatedPlateSolveBinning_Tooltip}" Unit="x">
+                        <Binding Path="MLPTPlateSolveBinning" UpdateSourceTrigger="LostFocus">
+                            <Binding.ValidationRules>
+                                <rules:IntRangeRule>
+                                    <rules:IntRangeRule.ValidRange>
+                                        <rules:IntRangeChecker Maximum="16" Minimum="1" />
+                                    </rules:IntRangeRule.ValidRange>
+                                </rules:IntRangeRule>
+                            </Binding.ValidationRules>
+                        </Binding>
+                    </ninactrl:UnitTextBox>
+
+                    <TextBlock Grid.Row="8" Grid.Column="0" VerticalAlignment="Center" Text="MLPT Gain" ToolTip="{StaticResource DedicatedPlateSolveGain_Tooltip}" />
+                    <ninactrl:UnitTextBox Grid.Row="8" Grid.Column="1" MinWidth="80" Margin="5,5,0,0" HorizontalAlignment="Left" VerticalAlignment="Center" ToolTip="{StaticResource DedicatedPlateSolveGain_Tooltip}" Unit="gain">
+                        <Binding Path="MLPTPlateSolveGain" UpdateSourceTrigger="LostFocus">
+                            <Binding.ValidationRules>
+                                <rules:IntRangeRule>
+                                    <rules:IntRangeRule.ValidRange>
+                                        <rules:IntRangeChecker Maximum="65535" Minimum="-1" />
+                                    </rules:IntRangeRule.ValidRange>
+                                </rules:IntRangeRule>
+                            </Binding.ValidationRules>
+                        </Binding>
+                    </ninactrl:UnitTextBox>
+
+                    <TextBlock Grid.Row="9" Grid.Column="0" VerticalAlignment="Center" Text="MLPT Offset" ToolTip="{StaticResource DedicatedPlateSolveOffset_Tooltip}" />
+                    <ninactrl:UnitTextBox Grid.Row="9" Grid.Column="1" MinWidth="80" Margin="5,5,0,0" HorizontalAlignment="Left" VerticalAlignment="Center" ToolTip="{StaticResource DedicatedPlateSolveOffset_Tooltip}" Unit="offset">
+                        <Binding Path="MLPTPlateSolveOffset" UpdateSourceTrigger="LostFocus">
+                            <Binding.ValidationRules>
+                                <rules:IntRangeRule>
+                                    <rules:IntRangeRule.ValidRange>
+                                        <rules:IntRangeChecker Maximum="65535" Minimum="-1" />
+                                    </rules:IntRangeRule.ValidRange>
+                                </rules:IntRangeRule>
                             </Binding.ValidationRules>
                         </Binding>
                     </ninactrl:UnitTextBox>
@@ -297,6 +440,7 @@
                         <RowDefinition />
                         <RowDefinition />
                         <RowDefinition />
+                        <RowDefinition />
                     </Grid.RowDefinitions>
 
                     <TextBlock Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" Text="Legacy Autoslew" ToolTip="{StaticResource LegacyDDM_Tooltip}" />
@@ -307,8 +451,11 @@
                         <Binding Path="SiderealTrackPathOffsetMinutes" UpdateSourceTrigger="LostFocus" />
                     </ninactrl:UnitTextBox>
 
-                    <TextBlock Grid.Row="2" Grid.Column="0" VerticalAlignment="Center" Text="POX Output Directory" ToolTip="{StaticResource PoxOutputDirectory_Tooltip}" />
-                    <Grid Grid.Row="2" Grid.Column="1" Margin="5,5,0,0" HorizontalAlignment="Left" VerticalAlignment="Center">
+                    <TextBlock Grid.Row="2" Grid.Column="0" VerticalAlignment="Center" Text="MLPT Debug / Simulator" ToolTip="{StaticResource EnableMLPTDebugSimulator_Tooltip}" />
+                    <CheckBox Grid.Row="2" Grid.Column="1" MinWidth="80" Margin="5,5,0,0" HorizontalAlignment="Left" VerticalAlignment="Center" IsChecked="{Binding EnableMLPTDebugSimulator}" ToolTip="{StaticResource EnableMLPTDebugSimulator_Tooltip}" />
+
+                    <TextBlock Grid.Row="3" Grid.Column="0" VerticalAlignment="Center" Text="POX Output Directory" ToolTip="{StaticResource PoxOutputDirectory_Tooltip}" />
+                    <Grid Grid.Row="3" Grid.Column="1" Margin="5,5,0,0" HorizontalAlignment="Left" VerticalAlignment="Center">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto" />
                             <ColumnDefinition />

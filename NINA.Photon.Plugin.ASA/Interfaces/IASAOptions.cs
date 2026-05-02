@@ -110,12 +110,30 @@ namespace NINA.Photon.Plugin.ASA.Interfaces
 
         double PlateSolveSubframePercentage { get; set; }
 
+        bool SyncBeforeModelBuild { get; set; }
+
+        bool UseDedicatedFullSkyPlateSolveSettings { get; set; }
+        double FullSkyPlateSolveExposureTime { get; set; }
+        int FullSkyPlateSolveBinning { get; set; }
+        int FullSkyPlateSolveGain { get; set; }
+        int FullSkyPlateSolveOffset { get; set; }
+
+        bool UseDedicatedMLPTPlateSolveSettings { get; set; }
+        double MLPTPlateSolveExposureTime { get; set; }
+        int MLPTPlateSolveBinning { get; set; }
+        int MLPTPlateSolveGain { get; set; }
+        int MLPTPlateSolveOffset { get; set; }
+
         bool AlternateDirectionsBetweenIterations { get; set; }
 
         bool DisableRefractionCorrection { get; set; }
         bool IsLegacyDDM { get; set; }
         bool DomeControlNINA { get; set; }
+        bool EnableMLPTDebugSimulator { get; set; }
         DateTime LastMLPT { get; set; }
+        double ActiveMLPTDurationSeconds { get; set; }
+        double ActiveMLPTCaptureDurationSeconds { get; set; }
+        int ActiveMLPTPointCount { get; set; }
 
         string IPAddress { get; set; }
 

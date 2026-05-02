@@ -1,6 +1,39 @@
 
 # Changelog
 
+## 3.2.8.13 (2026-05-02)
+
+### Full-Sky Model Build Startup / Sync
+
+- Added **Sync Before Model Build** to run the full pre-start sync workflow before a full-sky model build starts.
+- When enabled, the builder forces the pier side required by the first traversal point, slews to the same hemisphere-aware 50° meridian sync point used by **Final Sync**, captures once, plate solves once, and performs a real NINA mount sync before normal traversal begins.
+- The pre-start sync point is now treated as a warmup/setup step only and is **not** added to the ASA model.
+- The pre-start sync point stays on the same pier side as the first real model point so the handoff into normal traversal does not require an extra flip.
+- The builder temporarily turns off NINA's telescope **Coordinate Sync** setting while the model build is running, then restores the previous value after completion.
+- Added a dock button **Final Sync** to run a one-shot post-build sync workflow after the user creates and loads a new model in Autoslew.
+- **Final Sync** is enabled only after a new full-sky POX file is written and disables again after it is used once.
+- Both sync workflows use the same fixed meridian sync position at 50° altitude: south in the northern hemisphere, north in the southern hemisphere.
+- The dock action enables NINA sync temporarily, slews to that shared sync point on the current pier side, plate solves once, syncs the mount, restores NINA's previous sync setting, and reminds the user to also set a new homeposition in Autoslew.
+
+### Dedicated Plate-Solve Capture Settings
+
+- Added dedicated plate-solve capture settings for **full-sky model builds** with configurable exposure time, binning, gain, and offset.
+- Added a separate dedicated plate-solve capture settings group for **MLPT** with its own exposure time, binning, gain, and offset.
+- Full-sky and MLPT builds now use their selected dedicated capture settings for plate-solve image capture and plate-solve binning, while still falling back to NINA's standard plate-solve profile when the dedicated group is disabled.
+
+### MLPT Diagnostics / Simulator
+
+- MLPT diagnostics charts now render a live vertical progress marker for the active/simulated MLPT run.
+- Added **Elapsed**, **MLPT capture**, and **Remaining** readouts below the MLPT charts to make timeline/debug state visible while testing.
+- Moved MLPT run-state tracking to the actual controller-send phase and persisted active MLPT duration/point-count metadata so the diagnostics charts follow the active path instead of the preview.
+- Corrected MLPT remaining-time/progress calculation to use the first actual captured image as the controller timing reference once capture data is available.
+  
+- Added an **MLPT Debug / Simulator** option to run generated MLPT paths locally without sending them to the controller.
+
+### Mount Dither Trigger
+
+- Updated **Mount Dither After x Exposures** to pause N.I.N.A. autoguiding before the dither operation and resume guiding afterward, including proper cleanup/restart handling if the dither flow throws.
+
 ## 3.2.8.7 (2026-03-09)
 
 - Fixed an issue where AutoGrid builds could still use legacy azimuth sweep immediately after selecting ASA Band Path.

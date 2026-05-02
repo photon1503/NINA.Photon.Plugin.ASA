@@ -44,6 +44,7 @@ namespace NINA.Photon.Plugin.ASA.SequenceItems
         public MLTPStop(IMountMediator mountMediator, IASAOptions options, IMount mount)
         {
             this.mountMediator = mountMediator;
+            this.options = options;
             this.mount = mount;
         }
 
@@ -59,7 +60,7 @@ namespace NINA.Photon.Plugin.ASA.SequenceItems
 
         private IMountMediator mountMediator;
         private IMount mount;
-        private ASAOptions options;
+        private IASAOptions options;
         private IList<string> issues = new List<string>();
 
         public IList<string> Issues
@@ -103,6 +104,11 @@ namespace NINA.Photon.Plugin.ASA.SequenceItems
             {
                 throw new Exception("Failed to stop MLPT");
             }
+
+            options.LastMLPT = DateTime.MinValue;
+            options.ActiveMLPTDurationSeconds = 0.0d;
+            options.ActiveMLPTCaptureDurationSeconds = 0.0d;
+            options.ActiveMLPTPointCount = 0;
         }
 
         public override string ToString()

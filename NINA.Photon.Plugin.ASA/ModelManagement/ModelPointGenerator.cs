@@ -1244,7 +1244,8 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                     {
                         Altitude = altitudeDegrees,
                         Azimuth = azimuthDegrees,
-                        ModelPointState = creationState
+                        ModelPointState = creationState,
+                        PlannedCaptureTime = currentTime
                     });
             }
 
