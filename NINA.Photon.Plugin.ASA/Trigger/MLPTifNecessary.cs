@@ -710,27 +710,10 @@ namespace NINA.Photon.Plugin.ASA.MLTP
         }
 
         private double lastValidMLPTMinutes = 0; // remembers last non-zero MLPT time left
+        private DateTime lastValidMLPTSampleTime = DateTime.MinValue;
 
         public override bool ShouldTrigger(ISequenceItem previousItem, ISequenceItem nextItem)
         {
-            // Safely read MLPT time left (minutes); mount API may return 0 after another trigger stops MLPT
-            double reportedMinutes = 0;
-            try
-            {
-                var resp = mount.MLPTTimeLeft(); // Response<double>
-                reportedMinutes = resp != null ? resp.Value : 0;
-            }
-            catch { reportedMinutes = 0; }
-
-            if (reportedMinutes > 0)
-            {
-                lastValidMLPTMinutes = reportedMinutes; // update cache
-            }
-            MLPTTimeLeft = Math.Round(reportedMinutes, 2);
-
-            // Use last non-zero value if current is zero (simple resilience)
-            double effectiveMinutes = reportedMinutes > 0 ? reportedMinutes : lastValidMLPTMinutes;
-
             if (nextItem == null) { return false; }
             if (nextItem is not IExposureItem exposureItem) { return false; }
             if (exposureItem.ImageType != "LIGHT") { return false; }
@@ -742,21 +725,64 @@ namespace NINA.Photon.Plugin.ASA.MLTP
                 return false;
             }
 
-            if (effectiveMinutes <= 0)
+            var now = DateTime.Now;
+            double reportedMinutes = 0;
+
+            // Read the live value from mount (can be transiently 0).
+            try
             {
-                // Still nothing useful; do not trigger
-                return false;
+                var resp = mount.MLPTTimeLeft(); // Response<double>
+                reportedMinutes = resp?.Value ?? 0;
+            }
+            catch
+            {
+                reportedMinutes = 0;
             }
 
-            double exposureSeconds = exposureItem.ExposureTime;
-
-            if (effectiveMinutes * 60.0 < exposureSeconds)
+            if (reportedMinutes > 0)
             {
-                Logger.Debug($"MLPTifExceeds: Exposure {exposureSeconds:0.##}s > MLPT remaining {effectiveMinutes:0.##} min. Triggering.");
-                return true;
+                lastValidMLPTMinutes = reportedMinutes;
+                lastValidMLPTSampleTime = now;
             }
 
-            return false;
+            // Fallback derived from the schedule sent to the mount.
+            var elapsedSinceLastMlptSeconds = Math.Max(0.0d, (now - options.LastMLPT).TotalSeconds);
+            var derivedRemainingSeconds = options.ActiveMLPTDurationSeconds > 0
+                ? Math.Max(0.0d, options.ActiveMLPTDurationSeconds - elapsedSinceLastMlptSeconds)
+                : -1.0d;
+
+            double remainingSeconds;
+            string remainingSource;
+
+            if (reportedMinutes > 0)
+            {
+                remainingSeconds = reportedMinutes * 60.0d;
+                remainingSource = "mount";
+            }
+            else if (derivedRemainingSeconds >= 0)
+            {
+                remainingSeconds = derivedRemainingSeconds;
+                remainingSource = "derived";
+            }
+            else if (lastValidMLPTMinutes > 0 && (now - lastValidMLPTSampleTime) <= TimeSpan.FromMinutes(2))
+            {
+                remainingSeconds = lastValidMLPTMinutes * 60.0d;
+                remainingSource = "cached";
+            }
+            else
+            {
+                remainingSeconds = 0.0d;
+                remainingSource = "none";
+            }
+
+            MLPTTimeLeft = Math.Round(Math.Max(0.0d, remainingSeconds / 60.0d), 2);
+
+            var exposureSeconds = exposureItem.ExposureTime;
+            var shouldTrigger = remainingSeconds <= 0.0d || exposureSeconds >= remainingSeconds;
+
+            Logger.Info($"MLPTifExceeds: Exposure={exposureSeconds:0.##}s, Remaining={remainingSeconds:0.##}s ({remainingSource}), Trigger={shouldTrigger}");
+
+            return shouldTrigger;
         }
 
         private ImmutableList<ModelPoint> ModelPoints = ImmutableList.Create<ModelPoint>();

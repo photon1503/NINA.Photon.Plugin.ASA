@@ -1,6 +1,15 @@
 
 # Changelog
 
+## 3.2.8.14 (2026-07-20)
+
+### MLPT Trigger Reliability
+
+- Improved **MLPT Restart If Exceeds** trigger reliability by hardening time-left evaluation.
+	- Added robust fallback logic when mount-reported **MLPTTimeLeft** is transiently invalid/zero by deriving remaining time from active MLPT metadata.
+	- Added short-lived cached fallback for last valid mount-reported MLPT remaining time.
+	- Fixed edge case where trigger could miss when MLPT remaining time reached **0**: it now triggers deterministically when remaining time is depleted or insufficient for the next exposure.
+
 ## 3.2.8.13 (2026-05-02)
 
 ### Full-Sky Model Build Startup / Sync
