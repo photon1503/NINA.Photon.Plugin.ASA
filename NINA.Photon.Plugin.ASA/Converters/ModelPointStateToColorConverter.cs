@@ -28,7 +28,7 @@ namespace NINA.Photon.Plugin.ASA.Converters {
                         return Colors.LightGreen;
 
                     case ModelPointStateEnum.Failed:
-                        return Colors.Red;
+                        return (Color)ColorConverter.ConvertFromString("#FC8D59");
 
                     case ModelPointStateEnum.UpNext:
                         return Colors.YellowGreen;
