@@ -14,14 +14,15 @@ using NINA.Photon.Plugin.ASA.Model;
 using OxyPlot;
 using OxyPlot.Axes;
 
-namespace NINA.Photon.Plugin.ASA.Extensions.OxyPlot {
-
-    public class ModelPointStateColorAxis : LinearAxis, IColorAxis {
-
+namespace NINA.Photon.Plugin.ASA.Extensions.OxyPlot
+{
+    public class ModelPointStateColorAxis : LinearAxis, IColorAxis
+    {
         private const int GeneratedEastPaletteIndex = 1000;
         private const int GeneratedWestPaletteIndex = 1001;
 
-        public OxyColor GetColor(int paletteIndex) {
+        public OxyColor GetColor(int paletteIndex)
+        {
             if (paletteIndex == GeneratedEastPaletteIndex)
             {
                 return OxyColors.DeepSkyBlue;
@@ -33,40 +34,44 @@ namespace NINA.Photon.Plugin.ASA.Extensions.OxyPlot {
             }
 
             var modelPointState = (ModelPointStateEnum)paletteIndex;
-            switch (modelPointState) {
+            switch (modelPointState)
+            {
                 case ModelPointStateEnum.Generated:
-                    return OxyColors.LightGreen;
+                    return OxyColor.Parse("#6BAED6");   // Light Steel Blue
 
                 case ModelPointStateEnum.BelowHorizon:
                 case ModelPointStateEnum.OutsideAltitudeBounds:
                 case ModelPointStateEnum.OutsideAzimuthBounds:
-                    return OxyColors.Brown;
+                    return OxyColors.Gray;
 
                 case ModelPointStateEnum.Failed:
                 case ModelPointStateEnum.FailedRMS:
-                    return OxyColors.Red;
+                    return OxyColor.Parse("#D55E00");   // Orange-Peach
 
                 case ModelPointStateEnum.UpNext:
-                    return OxyColors.Yellow;
+                    return OxyColor.Parse("#FEE08B");   // Pale Gold
 
                 case ModelPointStateEnum.Exposing:
-                    return OxyColors.LightBlue;
+                    return OxyColor.Parse("#66C2A4");   // Mint Green
 
                 case ModelPointStateEnum.Processing:
-                    return OxyColors.Blue;
+                    return OxyColor.Parse("#8C564B");   // Brown
 
                 case ModelPointStateEnum.AddedToModel:
-                    return OxyColors.ForestGreen;
+                    return OxyColors.ForestGreen;       // Final success
             }
             return OxyColors.Black;
         }
 
-        public int GetPaletteIndex(double value) {
+        public int GetPaletteIndex(double value)
+        {
             return (int)value;
         }
 
-        public override void Render(IRenderContext rc, int pass) {
-            if (this.Position == AxisPosition.None) {
+        public override void Render(IRenderContext rc, int pass)
+        {
+            if (this.Position == AxisPosition.None)
+            {
                 return;
             }
             base.Render(rc, pass);

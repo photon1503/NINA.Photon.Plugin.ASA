@@ -1,6 +1,9 @@
 
 # Changelog
 
+## 3.2.8.15 (2026-07-26)
+- Improved chart colors for better visibility.
+
 ## 3.2.8.14 (2026-07-20)
 
 ### MLPT Trigger Reliability
