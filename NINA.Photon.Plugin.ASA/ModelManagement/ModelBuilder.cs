@@ -477,6 +477,21 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 }
             }
 
+            var restoreDomeControlNINA = false;
+            var previousDomeControlNINA = asaOptions.DomeControlNINA;
+            var forceNinaDomeControl = !IsMlptBuild(options);
+            if (forceNinaDomeControl)
+            {
+                options.DomeControlNINA = true;
+                if (!previousDomeControlNINA)
+                {
+                    asaOptions.DomeControlNINA = true;
+                    restoreDomeControlNINA = true;
+                    Logger.Info("Enabled 'Let NINA control the dome' for full-sky model build. It will be restored after completion");
+                    Notification.ShowInformation("Enabled 'Let NINA control the dome' for full-sky model build. It will be restored after completion");
+                }
+            }
+
             var reenableDomeFollower = false;
             var state = new ModelBuilderState(options, modelPoints, mount, domeMediator, weatherDataMediator, cameraMediator, profileService, asaOptions);
             if (state.UseDome && domeMediator.IsFollowingScope)
@@ -589,6 +604,12 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 {
                     profileService.ActiveProfile.TelescopeSettings.NoSync = previousNINANoSync;
                     Logger.Info($"Restored NINA coordinate sync setting after ASA model build. NoSync={previousNINANoSync}");
+                }
+
+                if (restoreDomeControlNINA)
+                {
+                    asaOptions.DomeControlNINA = previousDomeControlNINA;
+                    Logger.Info($"Restored 'Let NINA control the dome' setting after ASA model build. DomeControlNINA={previousDomeControlNINA}");
                 }
 
                 if (reenableRefractionCorrection)

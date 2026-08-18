@@ -1,6 +1,10 @@
 
 # Changelog
 
+## 3.2.8.16 (2026-08-18)
+- Full-sky model builds (non-MLPT) now temporarily enable **Let NINA control the dome** for the run.
+- The previous dome-control setting is restored automatically after the build completes.
+
 ## 3.2.8.15 (2026-07-26)
 - Improved chart colors for better visibility.
 
