@@ -1418,7 +1418,8 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             //  Logger.Info($"Processing {eligiblePointsOrdered.Count} points. First point Alt={nextPoint.Altitude:0.###}, Az={nextPoint.Azimuth:0.###}, MinDomeAz={nextPoint.MinDomeAzimuth:0.###}, MaxDomeAz={nextPoint.MaxDomeAzimuth:0.###}");
             if (state.UseDome)
             {
-                await SlewDomeIfNecessary(state, eligiblePointsOrdered, ct);
+                // For MLPT, let the initial dome positioning overlap with the pre-balance/first mount slew instead of blocking on it here
+                await SlewDomeIfNecessary(state, eligiblePointsOrdered, ct, waitForCompletion: !IsMlptBuild(state.Options));
             }
 
             ModelPoint refPointEast = new ModelPoint(telescopeMediator)
@@ -1624,7 +1625,8 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                         if (nextPoint != null)
                         {
                             Logger.Info($"Next point not visible through dome. Dome slew required. Alt={nextPoint.Altitude:0.###}, Az={nextPoint.Azimuth:0.###}, MinDomeAz={nextPoint.MinDomeAzimuth:0.###}, MaxDomeAz={nextPoint.MaxDomeAzimuth:0.###}, CurrentDomeAz={domeMediator.GetInfo().Azimuth:0.###}");
-                            await SlewDomeIfNecessary(state, eligibleForNextPoint, ct);
+                            // For MLPT, overlap this dome slew with the upcoming mount slew instead of blocking on it here; state.DomeSlewTask is awaited before the next capture
+                            await SlewDomeIfNecessary(state, eligibleForNextPoint, ct, waitForCompletion: !IsMlptBuild(state.Options));
                         }
                     }
                     else
@@ -2088,7 +2090,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 .ToList();
         }
 
-        private async Task<bool> SlewDomeIfNecessary(ModelBuilderState state, List<ModelPoint> sideOfPierPoints, CancellationToken ct)
+        private async Task<bool> SlewDomeIfNecessary(ModelBuilderState state, List<ModelPoint> sideOfPierPoints, CancellationToken ct, bool waitForCompletion = true)
         {
             if (state.DomeSlewTask != null)
             {
@@ -2113,23 +2115,34 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 domeSlewAzimuth = nextAzimuthSlewPoint.DomeAzimuth;
             }
             domeSlewAzimuth = AstroUtil.EuclidianModulus(domeSlewAzimuth, 360.0d);
+
+            Logger.Info($"Next dome slew to {domeSlewAzimuth} based on point at Alt={nextAzimuthSlewPoint.Altitude:0.###}, Az={nextAzimuthSlewPoint.Azimuth:0.###}");
+            var domeSlewTask = RunDomeSlew(state, domeSlewAzimuth, ct);
+            state.DomeSlewTask = domeSlewTask;
+
+            if (!waitForCompletion)
+            {
+                // Runs in the background; the caller is expected to await state.DomeSlewTask before capturing at the destination point
+                return true;
+            }
+
+            return await domeSlewTask;
+        }
+
+        private async Task<bool> RunDomeSlew(ModelBuilderState state, double domeSlewAzimuth, CancellationToken ct)
+        {
             try
             {
-                Logger.Info($"Next dome slew to {domeSlewAzimuth} based on point at Alt={nextAzimuthSlewPoint.Altitude:0.###}, Az={nextAzimuthSlewPoint.Azimuth:0.###}");
-                state.DomeSlewTask = domeMediator.SlewToAzimuth(domeSlewAzimuth, ct);
-                if (!await state.DomeSlewTask)
+                if (!await domeMediator.SlewToAzimuth(domeSlewAzimuth, ct))
                 {
                     Logger.Error("Dome slew failed");
                     Notification.ShowError("Dome Slew failed");
                     return false;
                 }
 
-                // Wait for the dome to finish slewing
-                var domeInfo = domeMediator.GetInfo();
-                while (domeInfo.Slewing)
+                // Wait for the dome to finish slewing. Re-fetch info each iteration since it reflects live dome state
+                while (domeMediator.GetInfo().Slewing)
                 {
-                    //Logger.Info("Waiting for dome to finish slewing");
-                    // pause
                     await Task.Delay(1000, ct);
                 }
 

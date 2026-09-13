@@ -576,10 +576,9 @@ namespace NINA.Photon.Plugin.ASA
 
         private int domeShutterWidth_mm;
 
-        // TODO: Restore after this works properly
         public int DomeShutterWidth_mm
         {
-            get => 0; // domeShutterWidth_mm;
+            get => domeShutterWidth_mm;
             set
             {
                 if (domeShutterWidth_mm != value)

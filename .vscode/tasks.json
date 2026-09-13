@@ -7,9 +7,10 @@
 			"command": "dotnet",
 			"args": [
 				"build",
-				".\\NINA.Photon.Plugin.ASA\\NINA.Photon.Plugin.ASA.csproj",
+				"./NINA.Photon.Plugin.ASA/NINA.Photon.Plugin.ASA.csproj",
 				"-c",
-				"Debug"
+				"Debug",
+				"-p:EnableWindowsTargeting=true"
 			],
 			"group": {
 				"kind": "build",

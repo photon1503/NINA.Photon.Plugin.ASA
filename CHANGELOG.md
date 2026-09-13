@@ -1,6 +1,11 @@
 
 # Changelog
 
+## 3.2.8.17 (2026-09-13)
+- MLPT builds now overlap dome slews with the mount slew to the next point instead of waiting for the dome to finish moving first.
+- Fixed **Dome Shutter Width** setting being ignored, which prevented it from widening the no-dome-move window between points.
+- Fixed a possible hang in the dome-slew completion check that never re-read the dome's live status.
+
 ## 3.2.8.16 (2026-08-18)
 - Full-sky model builds (non-MLPT) now temporarily enable **Let NINA control the dome** for the run.
 - The previous dome-control setting is restored automatically after the build completes.
