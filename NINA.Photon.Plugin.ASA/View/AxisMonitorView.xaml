@@ -173,8 +173,31 @@
                         AxislineColor="#FF6FAE"
                         TextColor="#FF6FAE"
                         TicklineColor="#FF6FAE" />
+                    <!--  Fixed 0..1 scale so epoch markers span the full plot height  -->
+                    <oxy:LinearAxis
+                        Position="Left"
+                        Key="EpochAxis"
+                        Minimum="0"
+                        Maximum="1"
+                        IsAxisVisible="False"
+                        IsPanEnabled="False"
+                        IsZoomEnabled="False"
+                        MajorGridlineStyle="None"
+                        MinorGridlineStyle="None" />
                 </oxy:Plot.Axes>
                 <oxy:Plot.Series>
+                    <!--  Vertical line marking the start of a new statistics epoch  -->
+                    <oxy:LineSeries
+                        ItemsSource="{Binding EpochMarkerSeries, UpdateSourceTrigger=PropertyChanged}"
+                        DataFieldX="X"
+                        DataFieldY="Y"
+                        XAxisKey="TimeAxis"
+                        YAxisKey="EpochAxis"
+                        StrokeThickness="1"
+                        LineStyle="Dash"
+                        Color="#9AA6B2"
+                        RenderInLegend="False"
+                        TrackerFormatString="{}New statistics epoch" />
                     <oxy:LineSeries
                         Title="Err [&#8243;]"
                         ItemsSource="{Binding PositionErrorHistory, UpdateSourceTrigger=PropertyChanged}"

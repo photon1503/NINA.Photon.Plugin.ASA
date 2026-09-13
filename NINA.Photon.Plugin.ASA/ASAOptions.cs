@@ -84,6 +84,7 @@ namespace NINA.Photon.Plugin.ASA
             mountInfoHistorySeconds = optionsAccessor.GetValueInt32(nameof(MountInfoHistorySeconds), 60);
             mountInfoRefreshIntervalSeconds = optionsAccessor.GetValueDouble(nameof(MountInfoRefreshIntervalSeconds), 1.0d);
             mountInfoSlewSettleSeconds = optionsAccessor.GetValueDouble(nameof(MountInfoSlewSettleSeconds), 5.0d);
+            mountInfoErrorScaleArcsec = optionsAccessor.GetValueDouble(nameof(MountInfoErrorScaleArcsec), 0.0d);
             allowBlindSolves = optionsAccessor.GetValueBoolean("AllowBlindSolves", false);
             minPointAltitude = optionsAccessor.GetValueInt32("MinPointAltitude", 0);
             maxPointAltitude = optionsAccessor.GetValueInt32("MaxPointAltitude", 90);
@@ -172,6 +173,7 @@ namespace NINA.Photon.Plugin.ASA
             MountInfoHistorySeconds = 60;
             MountInfoRefreshIntervalSeconds = 1.0d;
             MountInfoSlewSettleSeconds = 5.0d;
+            MountInfoErrorScaleArcsec = 0.0d;
             AllowBlindSolves = false;
             MinPointAltitude = 0;
             MaxPointAltitude = 90;
@@ -1210,6 +1212,30 @@ namespace NINA.Photon.Plugin.ASA
                     }
                     mountInfoSlewSettleSeconds = value;
                     optionsAccessor.SetValueDouble(nameof(MountInfoSlewSettleSeconds), mountInfoSlewSettleSeconds);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private double mountInfoErrorScaleArcsec;
+
+        /// <summary>
+        /// Fixed +/- scale of the position error axis in arcseconds, shared by both axis graphs.
+        /// Zero means the axis scales automatically to the data.
+        /// </summary>
+        public double MountInfoErrorScaleArcsec
+        {
+            get => mountInfoErrorScaleArcsec;
+            set
+            {
+                if (mountInfoErrorScaleArcsec != value)
+                {
+                    if (value < 0)
+                    {
+                        throw new ArgumentException("MountInfoErrorScaleArcsec must be non-negative", nameof(MountInfoErrorScaleArcsec));
+                    }
+                    mountInfoErrorScaleArcsec = value;
+                    optionsAccessor.SetValueDouble(nameof(MountInfoErrorScaleArcsec), mountInfoErrorScaleArcsec);
                     RaisePropertyChanged();
                 }
             }

@@ -308,47 +308,96 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
         public void UpdateDeviceInfo(TelescopeInfo deviceInfo)
         {
             TelescopeConnected = deviceInfo.Connected;
-            UpdateSlewingState(deviceInfo.Connected && deviceInfo.Slewing);
+            UpdateMountState(deviceInfo.Connected && deviceInfo.Slewing, deviceInfo.Connected && deviceInfo.TrackingEnabled);
             EvaluateMonitoringState();
         }
 
         private bool telescopeSlewing;
+        private bool telescopeTracking;
+        private bool mountStateKnown;
         private DateTime? settleUntil;
 
         /// <summary>
-        /// A slew makes the position error meaningless and would otherwise dominate the longer
-        /// statistics windows for minutes. Samples are therefore discarded while slewing, and the
-        /// history is reset once the mount has settled again.
+        /// A slew, or any period without tracking, makes the position error meaningless and would
+        /// otherwise dominate the longer statistics windows for minutes. The statistics are
+        /// therefore restarted whenever the mount begins tracking again. The plotted history is
+        /// deliberately kept so the run-up to the event stays visible.
         /// </summary>
-        private void UpdateSlewingState(bool slewing)
+        private void UpdateMountState(bool slewing, bool tracking)
         {
-            if (telescopeSlewing == slewing)
+            var wasPaused = StatisticsPaused;
+            var slewingChanged = telescopeSlewing != slewing;
+            var trackingChanged = telescopeTracking != tracking;
+            if (!slewingChanged && !trackingChanged && mountStateKnown)
             {
                 return;
             }
 
+            mountStateKnown = true;
+
             telescopeSlewing = slewing;
-            if (slewing)
+            telescopeTracking = tracking;
+
+            if (slewing || !tracking)
             {
+                // Disturbed: hold the statistics until the mount is tracking steadily again.
                 settleUntil = null;
-                ResetHistory();
             }
             else
             {
-                var settleSeconds = options.MountInfoSlewSettleSeconds;
-                settleUntil = settleSeconds > 0 ? DateTime.Now.AddSeconds(settleSeconds) : (DateTime?)null;
-                ResetHistory();
+                // Settled tracking has (re)started, so schedule a fresh epoch.
+                settleUntil = DateTime.Now.AddSeconds(Math.Max(0, options.MountInfoSlewSettleSeconds));
             }
-            RaisePropertyChanged(nameof(IsSlewing));
-            RaisePropertyChanged(nameof(StatisticsPaused));
+
+            if (slewingChanged)
+            {
+                RaisePropertyChanged(nameof(IsSlewing));
+            }
+            if (trackingChanged)
+            {
+                RaisePropertyChanged(nameof(IsTracking));
+            }
+            if (wasPaused != StatisticsPaused)
+            {
+                RaisePropertyChanged(nameof(StatisticsPaused));
+            }
+            RaisePropertyChanged(nameof(StatisticsPausedReason));
         }
 
         /// <summary>
-        /// True while the mount is slewing or still settling afterwards, i.e. while samples are discarded.
+        /// True while the position error is not meaningful, i.e. while slewing, while not tracking,
+        /// or during the settle time after tracking resumes.
         /// </summary>
-        public bool StatisticsPaused => telescopeSlewing || (settleUntil.HasValue && DateTime.Now < settleUntil.Value);
+        public bool StatisticsPaused => telescopeSlewing || !telescopeTracking || (settleUntil.HasValue && DateTime.Now < settleUntil.Value);
+
+        public string StatisticsPausedReason
+            => telescopeSlewing ? "Slewing - statistics paused"
+                : !telescopeTracking ? "Not tracking - statistics paused"
+                : "Settling - statistics paused";
 
         public bool IsSlewing => telescopeSlewing;
+
+        public bool IsTracking => telescopeTracking;
+
+        /// <summary>
+        /// Restarts the statistics and marks the graphs with a vertical line, keeping the
+        /// plotted history intact.
+        /// </summary>
+        private void StartNewEpoch()
+        {
+            var dispatcher = Application.Current?.Dispatcher;
+            if (dispatcher != null && !dispatcher.CheckAccess())
+            {
+                dispatcher.BeginInvoke((Action)StartNewEpoch);
+                return;
+            }
+
+            var timestamp = DateTime.Now;
+            Axis1.StartNewEpoch(timestamp);
+            Axis2.StartNewEpoch(timestamp);
+            TotalErrorStatistics.Clear();
+            TotalErrorArcsec = double.NaN;
+        }
 
         private void ResetHistory()
         {
@@ -407,6 +456,8 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 Logger.Error($"Failed to enable ASA mount reporting: {ex.Message}");
                 ErrorMessage = ex.Message;
             }
+            mountStateKnown = false;
+            ResetHistory();
             updateTimer.Interval = GetPollInterval();
             updateTimer.Start();
         }
@@ -454,27 +505,28 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                     var axis2 = mount.GetAxisReport(2)?.Value;
                     Application.Current?.Dispatcher.BeginInvoke((Action)(() =>
                     {
-                        if (StatisticsPaused)
+                        var paused = StatisticsPaused;
+                        if (!paused && settleUntil.HasValue)
                         {
-                            // Still slewing or settling: keep the live readout current but do not
-                            // let the slew excursion enter the history or the statistics.
-                            Axis1.SetLiveOnly(axis1);
-                            Axis2.SetLiveOnly(axis2);
-                            RaisePropertyChanged(nameof(StatisticsPaused));
-                            return;
-                        }
-
-                        if (settleUntil.HasValue)
-                        {
-                            // Settling just finished, so drop anything captured during the slew.
+                            // Settling just finished: begin a fresh statistics epoch and mark it
+                            // in the graphs, without discarding the plotted history.
                             settleUntil = null;
-                            ResetHistory();
+                            StartNewEpoch();
+                            RaisePropertyChanged(nameof(StatisticsPaused));
+                        }
+                        else if (paused)
+                        {
+                            // Keep the banner in sync as the settle timer expires.
                             RaisePropertyChanged(nameof(StatisticsPaused));
                         }
 
-                        Axis1.Add(axis1);
-                        Axis2.Add(axis2);
-                        UpdateTotalStatistics(axis1, axis2);
+                        // The graph always keeps the sample; only the statistics are gated.
+                        Axis1.Add(axis1, !paused);
+                        Axis2.Add(axis2, !paused);
+                        if (!paused)
+                        {
+                            UpdateTotalStatistics(axis1, axis2);
+                        }
                     }));
                     ErrorMessage = null;
                 }

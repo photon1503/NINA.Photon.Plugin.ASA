@@ -99,7 +99,7 @@
                 FontSize="11"
                 FontWeight="Bold"
                 Foreground="#F6D94A"
-                Text="Slewing - statistics paused"
+                Text="{Binding StatisticsPausedReason}"
                 Visibility="{Binding StatisticsPaused, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}" />
             <TextBlock
                 FontSize="11"

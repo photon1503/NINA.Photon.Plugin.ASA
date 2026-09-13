@@ -32,9 +32,9 @@
         </Style>
     </UserControl.Resources>
 
-    <Grid>
+    <Grid Grid.IsSharedSizeScope="True">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="Auto" SharedSizeGroup="StatLabelColumn" />
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="*" />
             <ColumnDefinition Width="*" />
@@ -70,12 +70,15 @@
         <!--  One row per time window  -->
         <ItemsControl
             Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="4"
+            Padding="0"
+            BorderThickness="0"
+            HorizontalContentAlignment="Stretch"
             ItemsSource="{Binding Statistics}">
             <ItemsControl.ItemTemplate>
                 <DataTemplate DataType="{x:Type localvm:ErrorStatistics}">
-                    <Grid>
+                    <Grid MinHeight="16">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="Auto" SharedSizeGroup="StatLabelColumn" />
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="*" />
                             <ColumnDefinition Width="*" />
