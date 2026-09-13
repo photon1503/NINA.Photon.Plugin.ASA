@@ -7,7 +7,8 @@
 
 - Added a new **ASA Mount Info** dock that shows live per-axis mount telemetry.
 - Two graphs, one per axis, plot motor current, position error and axis velocity over time.
-- The graph width (history) and the mount report refresh rate are selectable directly in the dock, and are also configurable under plugin options.
+- The graph width (history), the mount report refresh rate and the position error scale are selectable directly in the dock, and are also configurable under plugin options.
+- The **Scale** dropdown fixes the position error axis of both graphs to +/- 0.5" or 1.0", or to a custom value typed into the dropdown. **Auto** scales each graph to its data.
 - Added a **Monitor** toggle to start/stop polling the mount without closing the dock. Reporting is also stopped automatically when the dock is hidden or the telescope disconnects.
 - Shows **Max**, **trailing average** and **RMS deviation** of the position error in arcseconds over the last 10 s, 60 s and 5 minutes, per axis and combined (total). The average is taken over the absolute error so it is comparable to the ASA driver and consistent between a single axis and the total; hover a value for the signed mean (bias).
 - The statistics are restarted whenever the mount begins tracking again, i.e. after a slew or after tracking was stopped, so those excursions no longer dominate the longer windows. Recording resumes after a configurable settle time (default 5 s, plugin options -> Mount Info Dock -> Slew Settle Time).

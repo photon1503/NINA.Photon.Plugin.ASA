@@ -6,8 +6,12 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:local="clr-namespace:NINA.Photon.Plugin.ASA.View"
     xmlns:localvm="clr-namespace:NINA.Photon.Plugin.ASA.ViewModels"
+    xmlns:conv="clr-namespace:NINA.Photon.Plugin.ASA.Converters"
     d:DataContext="{d:DesignInstance localvm:MountInfoVM, IsDesignTimeCreatable=False}"
     mc:Ignorable="d">
+    <UserControl.Resources>
+        <conv:ErrorScaleToStringConverter x:Key="ErrorScaleToStringConverter" />
+    </UserControl.Resources>
     <Grid Margin="2">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
@@ -17,9 +21,10 @@
             <RowDefinition Height="1*" />
         </Grid.RowDefinitions>
 
-        <!--  Toolbar: monitoring toggle, graph width and mount refresh rate  -->
+        <!--  Toolbar: monitoring toggle, graph width, mount refresh rate and error scale  -->
         <Grid Grid.Row="0" Margin="4,2,4,4">
             <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="Auto" />
@@ -80,6 +85,29 @@
                     <ComboBox.ItemTemplate>
                         <DataTemplate>
                             <TextBlock Text="{Binding StringFormat={}{0} s}" />
+                        </DataTemplate>
+                    </ComboBox.ItemTemplate>
+                </ComboBox>
+            </StackPanel>
+
+            <StackPanel Grid.Column="4" Margin="12,0,0,0" Orientation="Horizontal">
+                <TextBlock
+                    VerticalAlignment="Center"
+                    FontSize="11"
+                    Foreground="{StaticResource PrimaryBrush}"
+                    Opacity="0.85"
+                    Text="Scale" />
+                <ComboBox
+                    Margin="6,0,0,0"
+                    MinWidth="64"
+                    VerticalAlignment="Center"
+                    IsEditable="True"
+                    ItemsSource="{Binding ErrorScaleChoices}"
+                    Text="{Binding ErrorScaleArcsec, Mode=TwoWay, Converter={StaticResource ErrorScaleToStringConverter}, UpdateSourceTrigger=LostFocus}"
+                    ToolTip="Fixed scale of the position error axis for both graphs. Choose Auto to scale to the data, or type a custom value in arcseconds.">
+                    <ComboBox.ItemTemplate>
+                        <DataTemplate>
+                            <TextBlock Text="{Binding Converter={StaticResource ErrorScaleToStringConverter}}" />
                         </DataTemplate>
                     </ComboBox.ItemTemplate>
                 </ComboBox>

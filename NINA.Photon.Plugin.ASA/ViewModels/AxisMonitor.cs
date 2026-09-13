@@ -78,6 +78,33 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             }
         }
 
+        private double errorScaleArcsec;
+
+        /// <summary>
+        /// Fixed +/- scale of the position error axis in arcseconds. Zero means auto scale.
+        /// </summary>
+        public double ErrorScaleArcsec
+        {
+            get => errorScaleArcsec;
+            set
+            {
+                if (errorScaleArcsec != value)
+                {
+                    errorScaleArcsec = value;
+                    RaisePropertyChanged();
+                    RaisePropertyChanged(nameof(ErrorAxisMinimum));
+                    RaisePropertyChanged(nameof(ErrorAxisMaximum));
+                }
+            }
+        }
+
+        /// <summary>
+        /// Lower bound of the error axis, or NaN to let OxyPlot scale it to the data.
+        /// </summary>
+        public double ErrorAxisMinimum => errorScaleArcsec > 0 ? -errorScaleArcsec : double.NaN;
+
+        public double ErrorAxisMaximum => errorScaleArcsec > 0 ? errorScaleArcsec : double.NaN;
+
         /// <summary>
         /// Records a sample. The graph history always keeps the sample so that the run-up to a
         /// slew stays visible, but the statistics only include it once the mount is tracking

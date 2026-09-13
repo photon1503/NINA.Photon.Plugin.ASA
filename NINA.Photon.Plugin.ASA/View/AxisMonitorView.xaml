@@ -133,6 +133,8 @@
                         Position="Left"
                         Key="ErrorAxis"
                         FontSize="10"
+                        Minimum="{Binding ErrorAxisMinimum}"
+                        Maximum="{Binding ErrorAxisMaximum}"
                         IntervalLength="28"
                         IsPanEnabled="False"
                         IsZoomEnabled="False"

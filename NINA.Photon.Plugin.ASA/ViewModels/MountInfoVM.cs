@@ -71,7 +71,10 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             this.HistoryChoices = new ObservableCollection<int> { 30, 60, 120, 300, 600 };
             this.RefreshIntervalChoices = new ObservableCollection<double> { 0.2d, 0.5d, 1.0d, 2.0d, 5.0d, 10.0d };
             EnsureChoice(this.HistoryChoices, options.MountInfoHistorySeconds);
+            this.ErrorScaleChoices = new ObservableCollection<double> { 0.0d, 0.5d, 1.0d };
             EnsureChoice(this.RefreshIntervalChoices, options.MountInfoRefreshIntervalSeconds);
+            EnsureChoice(this.ErrorScaleChoices, options.MountInfoErrorScaleArcsec);
+            ApplyErrorScale();
 
             this.updateTimer = new DispatcherTimer(DispatcherPriority.Background, Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher) { Interval = GetPollInterval() };
             this.updateTimer.Tick += UpdateTimer_Tick;
@@ -173,6 +176,41 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
         public ObservableCollection<double> RefreshIntervalChoices { get; }
 
         /// <summary>
+        /// Selectable fixed scales for the position error axis, in arcseconds. Zero is the
+        /// autoscale entry; any other value can also be typed into the editable dropdown.
+        /// </summary>
+        public ObservableCollection<double> ErrorScaleChoices { get; }
+
+        /// <summary>
+        /// Fixed +/- scale of the position error axis, shared by both axis graphs.
+        /// Zero means autoscale.
+        /// </summary>
+        public double ErrorScaleArcsec
+        {
+            get => options.MountInfoErrorScaleArcsec;
+            set
+            {
+                var sanitized = double.IsNaN(value) || value < 0 ? 0.0d : value;
+                if (options.MountInfoErrorScaleArcsec != sanitized)
+                {
+                    options.MountInfoErrorScaleArcsec = sanitized;
+                }
+                else
+                {
+                    // Re-notify so a rejected entry snaps back to the stored value.
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private void ApplyErrorScale()
+        {
+            var scale = options.MountInfoErrorScaleArcsec;
+            Axis1.ErrorScaleArcsec = scale;
+            Axis2.ErrorScaleArcsec = scale;
+        }
+
+        /// <summary>
         /// Interval in seconds at which the mount refreshes its report values and at which the dock polls them.
         /// </summary>
         public double RefreshIntervalSeconds
@@ -267,6 +305,12 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 Axis2.HistorySeconds = options.MountInfoHistorySeconds;
                 EnsureChoice(HistoryChoices, options.MountInfoHistorySeconds);
                 RaisePropertyChanged(nameof(HistorySeconds));
+            }
+            else if (e.PropertyName == nameof(IASAOptions.MountInfoErrorScaleArcsec))
+            {
+                EnsureChoice(ErrorScaleChoices, options.MountInfoErrorScaleArcsec);
+                ApplyErrorScale();
+                RaisePropertyChanged(nameof(ErrorScaleArcsec));
             }
             else if (e.PropertyName == nameof(IASAOptions.MountInfoRefreshIntervalSeconds))
             {
