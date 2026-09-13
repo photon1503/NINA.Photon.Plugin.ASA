@@ -83,6 +83,10 @@ namespace NINA.Photon.Plugin.ASA.Interfaces
 
         int MaxConcurrency { get; set; }
 
+        int MountInfoHistorySeconds { get; set; }
+
+        double MountInfoRefreshIntervalSeconds { get; set; }
+
         ModelPointGenerationTypeEnum ModelPointGenerationType { get; set; }
 
         int MinPointAltitude { get; set; }

@@ -71,7 +71,43 @@
                 <TextBlock x:Key="DomeControlNINA_Tooltip" Text="When enabled, NINA manages dome positioning during model operations instead of leaving control external" />
                 <TextBlock x:Key="EnableMLPTDebugSimulator_Tooltip" Text="When enabled, generated MLPT paths can run in a local simulator that synthesizes solved points and advances the MLPT timeline for chart debugging." />
                 <TextBlock x:Key="MLTPPathOffset_Tooltip" Text="Offset, in RA-minutes, used to shift the MLTP path start point. Negative values start in RA-, positive values in RA+" />
+                <TextBlock x:Key="MountInfoHistorySeconds_Tooltip" Text="Width of the graphs in the ASA Mount Info dock, in seconds" />
+                <TextBlock x:Key="MountInfoRefreshIntervalSeconds_Tooltip" Text="Interval in seconds at which the mount refreshes its axis report values and the ASA Mount Info dock polls them" />
             </StackPanel.Resources>
+
+            <GroupBox Margin="0,0,0,8">
+                <GroupBox.Header>
+                    <TextBlock FontSize="16" Text="Mount Info Dock" />
+                </GroupBox.Header>
+                <Grid Margin="5">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" SharedSizeGroup="OptionsCol0" />
+                        <ColumnDefinition Width="Auto" SharedSizeGroup="OptionsCol1" />
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition />
+                        <RowDefinition />
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Grid.Column="0" VerticalAlignment="Center" Text="Graph History" ToolTip="{StaticResource MountInfoHistorySeconds_Tooltip}" />
+                    <ninactrl:UnitTextBox Grid.Row="0" Grid.Column="1" MinWidth="80" Margin="5,5,0,0" HorizontalAlignment="Left" ToolTip="{StaticResource MountInfoHistorySeconds_Tooltip}" Unit="s">
+                        <Binding Path="MountInfoHistorySeconds" UpdateSourceTrigger="LostFocus">
+                            <Binding.ValidationRules>
+                                <rules:GreaterZeroRule />
+                            </Binding.ValidationRules>
+                        </Binding>
+                    </ninactrl:UnitTextBox>
+
+                    <TextBlock Grid.Row="1" Grid.Column="0" VerticalAlignment="Center" Text="Refresh Interval" ToolTip="{StaticResource MountInfoRefreshIntervalSeconds_Tooltip}" />
+                    <ninactrl:UnitTextBox Grid.Row="1" Grid.Column="1" MinWidth="80" Margin="5,5,0,0" HorizontalAlignment="Left" ToolTip="{StaticResource MountInfoRefreshIntervalSeconds_Tooltip}" Unit="s">
+                        <Binding Path="MountInfoRefreshIntervalSeconds" UpdateSourceTrigger="LostFocus">
+                            <Binding.ValidationRules>
+                                <rules:GreaterZeroRule />
+                            </Binding.ValidationRules>
+                        </Binding>
+                    </ninactrl:UnitTextBox>
+                </Grid>
+            </GroupBox>
 
             <GroupBox Margin="0,0,0,8">
                 <GroupBox.Header>

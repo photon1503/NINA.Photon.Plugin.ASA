@@ -132,5 +132,11 @@ namespace NINA.Photon.Plugin.ASA.Interfaces
         void StartTracking();
 
         Response<bool> SetRefractionCorrection(bool enabled);
+
+        Response<bool> SetReporting(bool enabled);
+
+        Response<bool> SetReportRefreshInterval(double seconds);
+
+        Response<AxisReport> GetAxisReport(int axis);
     }
 }

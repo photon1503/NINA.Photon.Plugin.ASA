@@ -10,4 +10,8 @@
     <DataTemplate x:Key="NINA.Photon.Plugin.ASA.ViewModels.MountModelBuilderVM_Dockable">
         <view:MountModelBuilderView />
     </DataTemplate>
+
+    <DataTemplate x:Key="NINA.Photon.Plugin.ASA.ViewModels.MountInfoVM_Dockable">
+        <view:MountInfoView />
+    </DataTemplate>
 </ResourceDictionary>

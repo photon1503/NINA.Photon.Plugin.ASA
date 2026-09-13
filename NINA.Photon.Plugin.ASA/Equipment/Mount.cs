@@ -168,8 +168,32 @@ namespace NINA.Photon.Plugin.ASA.Equipment
             return new Response<bool>(true, "");
         }
 
-        public Response<bool> CoverOpen()
+        public Response<bool> SetReporting(bool enabled)
         {
+            this.mountCommander.Action("reporting", enabled ? "on" : "off");
+            return new Response<bool>(true, "");
+        }
+
+        public Response<bool> SetReportRefreshInterval(double seconds)
+        {
+            this.mountCommander.Action("reportrefresinterval", seconds.ToString(CultureInfo.InvariantCulture));
+            return new Response<bool>(true, "");
+        }
+
+        public Response<AxisReport> GetAxisReport(int axis)        {
+            var rc = this.mountCommander.ActionWithReturn("report", axis.ToString(CultureInfo.InvariantCulture));
+            try
+            {
+                return new Response<AxisReport>(AxisReport.Parse(rc), rc);
+            }
+            catch (Exception ex)
+            {
+                Logger.Error($"Failed to parse axis {axis} report '{rc}': {ex.Message}");
+                return new Response<AxisReport>(null, rc);
+            }
+        }
+
+        public Response<bool> CoverOpen()        {
             this.mountCommander.Action("Telescope:OpenCover", "");
             return new Response<bool>(true, "");
         }

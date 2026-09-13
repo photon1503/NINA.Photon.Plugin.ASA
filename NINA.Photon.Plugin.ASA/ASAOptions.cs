@@ -81,6 +81,8 @@ namespace NINA.Photon.Plugin.ASA
             maxPointRMS = optionsAccessor.GetValueDouble("MaxPointRMS", double.NaN);
             logCommands = optionsAccessor.GetValueBoolean("LogCommands", false);
             maxConcurrency = optionsAccessor.GetValueInt32("MaxConcurrency", 3);
+            mountInfoHistorySeconds = optionsAccessor.GetValueInt32(nameof(MountInfoHistorySeconds), 60);
+            mountInfoRefreshIntervalSeconds = optionsAccessor.GetValueDouble(nameof(MountInfoRefreshIntervalSeconds), 1.0d);
             allowBlindSolves = optionsAccessor.GetValueBoolean("AllowBlindSolves", false);
             minPointAltitude = optionsAccessor.GetValueInt32("MinPointAltitude", 0);
             maxPointAltitude = optionsAccessor.GetValueInt32("MaxPointAltitude", 90);
@@ -166,6 +168,8 @@ namespace NINA.Photon.Plugin.ASA
             MaxPointRMS = double.NaN;
             LogCommands = false;
             MaxConcurrency = 3;
+            MountInfoHistorySeconds = 60;
+            MountInfoRefreshIntervalSeconds = 1.0d;
             AllowBlindSolves = false;
             MinPointAltitude = 0;
             MaxPointAltitude = 90;
@@ -1145,9 +1149,47 @@ namespace NINA.Photon.Plugin.ASA
             }
         }
 
-        private bool showRemovedPoints;
+        private int mountInfoHistorySeconds;
 
-        public bool ShowRemovedPoints
+        public int MountInfoHistorySeconds
+        {
+            get => mountInfoHistorySeconds;
+            set
+            {
+                if (mountInfoHistorySeconds != value)
+                {
+                    if (value <= 0)
+                    {
+                        throw new ArgumentException("MountInfoHistorySeconds must be positive", nameof(MountInfoHistorySeconds));
+                    }
+                    mountInfoHistorySeconds = value;
+                    optionsAccessor.SetValueInt32(nameof(MountInfoHistorySeconds), mountInfoHistorySeconds);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private double mountInfoRefreshIntervalSeconds;
+
+        public double MountInfoRefreshIntervalSeconds
+        {
+            get => mountInfoRefreshIntervalSeconds;
+            set
+            {
+                if (mountInfoRefreshIntervalSeconds != value)
+                {
+                    if (value < 0)
+                    {
+                        throw new ArgumentException("MountInfoRefreshIntervalSeconds must be non-negative", nameof(MountInfoRefreshIntervalSeconds));
+                    }
+                    mountInfoRefreshIntervalSeconds = value;
+                    optionsAccessor.SetValueDouble(nameof(MountInfoRefreshIntervalSeconds), mountInfoRefreshIntervalSeconds);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private bool showRemovedPoints;        public bool ShowRemovedPoints
         {
             get => showRemovedPoints;
             set
