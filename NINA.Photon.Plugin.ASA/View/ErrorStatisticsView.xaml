@@ -1,0 +1,110 @@
+﻿<UserControl
+    x:Class="NINA.Photon.Plugin.ASA.View.ErrorStatisticsView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:localvm="clr-namespace:NINA.Photon.Plugin.ASA.ViewModels"
+    d:DataContext="{d:DesignInstance localvm:ErrorStatisticsTracker, IsDesignTimeCreatable=False}"
+    mc:Ignorable="d">
+    <UserControl.Resources>
+        <Style x:Key="StatHeader" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="10" />
+            <Setter Property="Foreground" Value="{StaticResource PrimaryBrush}" />
+            <Setter Property="Opacity" Value="0.8" />
+            <Setter Property="HorizontalAlignment" Value="Right" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Margin" Value="4,0,0,1" />
+        </Style>
+        <Style x:Key="StatValue" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontFamily" Value="Consolas" />
+            <Setter Property="HorizontalAlignment" Value="Right" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Margin" Value="4,0,0,0" />
+        </Style>
+        <Style x:Key="StatWindow" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Foreground" Value="{StaticResource PrimaryBrush}" />
+            <Setter Property="HorizontalAlignment" Value="Left" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+    </UserControl.Resources>
+
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="*" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!--  Column headers  -->
+        <TextBlock
+            Grid.Row="0" Grid.Column="0"
+            HorizontalAlignment="Left"
+            Style="{StaticResource StatHeader}"
+            Margin="0,0,0,1"
+            Text="Error [&#8243;]" />
+        <TextBlock
+            Grid.Row="0" Grid.Column="1"
+            Style="{StaticResource StatHeader}"
+            Text="RMS"
+            ToolTip="Root mean square of the position error over the window" />
+        <TextBlock
+            Grid.Row="0" Grid.Column="2"
+            Style="{StaticResource StatHeader}"
+            Text="Avg"
+            ToolTip="Trailing average of the absolute position error over the window. Hover a value for the signed mean (bias)." />
+        <TextBlock
+            Grid.Row="0" Grid.Column="3"
+            Style="{StaticResource StatHeader}"
+            Text="Max"
+            ToolTip="Largest absolute position error over the window" />
+
+        <!--  One row per time window  -->
+        <ItemsControl
+            Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="4"
+            ItemsSource="{Binding Statistics}">
+            <ItemsControl.ItemTemplate>
+                <DataTemplate DataType="{x:Type localvm:ErrorStatistics}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock
+                            Grid.Column="0"
+                            Style="{StaticResource StatWindow}"
+                            Text="{Binding Label}"
+                            ToolTip="{Binding SampleCount, StringFormat=Samples: {0}}" />
+                        <TextBlock
+                            Grid.Column="1"
+                            Foreground="#5CE1E6"
+                            FontWeight="Bold"
+                            Style="{StaticResource StatValue}"
+                            Text="{Binding RMS, StringFormat={}{0:0.000}, TargetNullValue=--}" />
+                        <TextBlock
+                            Grid.Column="2"
+                            Foreground="{StaticResource PrimaryBrush}"
+                            Style="{StaticResource StatValue}"
+                            Text="{Binding Average, StringFormat={}{0:0.000}}"
+                            ToolTip="{Binding Bias, StringFormat=Signed mean (bias): {0:+0.000;-0.000;0.000}}" />
+                        <TextBlock
+                            Grid.Column="3"
+                            Foreground="#F6D94A"
+                            Style="{StaticResource StatValue}"
+                            Text="{Binding Max, StringFormat={}{0:0.000}}" />
+                    </Grid>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+    </Grid>
+</UserControl>

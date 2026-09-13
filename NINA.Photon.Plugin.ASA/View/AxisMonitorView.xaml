@@ -4,27 +4,28 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="clr-namespace:NINA.Photon.Plugin.ASA.View"
     xmlns:localvm="clr-namespace:NINA.Photon.Plugin.ASA.ViewModels"
     xmlns:oxy="clr-namespace:OxyPlot.Wpf;assembly=OxyPlot.Contrib.Wpf"
     d:DataContext="{d:DesignInstance localvm:AxisMonitor, IsDesignTimeCreatable=False}"
     mc:Ignorable="d">
     <UserControl.Resources>
         <Style x:Key="ValueLabel" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="11" />
-            <Setter Property="Opacity" Value="0.7" />
-            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="FontSize" Value="10" />
+            <Setter Property="Foreground" Value="{StaticResource PrimaryBrush}" />
+            <Setter Property="Opacity" Value="0.85" />
+            <Setter Property="HorizontalAlignment" Value="Left" />
         </Style>
         <Style x:Key="ValueText" TargetType="TextBlock">
-            <Setter Property="FontSize" Value="12" />
+            <Setter Property="FontSize" Value="13" />
             <Setter Property="FontWeight" Value="Bold" />
-            <Setter Property="HorizontalAlignment" Value="Right" />
-            <Setter Property="VerticalAlignment" Value="Center" />
-            <Setter Property="Margin" Value="0,0,6,0" />
+            <Setter Property="HorizontalAlignment" Value="Left" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
         </Style>
     </UserControl.Resources>
     <Border
         Margin="2"
-        Padding="4"
+        Padding="6,4,6,4"
         BorderBrush="{StaticResource BorderBrush}"
         BorderThickness="1"
         CornerRadius="3">
@@ -32,106 +33,91 @@
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
-            <TextBlock
-                Grid.Row="0"
-                Margin="2,0,0,4"
-                FontSize="14"
-                FontWeight="Bold"
-                Foreground="{StaticResource PrimaryBrush}"
-                Text="{Binding Title}" />
-
-            <!--  Compact value readout: two columns of label/value pairs  -->
-            <Grid Grid.Row="1" Margin="2,0,0,4">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                    <ColumnDefinition Width="Auto" />
-                    <ColumnDefinition Width="*" />
-                </Grid.ColumnDefinitions>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
-                </Grid.RowDefinitions>
-
+            <!--  Title row with the velocity series toggle  -->
+            <DockPanel Grid.Row="0" Margin="0,0,0,4" LastChildFill="False">
                 <TextBlock
-                    Grid.Row="0" Grid.Column="0"
-                    Style="{StaticResource ValueLabel}"
-                    Text="Current" />
+                    DockPanel.Dock="Left"
+                    VerticalAlignment="Center"
+                    FontSize="14"
+                    FontWeight="Bold"
+                    Foreground="{StaticResource PrimaryBrush}"
+                    Text="{Binding Title}"
+                    TextTrimming="CharacterEllipsis" />
+                <CheckBox
+                    DockPanel.Dock="Right"
+                    VerticalAlignment="Center"
+                    IsChecked="{Binding ShowVelocity, Mode=TwoWay}"
+                    ToolTip="Show velocity series" />
                 <TextBlock
-                    Grid.Row="0" Grid.Column="1"
-                    Foreground="#F6D94A"
-                    Style="{StaticResource ValueText}"
-                    Text="{Binding Current, StringFormat={}{0:0.000} A}" />
-
-                <TextBlock
-                    Grid.Row="0" Grid.Column="2"
-                    Style="{StaticResource ValueLabel}"
-                    Text="Pos Error" />
-                <TextBlock
-                    Grid.Row="0" Grid.Column="3"
-                    Foreground="#5CE1E6"
-                    Style="{StaticResource ValueText}"
-                    Text="{Binding PositionErrorArcsec, StringFormat={}{0:0.00}&#8243;}" />
-
-                <TextBlock
-                    Grid.Row="1" Grid.Column="0"
-                    Style="{StaticResource ValueLabel}"
-                    Text="Enc Pos" />
-                <TextBlock
-                    Grid.Row="1" Grid.Column="1"
-                    Style="{StaticResource ValueText}"
-                    Text="{Binding EncoderPositionDegrees, StringFormat={}{0:0.0000}&#176;}" />
-
-                <TextBlock
-                    Grid.Row="1" Grid.Column="2"
-                    Style="{StaticResource ValueLabel}"
-                    Text="Velocity" />
-                <TextBlock
-                    Grid.Row="1" Grid.Column="3"
+                    DockPanel.Dock="Right"
+                    Margin="0,0,6,0"
+                    VerticalAlignment="Center"
+                    FontSize="10"
                     Foreground="#FF6FAE"
-                    Style="{StaticResource ValueText}"
-                    Text="{Binding VelocityDegreesPerSecond, StringFormat={}{0:0.0000}&#176;/s}" />
+                    Text="velocity"
+                    ToolTip="Show velocity series" />
+            </DockPanel>
 
-                <TextBlock
-                    Grid.Row="2" Grid.Column="0"
-                    Style="{StaticResource ValueLabel}"
-                    Text="Updated" />
-                <TextBlock
-                    Grid.Row="2" Grid.Column="1" Grid.ColumnSpan="3"
-                    HorizontalAlignment="Left"
-                    Margin="0"
-                    Style="{StaticResource ValueText}"
-                    Text="{Binding LastUpdate, StringFormat={}{0:HH:mm:ss}}" />
-            </Grid>
+            <!--  Value readout: each metric is a stacked label/value chip so nothing overlaps  -->
+            <UniformGrid Grid.Row="1" Columns="2" Rows="2" Margin="0,0,0,4">
+                <StackPanel Margin="0,0,6,2">
+                    <TextBlock Style="{StaticResource ValueLabel}" Text="Current" />
+                    <TextBlock
+                        Foreground="#F6D94A"
+                        Style="{StaticResource ValueText}"
+                        Text="{Binding Current, StringFormat={}{0:0.000} A}" />
+                </StackPanel>
+                <StackPanel Margin="0,0,0,2">
+                    <TextBlock Style="{StaticResource ValueLabel}" Text="Pos Error" />
+                    <TextBlock
+                        Foreground="#5CE1E6"
+                        Style="{StaticResource ValueText}"
+                        Text="{Binding PositionErrorArcsec, StringFormat={}{0:0.000}&#8243;}" />
+                </StackPanel>
+                <StackPanel Margin="0,0,6,0">
+                    <TextBlock Style="{StaticResource ValueLabel}" Text="Velocity" />
+                    <TextBlock
+                        Foreground="#FF6FAE"
+                        Style="{StaticResource ValueText}"
+                        Text="{Binding VelocityArcsecPerSecond, StringFormat={}{0:0.00}&#8243;/s}"
+                        ToolTip="Axis velocity. Sidereal tracking is about 15.04&#8243;/s" />
+                </StackPanel>
+                <StackPanel>
+                    <TextBlock Style="{StaticResource ValueLabel}" Text="Enc Pos" />
+                    <TextBlock
+                        Foreground="{StaticResource PrimaryBrush}"
+                        Style="{StaticResource ValueText}"
+                        Text="{Binding EncoderPositionDegrees, StringFormat={}{0:0.000}&#176;}"
+                        ToolTip="{Binding LastUpdate, StringFormat=Last update: {0:HH:mm:ss}}" />
+                </StackPanel>
+            </UniformGrid>
+
+            <!--  Rolling max / trailing average / RMS deviation of the position error  -->
+            <Border
+                Grid.Row="2"
+                Margin="0,0,0,4"
+                Padding="4,2,4,2"
+                Background="{StaticResource TertiaryBackgroundBrush}"
+                CornerRadius="2">
+                <local:ErrorStatisticsView DataContext="{Binding ErrorStatistics}" />
+            </Border>
 
             <oxy:Plot
-                Grid.Row="2"
+                Grid.Row="3"
                 MinHeight="130"
                 Background="Transparent"
                 PlotAreaBackground="Transparent"
                 PlotAreaBorderColor="Transparent">
-                <oxy:Plot.Legends>
-                    <oxy:Legend
-                        LegendPlacement="Inside"
-                        LegendPosition="TopRight"
-                        LegendFontSize="10"
-                        LegendBackground="#40000000"
-                        LegendBorderThickness="0"
-                        LegendTextColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}}"
-                        LegendOrientation="Horizontal"
-                        LegendMargin="0"
-                        LegendPadding="2"
-                        LegendSymbolLength="10" />
-                </oxy:Plot.Legends>
                 <oxy:Plot.Axes>
                     <oxy:LinearAxis
                         Position="Bottom"
                         Key="TimeAxis"
                         FontSize="10"
+                        IntervalLength="40"
                         Unit="s"
                         IsPanEnabled="False"
                         IsZoomEnabled="False"
@@ -147,11 +133,12 @@
                         Position="Left"
                         Key="ErrorAxis"
                         FontSize="10"
+                        IntervalLength="28"
                         IsPanEnabled="False"
                         IsZoomEnabled="False"
                         MajorGridlineStyle="Dot"
                         MinorGridlineStyle="None"
-                        StringFormat="0.##"
+                        StringFormat="0.###"
                         AxislineColor="#5CE1E6"
                         MajorGridlineColor="{Binding Path=Color, Source={StaticResource PrimaryBrush}, Converter={StaticResource SetAlphaToColorConverter}, ConverterParameter=40}"
                         TextColor="#5CE1E6"
@@ -160,6 +147,8 @@
                         Position="Right"
                         Key="CurrentAxis"
                         FontSize="10"
+                        IntervalLength="34"
+                        AxisTitleDistance="0"
                         IsPanEnabled="False"
                         IsZoomEnabled="False"
                         MajorGridlineStyle="None"
@@ -173,12 +162,14 @@
                         PositionTier="1"
                         Key="VelocityAxis"
                         FontSize="10"
-                        IsAxisVisible="{Binding IsChecked, ElementName=ShowVelocity}"
+                        IntervalLength="34"
+                        AxisTitleDistance="0"
+                        IsAxisVisible="{Binding ShowVelocity}"
                         IsPanEnabled="False"
                         IsZoomEnabled="False"
                         MajorGridlineStyle="None"
                         MinorGridlineStyle="None"
-                        StringFormat="0.###"
+                        StringFormat="0.##"
                         AxislineColor="#FF6FAE"
                         TextColor="#FF6FAE"
                         TicklineColor="#FF6FAE" />
@@ -193,7 +184,7 @@
                         YAxisKey="ErrorAxis"
                         StrokeThickness="1.5"
                         Color="#5CE1E6"
-                        TrackerFormatString="{}{0}&#x0a;{2:0.00}&#8243; @ {4:0}s" />
+                        TrackerFormatString="{}{0}&#x0a;{2:0.000}&#8243; @ {4:0}s" />
                     <oxy:LineSeries
                         Title="I [A]"
                         ItemsSource="{Binding CurrentHistory, UpdateSourceTrigger=PropertyChanged}"
@@ -205,7 +196,7 @@
                         Color="#F6D94A"
                         TrackerFormatString="{}{0}&#x0a;{2:0.000} A @ {4:0}s" />
                     <oxy:LineSeries
-                        Title="v [&#176;/s]"
+                        Title="v [&#8243;/s]"
                         ItemsSource="{Binding VelocityHistory, UpdateSourceTrigger=PropertyChanged}"
                         DataFieldX="X"
                         DataFieldY="Y"
@@ -213,20 +204,10 @@
                         YAxisKey="VelocityAxis"
                         StrokeThickness="1.5"
                         Color="#FF6FAE"
-                        Visibility="{Binding IsChecked, ElementName=ShowVelocity, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"
-                        TrackerFormatString="{}{0}&#x0a;{2:0.0000}&#176;/s @ {4:0}s" />
+                        Visibility="{Binding ShowVelocity, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"
+                        TrackerFormatString="{}{0}&#x0a;{2:0.00}&#8243;/s @ {4:0}s" />
                 </oxy:Plot.Series>
             </oxy:Plot>
-
-            <CheckBox
-                x:Name="ShowVelocity"
-                Grid.Row="2"
-                Margin="0,0,4,2"
-                HorizontalAlignment="Right"
-                VerticalAlignment="Bottom"
-                Content="v"
-                IsChecked="True"
-                ToolTip="Show velocity series" />
         </Grid>
     </Border>
 </UserControl>

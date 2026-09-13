@@ -83,6 +83,7 @@ namespace NINA.Photon.Plugin.ASA
             maxConcurrency = optionsAccessor.GetValueInt32("MaxConcurrency", 3);
             mountInfoHistorySeconds = optionsAccessor.GetValueInt32(nameof(MountInfoHistorySeconds), 60);
             mountInfoRefreshIntervalSeconds = optionsAccessor.GetValueDouble(nameof(MountInfoRefreshIntervalSeconds), 1.0d);
+            mountInfoSlewSettleSeconds = optionsAccessor.GetValueDouble(nameof(MountInfoSlewSettleSeconds), 5.0d);
             allowBlindSolves = optionsAccessor.GetValueBoolean("AllowBlindSolves", false);
             minPointAltitude = optionsAccessor.GetValueInt32("MinPointAltitude", 0);
             maxPointAltitude = optionsAccessor.GetValueInt32("MaxPointAltitude", 90);
@@ -170,6 +171,7 @@ namespace NINA.Photon.Plugin.ASA
             MaxConcurrency = 3;
             MountInfoHistorySeconds = 60;
             MountInfoRefreshIntervalSeconds = 1.0d;
+            MountInfoSlewSettleSeconds = 5.0d;
             AllowBlindSolves = false;
             MinPointAltitude = 0;
             MaxPointAltitude = 90;
@@ -1184,6 +1186,30 @@ namespace NINA.Photon.Plugin.ASA
                     }
                     mountInfoRefreshIntervalSeconds = value;
                     optionsAccessor.SetValueDouble(nameof(MountInfoRefreshIntervalSeconds), mountInfoRefreshIntervalSeconds);
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
+        private double mountInfoSlewSettleSeconds;
+
+        /// <summary>
+        /// Time to wait after a slew finishes before position error samples are recorded again,
+        /// so that post-slew settling does not distort the statistics.
+        /// </summary>
+        public double MountInfoSlewSettleSeconds
+        {
+            get => mountInfoSlewSettleSeconds;
+            set
+            {
+                if (mountInfoSlewSettleSeconds != value)
+                {
+                    if (value < 0)
+                    {
+                        throw new ArgumentException("MountInfoSlewSettleSeconds must be non-negative", nameof(MountInfoSlewSettleSeconds));
+                    }
+                    mountInfoSlewSettleSeconds = value;
+                    optionsAccessor.SetValueDouble(nameof(MountInfoSlewSettleSeconds), mountInfoSlewSettleSeconds);
                     RaisePropertyChanged();
                 }
             }

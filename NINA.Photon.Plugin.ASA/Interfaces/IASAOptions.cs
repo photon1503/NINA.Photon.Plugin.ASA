@@ -87,6 +87,8 @@ namespace NINA.Photon.Plugin.ASA.Interfaces
 
         double MountInfoRefreshIntervalSeconds { get; set; }
 
+        double MountInfoSlewSettleSeconds { get; set; }
+
         ModelPointGenerationTypeEnum ModelPointGenerationType { get; set; }
 
         int MinPointAltitude { get; set; }

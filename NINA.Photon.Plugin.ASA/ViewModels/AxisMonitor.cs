@@ -36,7 +36,31 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
 
         public int Axis { get; }
 
+        /// <summary>
+        /// Rolling max / trailing average / RMS deviation of the position error for this axis.
+        /// </summary>
+        public ErrorStatisticsTracker ErrorStatistics { get; } = new ErrorStatisticsTracker();
+
         public string Title { get; }
+
+        private bool showVelocity = true;
+
+        /// <summary>
+        /// Whether the velocity series and its axis are shown. The velocity scale differs greatly
+        /// from the error scale, so it can be hidden to declutter the graph.
+        /// </summary>
+        public bool ShowVelocity
+        {
+            get => showVelocity;
+            set
+            {
+                if (showVelocity != value)
+                {
+                    showVelocity = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
 
         private int historySeconds = 60;
 
@@ -61,12 +85,28 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 return;
             }
 
+            var timestamp = DateTime.Now;
             lock (lockObj)
             {
-                samples.Add((DateTime.Now, report));
+                samples.Add((timestamp, report));
             }
+            ErrorStatistics.Add(timestamp, report.PosErrArcsec);
             LastReport = report;
             Rebuild();
+        }
+
+        /// <summary>
+        /// Updates the live readout without recording the sample in the history or statistics.
+        /// Used while the mount is slewing, when the position error is not meaningful.
+        /// </summary>
+        public void SetLiveOnly(AxisReport report)
+        {
+            if (report == null)
+            {
+                return;
+            }
+
+            LastReport = report;
         }
 
         public void Clear()
@@ -75,6 +115,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             {
                 samples.Clear();
             }
+            ErrorStatistics.Clear();
             LastReport = null;
             Rebuild();
         }
@@ -91,7 +132,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 RaisePropertyChanged(nameof(Current));
                 RaisePropertyChanged(nameof(PositionErrorArcsec));
                 RaisePropertyChanged(nameof(EncoderPositionDegrees));
-                RaisePropertyChanged(nameof(VelocityDegreesPerSecond));
+                RaisePropertyChanged(nameof(VelocityArcsecPerSecond));
                 RaisePropertyChanged(nameof(LastUpdate));
             }
         }
@@ -102,7 +143,10 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
 
         public double EncoderPositionDegrees => lastReport?.EncPosDegrees ?? double.NaN;
 
-        public double VelocityDegreesPerSecond => lastReport?.VelocityDegreesPerSecond ?? double.NaN;
+        /// <summary>
+        /// Axis velocity in arcseconds per second. Sidereal rate is about 15.04.
+        /// </summary>
+        public double VelocityArcsecPerSecond => lastReport?.VelocityArcsecPerSecond ?? double.NaN;
 
         public DateTime? LastUpdate => lastReport?.LastTime;
 
@@ -158,9 +202,11 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 snapshot = samples.ToList();
             }
 
+            ErrorStatistics.Update(now);
+
             CurrentHistory = snapshot.Select(s => new DataPoint(-(now - s.Timestamp).TotalSeconds, s.Report.QCurr)).ToList();
             PositionErrorHistory = snapshot.Select(s => new DataPoint(-(now - s.Timestamp).TotalSeconds, s.Report.PosErrArcsec)).ToList();
-            VelocityHistory = snapshot.Select(s => new DataPoint(-(now - s.Timestamp).TotalSeconds, s.Report.VelocityDegreesPerSecond)).ToList();
+            VelocityHistory = snapshot.Select(s => new DataPoint(-(now - s.Timestamp).TotalSeconds, s.Report.VelocityArcsecPerSecond)).ToList();
             RaisePropertyChanged(nameof(TimeAxisMinimum));
         }
     }

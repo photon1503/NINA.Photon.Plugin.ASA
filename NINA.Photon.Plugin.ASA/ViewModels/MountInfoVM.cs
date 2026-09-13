@@ -16,6 +16,7 @@ using NINA.Equipment.Equipment.MyTelescope;
 using NINA.Equipment.Interfaces.Mediator;
 using NINA.Photon.Plugin.ASA.Equipment;
 using NINA.Photon.Plugin.ASA.Interfaces;
+using NINA.Photon.Plugin.ASA.Model;
 using NINA.Profile.Interfaces;
 using NINA.WPF.Base.ViewModel;
 using System;
@@ -61,7 +62,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
 
             var dict = new ResourceDictionary();
             dict.Source = new Uri("NINA.Photon.Plugin.ASA;component/Resources/SVGDataTemplates.xaml", UriKind.RelativeOrAbsolute);
-            ImageGeometry = (System.Windows.Media.GeometryGroup)dict["ASASVG"];
+            ImageGeometry = (System.Windows.Media.GeometryGroup)dict["ASAMountInfoSVG"];
             ImageGeometry.Freeze();
 
             this.Axis1 = new AxisMonitor(1, "Axis 1 (RA)") { HistorySeconds = options.MountInfoHistorySeconds };
@@ -85,6 +86,53 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             this.PropertyChanged += MountInfoVM_PropertyChanged;
         }
 
+        private bool monitoringEnabled = true;
+
+        /// <summary>
+        /// User toggle to start/stop polling the mount without having to close the dock.
+        /// </summary>
+        public bool MonitoringEnabled
+        {
+            get => monitoringEnabled;
+            set
+            {
+                if (monitoringEnabled != value)
+                {
+                    monitoringEnabled = value;
+                    RaisePropertyChanged();
+                    EvaluateMonitoringState();
+                }
+            }
+        }
+
+        /// <summary>
+        /// The total error is the vector sum of both axis errors, so it needs both axis reports
+        /// from the same poll cycle.
+        /// </summary>
+        private void UpdateTotalStatistics(AxisReport axis1, AxisReport axis2)
+        {
+            var now = DateTime.Now;
+            if (axis1 != null && axis2 != null)
+            {
+                var total = Math.Sqrt((axis1.PosErrArcsec * axis1.PosErrArcsec) + (axis2.PosErrArcsec * axis2.PosErrArcsec));
+                TotalErrorArcsec = total;
+                TotalErrorStatistics.Add(now, total);
+            }
+            TotalErrorStatistics.Update(now);
+        }
+
+        private void EvaluateMonitoringState()
+        {
+            if (MonitoringEnabled && monitoringVisible && TelescopeConnected)
+            {
+                StartMonitoring();
+            }
+            else
+            {
+                StopMonitoring();
+            }
+        }
+
         private void MountInfoVM_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             if (e.PropertyName == nameof(IsVisible))
@@ -96,6 +144,29 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
         public AxisMonitor Axis1 { get; }
 
         public AxisMonitor Axis2 { get; }
+
+        /// <summary>
+        /// Combined (total) position error statistics, computed from the vector sum of both axes.
+        /// </summary>
+        public ErrorStatisticsTracker TotalErrorStatistics { get; } = new ErrorStatisticsTracker();
+
+        private double totalErrorArcsec = double.NaN;
+
+        /// <summary>
+        /// Current total position error, i.e. the vector sum of both axis errors.
+        /// </summary>
+        public double TotalErrorArcsec
+        {
+            get => totalErrorArcsec;
+            private set
+            {
+                if (totalErrorArcsec != value)
+                {
+                    totalErrorArcsec = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
 
         public ObservableCollection<int> HistoryChoices { get; }
 
@@ -237,14 +308,61 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
         public void UpdateDeviceInfo(TelescopeInfo deviceInfo)
         {
             TelescopeConnected = deviceInfo.Connected;
-            if (!deviceInfo.Connected)
+            UpdateSlewingState(deviceInfo.Connected && deviceInfo.Slewing);
+            EvaluateMonitoringState();
+        }
+
+        private bool telescopeSlewing;
+        private DateTime? settleUntil;
+
+        /// <summary>
+        /// A slew makes the position error meaningless and would otherwise dominate the longer
+        /// statistics windows for minutes. Samples are therefore discarded while slewing, and the
+        /// history is reset once the mount has settled again.
+        /// </summary>
+        private void UpdateSlewingState(bool slewing)
+        {
+            if (telescopeSlewing == slewing)
             {
-                StopMonitoring();
+                return;
             }
-            else if (IsVisible)
+
+            telescopeSlewing = slewing;
+            if (slewing)
             {
-                StartMonitoring();
+                settleUntil = null;
+                ResetHistory();
             }
+            else
+            {
+                var settleSeconds = options.MountInfoSlewSettleSeconds;
+                settleUntil = settleSeconds > 0 ? DateTime.Now.AddSeconds(settleSeconds) : (DateTime?)null;
+                ResetHistory();
+            }
+            RaisePropertyChanged(nameof(IsSlewing));
+            RaisePropertyChanged(nameof(StatisticsPaused));
+        }
+
+        /// <summary>
+        /// True while the mount is slewing or still settling afterwards, i.e. while samples are discarded.
+        /// </summary>
+        public bool StatisticsPaused => telescopeSlewing || (settleUntil.HasValue && DateTime.Now < settleUntil.Value);
+
+        public bool IsSlewing => telescopeSlewing;
+
+        private void ResetHistory()
+        {
+            var dispatcher = Application.Current?.Dispatcher;
+            if (dispatcher != null && !dispatcher.CheckAccess())
+            {
+                dispatcher.BeginInvoke((Action)ResetHistory);
+                return;
+            }
+
+            Axis1.Clear();
+            Axis2.Clear();
+            TotalErrorStatistics.Clear();
+            TotalErrorArcsec = double.NaN;
         }
 
         private bool monitoringVisible;
@@ -260,14 +378,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             }
 
             monitoringVisible = base.IsVisible;
-            if (monitoringVisible && TelescopeConnected)
-            {
-                StartMonitoring();
-            }
-            else if (!monitoringVisible)
-            {
-                StopMonitoring();
-            }
+            EvaluateMonitoringState();
         }
 
         private void StartMonitoring()
@@ -343,8 +454,27 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                     var axis2 = mount.GetAxisReport(2)?.Value;
                     Application.Current?.Dispatcher.BeginInvoke((Action)(() =>
                     {
+                        if (StatisticsPaused)
+                        {
+                            // Still slewing or settling: keep the live readout current but do not
+                            // let the slew excursion enter the history or the statistics.
+                            Axis1.SetLiveOnly(axis1);
+                            Axis2.SetLiveOnly(axis2);
+                            RaisePropertyChanged(nameof(StatisticsPaused));
+                            return;
+                        }
+
+                        if (settleUntil.HasValue)
+                        {
+                            // Settling just finished, so drop anything captured during the slew.
+                            settleUntil = null;
+                            ResetHistory();
+                            RaisePropertyChanged(nameof(StatisticsPaused));
+                        }
+
                         Axis1.Add(axis1);
                         Axis2.Add(axis2);
+                        UpdateTotalStatistics(axis1, axis2);
                     }));
                     ErrorMessage = null;
                 }

@@ -73,6 +73,7 @@
                 <TextBlock x:Key="MLTPPathOffset_Tooltip" Text="Offset, in RA-minutes, used to shift the MLTP path start point. Negative values start in RA-, positive values in RA+" />
                 <TextBlock x:Key="MountInfoHistorySeconds_Tooltip" Text="Width of the graphs in the ASA Mount Info dock, in seconds" />
                 <TextBlock x:Key="MountInfoRefreshIntervalSeconds_Tooltip" Text="Interval in seconds at which the mount refreshes its axis report values and the ASA Mount Info dock polls them" />
+                <TextBlock x:Key="MountInfoSlewSettleSeconds_Tooltip" Text="Time in seconds to wait after a slew finishes before the ASA Mount Info dock records position error samples again. The history and statistics are reset after every slew, so that slew excursions do not distort the values. Set to 0 to resume immediately." />
             </StackPanel.Resources>
 
             <GroupBox Margin="0,0,0,8">
@@ -85,6 +86,7 @@
                         <ColumnDefinition Width="Auto" SharedSizeGroup="OptionsCol1" />
                     </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
+                        <RowDefinition />
                         <RowDefinition />
                         <RowDefinition />
                     </Grid.RowDefinitions>
@@ -101,6 +103,15 @@
                     <TextBlock Grid.Row="1" Grid.Column="0" VerticalAlignment="Center" Text="Refresh Interval" ToolTip="{StaticResource MountInfoRefreshIntervalSeconds_Tooltip}" />
                     <ninactrl:UnitTextBox Grid.Row="1" Grid.Column="1" MinWidth="80" Margin="5,5,0,0" HorizontalAlignment="Left" ToolTip="{StaticResource MountInfoRefreshIntervalSeconds_Tooltip}" Unit="s">
                         <Binding Path="MountInfoRefreshIntervalSeconds" UpdateSourceTrigger="LostFocus">
+                            <Binding.ValidationRules>
+                                <rules:GreaterZeroRule />
+                            </Binding.ValidationRules>
+                        </Binding>
+                    </ninactrl:UnitTextBox>
+
+                    <TextBlock Grid.Row="2" Grid.Column="0" VerticalAlignment="Center" Text="Slew Settle Time" ToolTip="{StaticResource MountInfoSlewSettleSeconds_Tooltip}" />
+                    <ninactrl:UnitTextBox Grid.Row="2" Grid.Column="1" MinWidth="80" Margin="5,5,0,0" HorizontalAlignment="Left" ToolTip="{StaticResource MountInfoSlewSettleSeconds_Tooltip}" Unit="s">
+                        <Binding Path="MountInfoSlewSettleSeconds" UpdateSourceTrigger="LostFocus">
                             <Binding.ValidationRules>
                                 <rules:GreaterZeroRule />
                             </Binding.ValidationRules>

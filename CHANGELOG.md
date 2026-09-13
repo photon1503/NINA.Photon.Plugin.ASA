@@ -1,6 +1,19 @@
 
 # Changelog
 
+## Unreleased
+
+### ASA Mount Info Dock
+
+- Added a new **ASA Mount Info** dock that shows live per-axis mount telemetry.
+- Two graphs, one per axis, plot motor current, position error and axis velocity over time.
+- The graph width (history) and the mount report refresh rate are selectable directly in the dock, and are also configurable under plugin options.
+- Added a **Monitor** toggle to start/stop polling the mount without closing the dock. Reporting is also stopped automatically when the dock is hidden or the telescope disconnects.
+- Shows **Max**, **trailing average** and **RMS deviation** of the position error in arcseconds over the last 10 s, 60 s and 5 minutes, per axis and combined (total). The average is taken over the absolute error so it is comparable to the ASA driver and consistent between a single axis and the total; hover a value for the signed mean (bias).
+- The graphs and statistics are reset whenever the mount slews. Samples are discarded while slewing and during a configurable settle time afterwards (default 5 s), so slew excursions no longer dominate the longer statistics windows. The live readout keeps updating and the dock shows a "Slewing - statistics paused" indicator.
+- Position error, encoder position and velocity are interpreted as degrees, matching the ASA driver. Velocity is displayed in arcsec/s (sidereal is about 15.04"/s).
+- Uses the ASCOM actions `reporting`, `reportrefresinterval` and `report`.
+
 ## 3.2.8.17 (2026-09-13)
 - MLPT builds now overlap dome slews with the mount slew to the next point instead of waiting for the dome to finish moving first.
 - Fixed **Dome Shutter Width** setting being ignored, which prevented it from widening the no-dome-move window between points.

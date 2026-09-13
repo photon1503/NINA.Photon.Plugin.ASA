@@ -17,7 +17,8 @@ namespace NINA.Photon.Plugin.ASA.Model
 {
     /// <summary>
     /// Result of the ASCOM "report" action for a single mount axis.
-    /// Angular values are reported by the mount in radians.
+    /// Angular values are reported by the mount in degrees (PosErr, EncPos) and degrees per
+    /// second (Velocity), matching the units the ASA driver itself uses.
     /// </summary>
     public class AxisReport
     {
@@ -36,17 +37,22 @@ namespace NINA.Photon.Plugin.ASA.Model
         [JsonProperty("LastTime")]
         public DateTime LastTime { get; set; }
 
-        private const double RadiansToArcsec = 206264.806247096d;
-        private const double RadiansToDegrees = 180.0d / Math.PI;
+        private const double DegreesToArcsec = 3600.0d;
 
         [JsonIgnore]
-        public double PosErrArcsec => PosErr * RadiansToArcsec;
+        public double PosErrArcsec => PosErr * DegreesToArcsec;
 
         [JsonIgnore]
-        public double EncPosDegrees => EncPos * RadiansToDegrees;
+        public double EncPosDegrees => EncPos;
 
         [JsonIgnore]
-        public double VelocityDegreesPerSecond => Velocity * RadiansToDegrees;
+        public double VelocityDegreesPerSecond => Velocity;
+
+        /// <summary>
+        /// Axis velocity in arcseconds per second. Sidereal rate is about 15.04.
+        /// </summary>
+        [JsonIgnore]
+        public double VelocityArcsecPerSecond => Velocity * DegreesToArcsec;
 
         public static AxisReport Parse(string json)
         {
