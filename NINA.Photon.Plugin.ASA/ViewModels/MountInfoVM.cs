@@ -37,6 +37,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
     {
         private readonly IMount mount;
         private readonly ITelescopeMediator telescopeMediator;
+        private readonly IProfileService profileService;
         private readonly IASAOptions options;
         private readonly DispatcherTimer updateTimer;
         private bool disposed = false;
@@ -58,6 +59,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             this.Title = "ASA Mount Info";
             this.mount = mount;
             this.telescopeMediator = telescopeMediator;
+            this.profileService = profileService;
             this.options = options;
 
             var dict = new ResourceDictionary();
@@ -389,8 +391,14 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             }
             else
             {
-                // Settled tracking has (re)started, so schedule a fresh epoch.
-                settleUntil = DateTime.Now.AddSeconds(Math.Max(0, options.MountInfoSlewSettleSeconds));
+                // Settled tracking has (re)started, so schedule a fresh epoch using NINA's
+                // standard guider settle time rather than a plugin-specific override.
+                var settleSeconds = profileService?.ActiveProfile?.GuiderSettings?.SettleTime ?? 0.0d;
+                if (double.IsNaN(settleSeconds) || settleSeconds < 0)
+                {
+                    settleSeconds = 0.0d;
+                }
+                settleUntil = DateTime.Now.AddSeconds(settleSeconds);
             }
 
             if (slewingChanged)

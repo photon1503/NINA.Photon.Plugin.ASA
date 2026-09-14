@@ -43,6 +43,25 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
 
         public string Title { get; }
 
+        private bool showCurrent = true;
+
+        /// <summary>
+        /// Whether the current series and its axis are shown. This helps declutter the graph when
+        /// the motor current is not relevant to the current observation.
+        /// </summary>
+        public bool ShowCurrent
+        {
+            get => showCurrent;
+            set
+            {
+                if (showCurrent != value)
+                {
+                    showCurrent = value;
+                    RaisePropertyChanged();
+                }
+            }
+        }
+
         private bool showVelocity = true;
 
         /// <summary>

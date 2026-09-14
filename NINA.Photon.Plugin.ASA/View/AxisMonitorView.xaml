@@ -48,18 +48,31 @@
                     Text="{Binding Title}"
                     TextTrimming="CharacterEllipsis" />
                 <CheckBox
-                    DockPanel.Dock="Right"
-                    VerticalAlignment="Center"
-                    IsChecked="{Binding ShowVelocity, Mode=TwoWay}"
-                    ToolTip="Show velocity series" />
+                   DockPanel.Dock="Right"
+                   VerticalAlignment="Center"
+                   IsChecked="{Binding ShowCurrent, Mode=TwoWay}"
+                   ToolTip="Show current series" />
                 <TextBlock
-                    DockPanel.Dock="Right"
-                    Margin="0,0,6,0"
-                    VerticalAlignment="Center"
-                    FontSize="10"
-                    Foreground="#FF6FAE"
-                    Text="velocity"
-                    ToolTip="Show velocity series" />
+                   DockPanel.Dock="Right"
+                   Margin="0,0,6,0"
+                   VerticalAlignment="Center"
+                   FontSize="10"
+                   Foreground="#F6D94A"
+                   Text="current"
+                   ToolTip="Show current series" />
+                <CheckBox
+                   DockPanel.Dock="Right"
+                   VerticalAlignment="Center"
+                   IsChecked="{Binding ShowVelocity, Mode=TwoWay}"
+                   ToolTip="Show velocity series" />
+                <TextBlock
+                   DockPanel.Dock="Right"
+                   Margin="0,0,6,0"
+                   VerticalAlignment="Center"
+                   FontSize="10"
+                   Foreground="#FF6FAE"
+                   Text="velocity"
+                   ToolTip="Show velocity series" />
             </DockPanel>
 
             <!--  Value readout: each metric is a stacked label/value chip so nothing overlaps  -->
@@ -151,6 +164,7 @@
                         FontSize="10"
                         IntervalLength="34"
                         AxisTitleDistance="0"
+                        IsAxisVisible="{Binding ShowCurrent}"
                         IsPanEnabled="False"
                         IsZoomEnabled="False"
                         MajorGridlineStyle="None"
@@ -219,6 +233,7 @@
                         YAxisKey="CurrentAxis"
                         StrokeThickness="1.5"
                         Color="#F6D94A"
+                        Visibility="{Binding ShowCurrent, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}"
                         TrackerFormatString="{}{0}&#x0a;{2:0.000} A @ {4:0}s" />
                     <oxy:LineSeries
                         Title="v [&#8243;/s]"

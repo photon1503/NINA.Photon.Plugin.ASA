@@ -11,7 +11,7 @@
 - The **Scale** dropdown fixes the position error axis of both graphs to +/- 0.5" or 1.0", or to a custom value typed into the dropdown. **Auto** scales each graph to its data.
 - Added a **Monitor** toggle to start/stop polling the mount without closing the dock. Reporting is also stopped automatically when the dock is hidden or the telescope disconnects.
 - Shows **Max**, **trailing average** and **RMS deviation** of the position error in arcseconds over the last 10 s, 60 s and 5 minutes, per axis and combined (total). The average is taken over the absolute error so it is comparable to the ASA driver and consistent between a single axis and the total; hover a value for the signed mean (bias).
-- The statistics are restarted whenever the mount begins tracking again, i.e. after a slew or after tracking was stopped, so those excursions no longer dominate the longer windows. Recording resumes after a configurable settle time (default 5 s, plugin options -> Mount Info Dock -> Slew Settle Time).
+- The statistics are restarted whenever the mount begins tracking again, i.e. after a slew or after tracking was stopped, so those excursions no longer dominate the longer windows. Recording resumes after NINA's normal guide settle time.
 - The graphs keep their full history across these events. A dashed vertical line marks the start of each new statistics epoch, and the dock shows why the statistics are currently paused.
 - Position error, encoder position and velocity are interpreted as degrees, matching the ASA driver. Velocity is displayed in arcsec/s (sidereal is about 15.04"/s).
 - Uses the ASCOM actions `reporting`, `reportrefresinterval` and `report`.
