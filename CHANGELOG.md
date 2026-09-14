@@ -14,6 +14,9 @@
 - The statistics are restarted whenever the mount begins tracking again, i.e. after a slew or after tracking was stopped, so those excursions no longer dominate the longer windows. Recording resumes after NINA's normal guide settle time.
 - The graphs keep their full history across these events. A dashed vertical line marks the start of each new statistics epoch, and the dock shows why the statistics are currently paused.
 - Position error, encoder position and velocity are interpreted as degrees, matching the ASA driver. Velocity is displayed in arcsec/s (sidereal is about 15.04"/s).
+- Added a live **Image RMS** summary in the mount-info dock that uses the ASA mount's combined RMS, updates during the active exposure, and keeps the saved value for that image.
+- The axis graphs now highlight each exposure with a translucent background band and tooltip metadata for the image name, exposure, filter, and saved filename as those details become available.
+- Added the **$$ASAIMAGERMS$$** file-pattern variable so the saved image filename template can include the ASA mount's combined image RMS in arcseconds.
 - Uses the ASCOM actions `reporting`, `reportrefresinterval` and `report`.
 
 ## 3.2.8.17 (2026-09-13)

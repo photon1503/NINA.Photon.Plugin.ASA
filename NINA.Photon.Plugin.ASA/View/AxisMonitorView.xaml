@@ -34,6 +34,7 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="Auto" />
+                <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
 
@@ -120,7 +121,7 @@
             </Border>
 
             <oxy:Plot
-                Grid.Row="3"
+                Grid.Row="4"
                 MinHeight="130"
                 Background="Transparent"
                 PlotAreaBackground="Transparent"
@@ -189,7 +190,7 @@
                         AxislineColor="#FF6FAE"
                         TextColor="#FF6FAE"
                         TicklineColor="#FF6FAE" />
-                    <!--  Fixed 0..1 scale so epoch markers span the full plot height  -->
+                    <!--  Fixed 0..1 scale so epoch markers and exposure shading span the full plot height  -->
                     <oxy:LinearAxis
                         Position="Left"
                         Key="EpochAxis"
@@ -200,8 +201,23 @@
                         IsZoomEnabled="False"
                         MajorGridlineStyle="None"
                         MinorGridlineStyle="None" />
+                    <oxy:LinearColorAxis
+                        Position="Right"
+                        Key="ExposureColorAxis"
+                        Minimum="0"
+                        Maximum="1"
+                        LowColor="#14F6D94A"
+                        HighColor="#14F6D94A"
+                        IsAxisVisible="False" />
                 </oxy:Plot.Axes>
                 <oxy:Plot.Series>
+                    <oxy:RectangleSeries
+                        ItemsSource="{Binding ExposureBackgrounds, UpdateSourceTrigger=PropertyChanged}"
+                        XAxisKey="TimeAxis"
+                        YAxisKey="EpochAxis"
+                        ColorAxisKey="ExposureColorAxis"
+                        RenderInLegend="False"
+                        TrackerFormatString="{}{Title}" />
                     <!--  Vertical line marking the start of a new statistics epoch  -->
                     <oxy:LineSeries
                         ItemsSource="{Binding EpochMarkerSeries, UpdateSourceTrigger=PropertyChanged}"

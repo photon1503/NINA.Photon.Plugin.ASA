@@ -12,18 +12,21 @@
 
 using NINA.Core.Utility;
 using NINA.Equipment.Equipment;
+using NINA.Equipment.Equipment.MyCamera;
 using NINA.Equipment.Equipment.MyTelescope;
 using NINA.Equipment.Interfaces.Mediator;
 using NINA.Photon.Plugin.ASA.Equipment;
 using NINA.Photon.Plugin.ASA.Interfaces;
 using NINA.Photon.Plugin.ASA.Model;
 using NINA.Profile.Interfaces;
+using NINA.WPF.Base.Interfaces.Mediator;
 using NINA.WPF.Base.ViewModel;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.ComponentModel.Composition;
+using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -33,20 +36,23 @@ using NINA.Equipment.Interfaces.ViewModel;
 namespace NINA.Photon.Plugin.ASA.ViewModels
 {
     [Export(typeof(IDockableVM))]
-    public class MountInfoVM : DockableVM, IMountInfoVM, ITelescopeConsumer
+    public class MountInfoVM : DockableVM, IMountInfoVM, ITelescopeConsumer, ICameraConsumer
     {
         private readonly IMount mount;
         private readonly ITelescopeMediator telescopeMediator;
+        private readonly ICameraMediator cameraMediator;
         private readonly IProfileService profileService;
         private readonly IASAOptions options;
+        private readonly IImageSaveMediator imageSaveMediator;
         private readonly DispatcherTimer updateTimer;
+        private readonly DispatcherTimer imageStatusTimer;
         private bool disposed = false;
         private bool reportingEnabled = false;
         private int updateInProgress = 0;
 
         [ImportingConstructor]
-        public MountInfoVM(IProfileService profileService, ITelescopeMediator telescopeMediator) :
-            this(profileService, telescopeMediator, ASAPlugin.Mount, ASAPlugin.ASAOptions)
+        public MountInfoVM(IProfileService profileService, ITelescopeMediator telescopeMediator, IImageSaveMediator imageSaveMediator, ICameraMediator cameraMediator) :
+            this(profileService, telescopeMediator, ASAPlugin.Mount, ASAPlugin.ASAOptions, imageSaveMediator, cameraMediator)
         {
         }
 
@@ -54,13 +60,17 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             IProfileService profileService,
             ITelescopeMediator telescopeMediator,
             IMount mount,
-            IASAOptions options) : base(profileService)
+            IASAOptions options,
+            IImageSaveMediator imageSaveMediator,
+            ICameraMediator cameraMediator) : base(profileService)
         {
             this.Title = "ASA Mount Info";
             this.mount = mount;
             this.telescopeMediator = telescopeMediator;
+            this.cameraMediator = cameraMediator;
             this.profileService = profileService;
             this.options = options;
+            this.imageSaveMediator = imageSaveMediator;
 
             var dict = new ResourceDictionary();
             dict.Source = new Uri("NINA.Photon.Plugin.ASA;component/Resources/SVGDataTemplates.xaml", UriKind.RelativeOrAbsolute);
@@ -80,10 +90,24 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
 
             this.updateTimer = new DispatcherTimer(DispatcherPriority.Background, Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher) { Interval = GetPollInterval() };
             this.updateTimer.Tick += UpdateTimer_Tick;
+            this.imageStatusTimer = new DispatcherTimer(DispatcherPriority.Background, Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher) { Interval = TimeSpan.FromMilliseconds(250) };
+            this.imageStatusTimer.Tick += ImageStatusTimer_Tick;
+            this.imageStatusTimer.Start();
 
             if (this.options is INotifyPropertyChanged npc)
             {
                 npc.PropertyChanged += Options_PropertyChanged;
+            }
+
+            if (imageSaveMediator != null)
+            {
+                imageSaveMediator.BeforeImageSaved += ImageSaveMediator_BeforeImageSaved;
+                imageSaveMediator.ImageSaved += ImageSaveMediator_ImageSaved;
+            }
+
+            if (cameraMediator != null)
+            {
+                cameraMediator.RegisterConsumer(this);
             }
 
             this.telescopeMediator.RegisterConsumer(this);
@@ -146,9 +170,180 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             }
         }
 
+        public static double? LatestImageRms { get; private set; }
+
+        public static DateTime? LatestImageRmsTimestamp { get; private set; }
+
+        public static string LatestImageRmsPatternValue => LatestImageRms?.ToString("0.000", System.Globalization.CultureInfo.InvariantCulture) ?? string.Empty;
+
+        private double? currentImageRms;
+        private DateTime? currentImageRmsTimestamp;
+        private bool exposureInProgress;
+        private DateTime? currentExposureStartTime;
+        private DateTime? currentExposureEndTime;
+        private ExposureRmsAccumulator currentExposureMountRms;
+        private double? lastCompletedExposureRms;
+        private DateTime? lastCompletedExposureStartTime;
+
+        public double? CurrentImageRms => currentImageRms;
+
+        public bool ExposureInProgress => exposureInProgress;
+
+        public double? CurrentExposureCountdownSeconds
+        {
+            get
+            {
+                if (!exposureInProgress || !currentExposureEndTime.HasValue)
+                {
+                    return null;
+                }
+
+                return Math.Max(0d, (currentExposureEndTime.Value - DateTime.Now).TotalSeconds);
+            }
+        }
+
+        private void ImageStatusTimer_Tick(object sender, EventArgs e)
+        {
+            if (!exposureInProgress)
+            {
+                return;
+            }
+
+            RefreshLiveImageRms();
+            RaisePropertyChanged(nameof(CurrentExposureCountdownSeconds));
+            Axis1.RefreshTimeOverlays();
+            Axis2.RefreshTimeOverlays();
+        }
+
         public AxisMonitor Axis1 { get; }
 
         public AxisMonitor Axis2 { get; }
+
+        private Task ImageSaveMediator_BeforeImageSaved(object sender, BeforeImageSavedEventArgs e)
+        {
+            var imageMetaData = e?.Image?.MetaData;
+            UpdateExposureInfo(
+                imageMetaData?.Image?.ExposureStart,
+                imageMetaData?.Image?.ExposureTime,
+                imageMetaData?.Target?.Name,
+                imageMetaData?.FilterWheel?.Filter ?? imageMetaData?.FilterWheel?.Name,
+                fileName: null);
+
+            return Task.CompletedTask;
+        }
+
+        private void ImageSaveMediator_ImageSaved(object sender, ImageSavedEventArgs e)
+        {
+            var timestamp = DateTime.Now;
+            var imageMetaData = e?.MetaData;
+            UpdateExposureInfo(
+                imageMetaData?.Image?.ExposureStart,
+                imageMetaData?.Image?.ExposureTime ?? e?.Duration,
+                imageMetaData?.Target?.Name,
+                imageMetaData?.FilterWheel?.Filter ?? imageMetaData?.FilterWheel?.Name ?? e?.Filter,
+                e?.PathToImage != null ? Path.GetFileName(e.PathToImage.LocalPath) : null);
+
+            var rms = lastCompletedExposureRms;
+            if (!IsMeaningfulRms(rms))
+            {
+                rms = GetCurrentExposureLiveRms();
+            }
+            if (!IsMeaningfulRms(rms))
+            {
+                rms = currentImageRms;
+            }
+
+            if (!IsMeaningfulRms(rms))
+            {
+                return;
+            }
+
+            UpdateCurrentImageRms(rms.Value, timestamp, updateLatestCapture: true);
+            Axis1.SetCapturedImageRms(rms.Value, timestamp);
+            Axis2.SetCapturedImageRms(rms.Value, timestamp);
+            lastCompletedExposureRms = null;
+            lastCompletedExposureStartTime = null;
+        }
+
+        private void UpdateCurrentImageRms(double rms, DateTime timestamp, bool updateLatestCapture)
+        {
+            var dispatcher = Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher;
+            if (!dispatcher.CheckAccess())
+            {
+                dispatcher.BeginInvoke((Action)(() => UpdateCurrentImageRms(rms, timestamp, updateLatestCapture)));
+                return;
+            }
+
+            currentImageRms = rms;
+            currentImageRmsTimestamp = timestamp;
+            LatestImageRms = rms;
+            LatestImageRmsTimestamp = timestamp;
+            RaisePropertyChanged(nameof(CurrentImageRms));
+        }
+
+        private static bool IsMeaningfulRms(double? rms)
+        {
+            return rms.HasValue && !double.IsNaN(rms.Value) && !double.IsInfinity(rms.Value) && rms.Value > 0d;
+        }
+
+        private double? GetCurrentExposureLiveRms()
+        {
+            return currentExposureMountRms?.Rms;
+        }
+
+        private void RefreshLiveImageRms()
+        {
+            var liveRms = GetCurrentExposureLiveRms();
+            if (IsMeaningfulRms(liveRms))
+            {
+                UpdateCurrentImageRms(liveRms.Value, DateTime.Now, updateLatestCapture: false);
+            }
+        }
+
+        private void UpdateExposureInfo(DateTime? exposureStart, double? exposureSeconds, string imageName, string filter, string fileName)
+        {
+            Axis1.UpdateExposureInfo(exposureStart ?? currentExposureStartTime ?? lastCompletedExposureStartTime, exposureSeconds, imageName, filter, fileName);
+            Axis2.UpdateExposureInfo(exposureStart ?? currentExposureStartTime ?? lastCompletedExposureStartTime, exposureSeconds, imageName, filter, fileName);
+        }
+
+        private void StartExposure(CameraInfo deviceInfo)
+        {
+            exposureInProgress = true;
+            currentExposureStartTime = DateTime.Now;
+            currentExposureEndTime = deviceInfo?.ExposureEndTime;
+            currentExposureMountRms = new ExposureRmsAccumulator();
+
+            Axis1.StartExposure(currentExposureStartTime.Value, CurrentExposureCountdownSeconds);
+            Axis2.StartExposure(currentExposureStartTime.Value, CurrentExposureCountdownSeconds);
+
+            RefreshLiveImageRms();
+
+            RaisePropertyChanged(nameof(ExposureInProgress));
+            RaisePropertyChanged(nameof(CurrentExposureCountdownSeconds));
+        }
+
+        private void StopExposure()
+        {
+            var exposureStartTime = currentExposureStartTime;
+            var stoppedAt = DateTime.Now;
+            var finalExposureRms = GetCurrentExposureLiveRms();
+            if (IsMeaningfulRms(finalExposureRms))
+            {
+                lastCompletedExposureRms = finalExposureRms;
+                lastCompletedExposureStartTime = exposureStartTime;
+                UpdateCurrentImageRms(finalExposureRms.Value, stoppedAt, updateLatestCapture: false);
+            }
+
+            Axis1.CompleteExposure(exposureStartTime, stoppedAt);
+            Axis2.CompleteExposure(exposureStartTime, stoppedAt);
+
+            exposureInProgress = false;
+            currentExposureStartTime = null;
+            currentExposureEndTime = null;
+            currentExposureMountRms = null;
+            RaisePropertyChanged(nameof(ExposureInProgress));
+            RaisePropertyChanged(nameof(CurrentExposureCountdownSeconds));
+        }
 
         /// <summary>
         /// Combined (total) position error statistics, computed from the vector sum of both axes.
@@ -356,6 +551,34 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             TelescopeConnected = deviceInfo.Connected;
             UpdateMountState(deviceInfo.Connected && deviceInfo.Slewing, deviceInfo.Connected && deviceInfo.TrackingEnabled);
             EvaluateMonitoringState();
+        }
+
+        public void UpdateDeviceInfo(CameraInfo deviceInfo)
+        {
+            var dispatcher = Application.Current?.Dispatcher ?? Dispatcher.CurrentDispatcher;
+            if (!dispatcher.CheckAccess())
+            {
+                dispatcher.BeginInvoke((Action)(() => UpdateDeviceInfo(deviceInfo)));
+                return;
+            }
+
+            var isExposing = deviceInfo?.IsExposing ?? false;
+            if (isExposing)
+            {
+                currentExposureEndTime = deviceInfo.ExposureEndTime;
+                if (!exposureInProgress)
+                {
+                    StartExposure(deviceInfo);
+                }
+                else
+                {
+                    RaisePropertyChanged(nameof(CurrentExposureCountdownSeconds));
+                }
+            }
+            else if (exposureInProgress)
+            {
+                StopExposure();
+            }
         }
 
         private bool telescopeSlewing;
@@ -575,6 +798,14 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                         // The graph always keeps the sample; only the statistics are gated.
                         Axis1.Add(axis1, !paused);
                         Axis2.Add(axis2, !paused);
+
+                        if (exposureInProgress && axis1 != null && axis2 != null)
+                        {
+                            var exposureTotalError = Math.Sqrt((axis1.PosErrArcsec * axis1.PosErrArcsec) + (axis2.PosErrArcsec * axis2.PosErrArcsec));
+                            currentExposureMountRms?.Add(exposureTotalError);
+                            RefreshLiveImageRms();
+                        }
+
                         if (!paused)
                         {
                             UpdateTotalStatistics(axis1, axis2);
@@ -600,13 +831,43 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             {
                 StopMonitoring();
                 updateTimer.Tick -= UpdateTimer_Tick;
+                imageStatusTimer.Stop();
+                imageStatusTimer.Tick -= ImageStatusTimer_Tick;
                 if (this.options is INotifyPropertyChanged npc)
                 {
                     npc.PropertyChanged -= Options_PropertyChanged;
                 }
+                if (this.imageSaveMediator != null)
+                {
+                    this.imageSaveMediator.BeforeImageSaved -= ImageSaveMediator_BeforeImageSaved;
+                    this.imageSaveMediator.ImageSaved -= ImageSaveMediator_ImageSaved;
+                }
+                if (this.cameraMediator != null)
+                {
+                    this.cameraMediator.RemoveConsumer(this);
+                }
                 telescopeMediator.RemoveConsumer(this);
                 this.PropertyChanged -= MountInfoVM_PropertyChanged;
                 disposed = true;
+            }
+        }
+
+        private sealed class ExposureRmsAccumulator
+        {
+            private double sumSquares;
+            private int sampleCount;
+
+            public double? Rms => sampleCount > 0 ? Math.Sqrt(sumSquares / sampleCount) : null;
+
+            public void Add(double value)
+            {
+                if (double.IsNaN(value) || double.IsInfinity(value) || value <= 0d)
+                {
+                    return;
+                }
+
+                sumSquares += value * value;
+                sampleCount++;
             }
         }
     }

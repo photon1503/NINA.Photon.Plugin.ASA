@@ -13,6 +13,7 @@
 using NINA.Core.Utility;
 using NINA.Photon.Plugin.ASA.Model;
 using OxyPlot;
+using OxyPlot.Series;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -164,6 +165,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
         }
 
         private readonly List<DateTime> epochMarkers = new List<DateTime>();
+        private readonly List<ExposureOverlay> exposureOverlays = new List<ExposureOverlay>();
 
         private IList<double> epochMarkerOffsets = new List<double>();
 
@@ -196,12 +198,90 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             }
         }
 
+        private IList<ExposureRectangleItem> exposureBackgrounds = new List<ExposureRectangleItem>();
+
+        public IList<ExposureRectangleItem> ExposureBackgrounds
+        {
+            get => exposureBackgrounds;
+            private set
+            {
+                exposureBackgrounds = value;
+                RaisePropertyChanged();
+            }
+        }
+
+        public void StartExposure(DateTime startTime, double? exposureSeconds)
+        {
+            lock (lockObj)
+            {
+                exposureOverlays.Add(new ExposureOverlay
+                {
+                    StartTime = startTime,
+                    ExposureSeconds = exposureSeconds
+                });
+            }
+
+            Rebuild();
+        }
+
+        public void CompleteExposure(DateTime? startTime, DateTime endTime)
+        {
+            lock (lockObj)
+            {
+                var overlay = FindExposureOverlay(startTime);
+                if (overlay != null)
+                {
+                    overlay.EndTime = endTime;
+                }
+            }
+
+            Rebuild();
+        }
+
+        public void UpdateExposureInfo(DateTime? startTime, double? exposureSeconds, string imageName, string filter, string fileName)
+        {
+            lock (lockObj)
+            {
+                var overlay = FindExposureOverlay(startTime);
+                if (overlay != null)
+                {
+                    if (exposureSeconds.HasValue && exposureSeconds.Value > 0d)
+                    {
+                        overlay.ExposureSeconds = exposureSeconds.Value;
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(imageName))
+                    {
+                        overlay.ImageName = imageName;
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(filter))
+                    {
+                        overlay.Filter = filter;
+                    }
+
+                    if (!string.IsNullOrWhiteSpace(fileName))
+                    {
+                        overlay.FileName = fileName;
+                    }
+                }
+            }
+
+            Rebuild();
+        }
+
+        public void RefreshTimeOverlays()
+        {
+            Rebuild();
+        }
+
         public void Clear()
         {
             lock (lockObj)
             {
                 samples.Clear();
                 epochMarkers.Clear();
+                exposureOverlays.Clear();
             }
             ErrorStatistics.Clear();
             LastReport = null;
@@ -237,6 +317,42 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
         public double VelocityArcsecPerSecond => lastReport?.VelocityArcsecPerSecond ?? double.NaN;
 
         public DateTime? LastUpdate => lastReport?.LastTime;
+
+        private double? lastImageRms;
+        private DateTime? lastImageRmsTimestamp;
+
+        public double? LastImageRms => lastImageRms;
+
+        public double? LastImageRmsAgeSeconds
+        {
+            get
+            {
+                if (!lastImageRmsTimestamp.HasValue)
+                {
+                    return null;
+                }
+
+                return Math.Max(0d, (DateTime.Now - lastImageRmsTimestamp.Value).TotalSeconds);
+            }
+        }
+
+        public void SetCapturedImageRms(double rms, DateTime timestamp)
+        {
+            lastImageRms = rms;
+            lastImageRmsTimestamp = timestamp;
+            RaisePropertyChanged(nameof(LastImageRms));
+            RaisePropertyChanged(nameof(LastImageRmsAgeSeconds));
+        }
+
+        public void RefreshCaptureTiming()
+        {
+            if (!lastImageRmsTimestamp.HasValue)
+            {
+                return;
+            }
+
+            RaisePropertyChanged(nameof(LastImageRmsAgeSeconds));
+        }
 
         private IList<DataPoint> currentHistory = new List<DataPoint>();
 
@@ -283,14 +399,17 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
         {
             List<(DateTime Timestamp, AxisReport Report)> snapshot;
             List<DateTime> markers;
+            List<ExposureOverlay> overlays;
             var now = DateTime.Now;
             var cutoff = now.AddSeconds(-HistorySeconds);
             lock (lockObj)
             {
                 samples.RemoveAll(s => s.Timestamp < cutoff);
                 epochMarkers.RemoveAll(m => m < cutoff);
+                exposureOverlays.RemoveAll(o => (o.EndTime ?? now) < cutoff);
                 snapshot = samples.ToList();
                 markers = epochMarkers.ToList();
+                overlays = exposureOverlays.Select(o => o.Clone()).ToList();
             }
 
             ErrorStatistics.Update(now);
@@ -300,7 +419,63 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             VelocityHistory = snapshot.Select(s => new DataPoint(-(now - s.Timestamp).TotalSeconds, s.Report.VelocityArcsecPerSecond)).ToList();
             EpochMarkerOffsets = markers.Select(m => -(now - m).TotalSeconds).ToList();
             EpochMarkerSeries = BuildEpochMarkerSeries(EpochMarkerOffsets);
+            ExposureBackgrounds = BuildExposureBackgrounds(overlays, now);
             RaisePropertyChanged(nameof(TimeAxisMinimum));
+        }
+
+        private ExposureOverlay FindExposureOverlay(DateTime? startTime)
+        {
+            if (exposureOverlays.Count == 0)
+            {
+                return null;
+            }
+
+            if (!startTime.HasValue)
+            {
+                return exposureOverlays.LastOrDefault();
+            }
+
+            return exposureOverlays
+                .OrderBy(o => Math.Abs((o.StartTime - startTime.Value).TotalMilliseconds))
+                .FirstOrDefault();
+        }
+
+        private static IList<ExposureRectangleItem> BuildExposureBackgrounds(IEnumerable<ExposureOverlay> overlays, DateTime now)
+        {
+            return overlays
+                .Select(o => new ExposureRectangleItem(
+                    new DataPoint(-(now - o.StartTime).TotalSeconds, 0d),
+                    new DataPoint(-(now - (o.EndTime ?? now)).TotalSeconds, 1d),
+                    1d,
+                    BuildExposureTooltip(o)))
+                .ToList();
+        }
+
+        private static string BuildExposureTooltip(ExposureOverlay overlay)
+        {
+            var lines = new List<string> { "Exposure" };
+
+            if (!string.IsNullOrWhiteSpace(overlay.ImageName))
+            {
+                lines.Add($"Image: {overlay.ImageName}");
+            }
+
+            if (overlay.ExposureSeconds.HasValue)
+            {
+                lines.Add($"Exposure: {overlay.ExposureSeconds.Value:0.0}s");
+            }
+
+            if (!string.IsNullOrWhiteSpace(overlay.Filter))
+            {
+                lines.Add($"Filter: {overlay.Filter}");
+            }
+
+            if (!string.IsNullOrWhiteSpace(overlay.FileName))
+            {
+                lines.Add($"File: {overlay.FileName}");
+            }
+
+            return string.Join(Environment.NewLine, lines);
         }
 
         /// <summary>
@@ -317,6 +492,45 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 points.Add(new DataPoint(double.NaN, double.NaN));
             }
             return points;
+        }
+
+        public sealed class ExposureRectangleItem : RectangleItem
+        {
+            public ExposureRectangleItem(DataPoint a, DataPoint b, double value, string title)
+                : base(a, b, value)
+            {
+                Title = title;
+            }
+
+            public string Title { get; }
+        }
+
+        private sealed class ExposureOverlay
+        {
+            public DateTime StartTime { get; set; }
+
+            public DateTime? EndTime { get; set; }
+
+            public double? ExposureSeconds { get; set; }
+
+            public string ImageName { get; set; }
+
+            public string Filter { get; set; }
+
+            public string FileName { get; set; }
+
+            public ExposureOverlay Clone()
+            {
+                return new ExposureOverlay
+                {
+                    StartTime = StartTime,
+                    EndTime = EndTime,
+                    ExposureSeconds = ExposureSeconds,
+                    ImageName = ImageName,
+                    Filter = Filter,
+                    FileName = FileName
+                };
+            }
         }
     }
 }

@@ -17,6 +17,7 @@
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="1*" />
             <RowDefinition Height="1*" />
         </Grid.RowDefinitions>
@@ -138,9 +139,58 @@
                 ToolTip="{Binding ErrorMessage}" />
         </StackPanel>
 
-        <!--  Combined (both axes) position error statistics  -->
         <Border
             Grid.Row="2"
+            Margin="6,0,6,4"
+            Padding="6,3,6,4"
+            Background="{StaticResource TertiaryBackgroundBrush}"
+            BorderBrush="{StaticResource BorderBrush}"
+            BorderThickness="1"
+            CornerRadius="3">
+            <DockPanel LastChildFill="False">
+                <TextBlock
+                    DockPanel.Dock="Left"
+                    VerticalAlignment="Center"
+                    FontSize="12"
+                    FontWeight="Bold"
+                    Foreground="{StaticResource PrimaryBrush}"
+                    Text="Image RMS" />
+                <TextBlock
+                    DockPanel.Dock="Right"
+                    Margin="8,0,0,0"
+                    VerticalAlignment="Center"
+                    FontFamily="Consolas"
+                    FontSize="12"
+                    FontWeight="Bold"
+                    Foreground="#F6D94A"
+                    Text="{Binding CurrentImageRms, StringFormat={}{0:0.000}, TargetNullValue=--}"
+                    ToolTip="Live ASA mount combined RMS during the current exposure, then the saved value for that image" />
+                <TextBlock
+                    DockPanel.Dock="Right"
+                    Margin="8,0,0,0"
+                    VerticalAlignment="Center"
+                    FontSize="11"
+                    Foreground="{StaticResource PrimaryBrush}"
+                    Opacity="0.85"
+                    Text="exp"
+                    Visibility="{Binding ExposureInProgress, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}" />
+                <TextBlock
+                    DockPanel.Dock="Right"
+                    Margin="4,0,0,0"
+                    VerticalAlignment="Center"
+                    FontFamily="Consolas"
+                    FontSize="12"
+                    FontWeight="Bold"
+                    Foreground="#5CE1E6"
+                    Text="{Binding CurrentExposureCountdownSeconds, StringFormat={}{0:0.0}s}"
+                    ToolTip="Remaining time in the current exposure"
+                    Visibility="{Binding ExposureInProgress, Converter={StaticResource BooleanToVisibilityCollapsedConverter}}" />
+            </DockPanel>
+        </Border>
+
+        <!--  Combined (both axes) position error statistics  -->
+        <Border
+            Grid.Row="3"
             Margin="6,0,6,4"
             Padding="6,3,6,4"
             Background="{StaticResource TertiaryBackgroundBrush}"
@@ -170,7 +220,7 @@
             </StackPanel>
         </Border>
 
-        <local:AxisMonitorView Grid.Row="3" DataContext="{Binding Axis1}" />
-        <local:AxisMonitorView Grid.Row="4" DataContext="{Binding Axis2}" />
+        <local:AxisMonitorView Grid.Row="4" DataContext="{Binding Axis1}" />
+        <local:AxisMonitorView Grid.Row="5" DataContext="{Binding Axis2}" />
     </Grid>
 </UserControl>

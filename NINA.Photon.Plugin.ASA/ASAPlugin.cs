@@ -13,6 +13,7 @@
 using NINA.Photon.Plugin.ASA.Interfaces;
 using NINA.Photon.Plugin.ASA.Properties;
 using NINA.Core.Utility;
+using System;
 using NINA.Equipment.Interfaces.Mediator;
 using NINA.Plugin;
 using NINA.Plugin.Interfaces;
@@ -23,11 +24,16 @@ using NINA.Photon.Plugin.ASA.Equipment;
 using NINA.WPF.Base.Interfaces.Mediator;
 using NINA.Equipment.Interfaces;
 using NINA.Photon.Plugin.ASA.ModelManagement;
+using NINA.Photon.Plugin.ASA.ViewModels;
 using NINA.PlateSolving.Interfaces;
 using RelayCommand = CommunityToolkit.Mvvm.Input.RelayCommand;
 using NINA.WPF.Base.Mediator;
 using NINA.Image.ImageData;
 using NINA.Image.Interfaces;
+using NINA.Core.Model;
+using NINA.WPF.Base.Interfaces.ViewModel;
+using System.Globalization;
+using System.Threading.Tasks;
 
 namespace NINA.Photon.Plugin.ASA
 {
@@ -44,10 +50,15 @@ namespace NINA.Photon.Plugin.ASA
     [Export(typeof(IPluginManifest))]
     public class ASAPlugin : PluginBase
     {
+        public const string ImageRmsPatternKey = "$$ASAIMAGERMS$$";
+
+        private readonly IImageSaveMediator imageSaveMediator;
+
         [ImportingConstructor]
         public ASAPlugin(
             IProfileService profileService, ITelescopeMediator telescopeMediator, IApplicationStatusMediator applicationStatusMediator, IDomeMediator domeMediator, IDomeSynchronization domeSynchronization,
-            IPlateSolverFactory plateSolverFactory, IImagingMediator imagingMediator, IFilterWheelMediator filterWheelMediator, IWeatherDataMediator weatherDataMediator, ICameraMediator cameraMediator, IImageDataFactory imageDataFactory, IGuiderMediator guiderMediator)
+            IPlateSolverFactory plateSolverFactory, IImagingMediator imagingMediator, IFilterWheelMediator filterWheelMediator, IWeatherDataMediator weatherDataMediator, ICameraMediator cameraMediator, IImageDataFactory imageDataFactory, IGuiderMediator guiderMediator,
+            IImageSaveMediator imageSaveMediator, IOptionsVM optionsVM)
         {
             if (Settings.Default.UpdateSettings)
             {
@@ -59,6 +70,13 @@ namespace NINA.Photon.Plugin.ASA
             if (ASAOptions == null)
             {
                 ASAOptions = new ASAOptions(profileService);
+            }
+
+            this.imageSaveMediator = imageSaveMediator;
+            RegisterImageRmsPattern(optionsVM);
+            if (this.imageSaveMediator != null)
+            {
+                this.imageSaveMediator.BeforeFinalizeImageSaved += ImageSaveMediator_BeforeFinalizeImageSaved;
             }
 
             ResetModelBuilderDefaultsCommand = new RelayCommand(ASAOptions.ResetDefaults);
@@ -98,5 +116,32 @@ namespace NINA.Photon.Plugin.ASA
         public static IMountModelBuilderMediator MountModelBuilderMediator { get; private set; }
 
         public static IApplicationStatusMediator ApplicationStatusMediator { get; private set; }
+
+        public static double? LatestImageRms => MountInfoVM.LatestImageRms;
+
+        public static DateTime? LatestImageRmsTimestamp => MountInfoVM.LatestImageRmsTimestamp;
+
+        private static void RegisterImageRmsPattern(IOptionsVM optionsVM)
+        {
+            optionsVM?.AddImagePattern(new ImagePattern(ImageRmsPatternKey, "ASA mount combined image RMS in arcseconds", "ASA")
+            {
+                Value = "0.000"
+            });
+        }
+
+        private Task ImageSaveMediator_BeforeFinalizeImageSaved(object sender, BeforeFinalizeImageSavedEventArgs e)
+        {
+            if (e == null)
+            {
+                return Task.CompletedTask;
+            }
+
+            e.AddImagePattern(new ImagePattern(ImageRmsPatternKey, "ASA mount combined image RMS in arcseconds", "ASA")
+            {
+                Value = MountInfoVM.LatestImageRmsPatternValue
+            });
+
+            return Task.CompletedTask;
+        }
     }
 }
