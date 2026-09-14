@@ -1388,7 +1388,7 @@
                     PlotAreaBorderColor="Transparent">
                     <oxy:Plot.Resources>
                         <!-- Cornflowerblue = 0xFF6495ED -->
-                        <Color x:Key="DomeShutterColor" A="50" R="0x64" G="0x95" B="0xED" />
+                        <Color x:Key="DomeShutterColor" A="30" R="0x64" G="0x95" B="0xED" />
                         <Color x:Key="DomeAzimuthColor" A="100" R="0x64" G="0x95" B="0xED" />
 
                         <!-- BlueViolet = 0xFF8A2BE2 -->

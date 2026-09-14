@@ -1063,6 +1063,8 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 if (state.Options.DomeShutterWidth_mm > 0)
                 {
                     (minAzimuth, maxAzimuth) = DomeUtility.CalculateDomeAzimuthRange(targetDomeCoordinates.Altitude, targetDomeCoordinates.Azimuth, domeRadius, state.Options.DomeShutterWidth_mm);
+                    minAzimuth -= domeThreshold;
+                    maxAzimuth += domeThreshold;
                 }
                 else
                 {
@@ -1400,11 +1402,18 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 state.PointAzimuthComparer,
                 cloneNonSyncPoints: false);
 
+            var skipInitialCaptureForPreBalance =
+                state.Options.ModelPointGenerationType == ModelPointGenerationTypeEnum.SiderealPath
+                && state.Options.SiderealTrackPreBalanceFarEndSlew
+                && eligiblePointsOrdered.Count > 1;
+
             // Track planned traversal count for progress/ETA reporting.
             // This includes generated sync points so the denominator matches actual work.
-            state.IterationPlannedPointCount = eligiblePointsOrdered.Count;
+            // For MLTP pre-balance, the first point is a setup slew only and is not captured.
+            state.IterationPlannedPointCount = eligiblePointsOrdered.Count - (skipInitialCaptureForPreBalance ? 1 : 0);
 
-            var nextPoint = eligiblePointsOrdered.FirstOrDefault();
+            var preBalancePoint = eligiblePointsOrdered.FirstOrDefault();
+            var nextPoint = eligiblePointsOrdered.ElementAtOrDefault(skipInitialCaptureForPreBalance ? 1 : 0);
 
             PointNextUp?.Invoke(this, new PointNextUpEventArgs() { Point = nextPoint });
 
@@ -1418,8 +1427,9 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
             //  Logger.Info($"Processing {eligiblePointsOrdered.Count} points. First point Alt={nextPoint.Altitude:0.###}, Az={nextPoint.Azimuth:0.###}, MinDomeAz={nextPoint.MinDomeAzimuth:0.###}, MaxDomeAz={nextPoint.MaxDomeAzimuth:0.###}");
             if (state.UseDome)
             {
-                // For MLPT, let the initial dome positioning overlap with the pre-balance/first mount slew instead of blocking on it here
-                await SlewDomeIfNecessary(state, eligiblePointsOrdered, ct, waitForCompletion: !IsMlptBuild(state.Options));
+                // For MLTP pre-balance, keep the dome moving toward the first real capture point while the mount slews through the setup move.
+                var domeSlewPoints = skipInitialCaptureForPreBalance ? eligiblePointsOrdered.Skip(1).ToList() : eligiblePointsOrdered;
+                await SlewDomeIfNecessary(state, domeSlewPoints, ct, waitForCompletion: !IsMlptBuild(state.Options));
             }
 
             ModelPoint refPointEast = new ModelPoint(telescopeMediator)
@@ -1440,11 +1450,9 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 ModelPointState = ModelPointStateEnum.Generated
             };
 
-            // For MLTP, optionally go to last point then back to first point to pre-balance for the final pier-side change
-            if (state.Options.ModelPointGenerationType == ModelPointGenerationTypeEnum.SiderealPath
-                && state.Options.SiderealTrackPreBalanceFarEndSlew)
+            // For MLTP, optionally go to last point then back to the setup point before the first capture.
+            if (skipInitialCaptureForPreBalance)
             {
-                // slew to last point and then back
                 var lastPoint = eligiblePointsOrdered.Last();
                 // disable dome sync
                 bool domeSyncEnabled = false;
@@ -1457,7 +1465,7 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 }
 
                 await SlewTelescopeToPoint(state, lastPoint, ct);
-                await SlewTelescopeToPoint(state, nextPoint, ct);
+                await SlewTelescopeToPoint(state, preBalancePoint, ct);
 
                 if (domeMediator != null && domeSyncEnabled)
                 {
@@ -2105,8 +2113,16 @@ namespace NINA.Photon.Plugin.ASA.ModelManagement
                 return true;
             }
 
+            var siderealPreBalanceRequiresCaptureSkip = state.Options.ModelPointGenerationType == ModelPointGenerationTypeEnum.SiderealPath
+                && state.Options.SiderealTrackPreBalanceFarEndSlew
+                && sideOfPierPoints.Count > 1;
+
             double domeSlewAzimuth;
-            if (state.Options.MinimizeDomeMovement)
+            if (siderealPreBalanceRequiresCaptureSkip)
+            {
+                domeSlewAzimuth = sideOfPierPoints[0].DomeAzimuth;
+            }
+            else if (state.Options.MinimizeDomeMovement)
             {
                 domeSlewAzimuth = state.Options.WestToEastSorting ? nextAzimuthSlewPoint.MinDomeAzimuth : nextAzimuthSlewPoint.MaxDomeAzimuth;
             }

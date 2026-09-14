@@ -2166,6 +2166,7 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
             var dataPoints2_2 = new List<DomeShutterOpeningDataPoint>();
             var azimuthAngle = Angle.ByDegree(azimuth);
             var domeRadius = this.profileService.ActiveProfile.DomeSettings.DomeRadius_mm;
+            var domeThreshold = Angle.ByDegree(azimuthTolerance);
             if (domeRadius <= 0)
             {
                 throw new ArgumentException("Dome Radius is not set in Dome Options");
@@ -2177,6 +2178,8 @@ namespace NINA.Photon.Plugin.ASA.ViewModels
                 ct.ThrowIfCancellationRequested();
                 var altitudeAngle = Angle.ByDegree(altitude);
                 (var leftAzimuthBoundary, var rightAzimuthBoundary) = DomeUtility.CalculateDomeAzimuthRange(altitudeAngle: altitudeAngle, azimuthAngle: azimuthAngle, domeRadius: domeRadius, domeShutterWidthMm: modelBuilderOptions.DomeShutterWidth_mm);
+                leftAzimuthBoundary -= domeThreshold;
+                rightAzimuthBoundary += domeThreshold;
                 if (leftAzimuthBoundary.Degree < 0.0)
                 {
                     var addDegrees = AstroUtil.EuclidianModulus(leftAzimuthBoundary.Degree, 360.0d) - leftAzimuthBoundary.Degree;
